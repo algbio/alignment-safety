@@ -5,8 +5,6 @@ from ete3 import Tree, NCBITaxa
 
 ncbi = NCBITaxa()
 
-# t = ncbi.get_topology([10497])
-# print(t.get_ascii())
 # Downloads/Updates taxonomy database
 # Uncomment this line for first run only
 
