@@ -30,4 +30,3 @@ pip3 install ete3
 
 Before first run:
 - Add paths to Snakefile
-- After firs run you can comment out line "ncbi.update_taxonomy_database()" in scripts/taxtree.py
