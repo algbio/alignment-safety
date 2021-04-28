@@ -1,0 +1,7 @@
+out/
+data/
+temp/
+.snakemake/
+.vscode/
+taxdump.tar.gz
+.DS_store
