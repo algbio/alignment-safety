@@ -5,3 +5,4 @@ temp/
 .vscode/
 taxdump.tar.gz
 .DS_store
+tmp.bin

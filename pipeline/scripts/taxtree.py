@@ -8,7 +8,7 @@ ncbi = NCBITaxa()
 # print(t.get_ascii())
 # Downloads/Updates taxonomy database
 # Uncomment this line for first run only
-# ncbi.update_taxonomy_database()
+ncbi.update_taxonomy_database()
 
 tax_dict = {}
 cluster_name = ""

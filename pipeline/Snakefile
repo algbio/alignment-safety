@@ -5,7 +5,7 @@ DIAMOND_PATH = "./../diamond-2.0.8"
 RAXML_PATH = "raxml-ng"
 MUSCLE_PATH = "muscle"
 
-
+# removes path and file extension from filename
 def clean_filename(filename):
     return filename.split("/")[-1].split(".")[0]
 
