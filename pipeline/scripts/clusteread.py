@@ -43,9 +43,37 @@ def print_info():
             b_len = len(clusters[key])
             b_name = key
 
+    # bar diagram
+    # 1-10, 11-100, 101-300, 301-500, 501-1000, 1000+
+    ranges = [10, 100, 300, 500, 1000]
+    bins = [0,0,0,0,0,0]
+    for key in clusters.keys():
+        l = len(clusters[key])
+        if 0 < l <= ranges[0]:
+            bins[0] += 1
+        if ranges[0] < l <= ranges[1]:
+            bins[1] += 1
+        if ranges[1] < l <= ranges[2]:
+            bins[2] += 1
+        if ranges[2] < l <= ranges[3]:
+            bins[3] += 1
+        if ranges[3] < l <= ranges[4]:
+            bins[4] += 1
+        if ranges[4] < l:
+            bins[5] += 1
+
     print(f"Total number of clusters:       {len(clusters.keys())}")
     print(f"Size of the smallest cluster:   {s_len}, {s_name}")
     print(f"Size of the biggest cluster:    {b_len},  {b_name}")
+    print("Distribution of cluster sizes:")
+    print("Size range  : Cluster count")
+    for i in range(6):
+        if i == 0:
+            print(f"{0:>4} - {ranges[i]:>4} : {bins[i]:6}")
+        elif i == 5:
+            print(f"{ranges[i-1]+1:>4} +      : {bins[i]:6}")
+        else:
+            print(f"{ranges[i-1]+1:>4} - {ranges[i]:>4} : {bins[i]:6} ")
 
 def separate_clusters(db_filename, cluster_key):
     f = open(db_filename, "r")

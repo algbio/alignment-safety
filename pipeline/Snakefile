@@ -1,9 +1,9 @@
 # download swiss protein db from: https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
 DB_FILE = "data/uniprot_sprot.fasta.gz"
-CLUSTER = ""
-DIAMOND_PATH = "diamond-2.0.8"
-RAXML_PATH = "raxml-ng"
-MUSCLE_PATH = "muscle"
+CLUSTER = "sp|B8NLM9|ARTA_ASPFN"
+DIAMOND_PATH = "./../../diamond-2.0.8"
+RAXML_PATH = "./../../raxml-ng"
+MUSCLE_PATH = "./../../muscle"
 
 # removes path and file extension from filename
 def clean_filename(filename):
@@ -34,6 +34,15 @@ rule mcl_cluster:
         f"data/{DB_FILENAME}.mcl"
     shell:
         "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo mcl -d {input} -o {output}"
+
+rule cluster_info:
+    input:
+        f"{DB_FILE}",
+        f"data/{DB_FILENAME}.multistep"
+    params:
+        cluster_name=CLUSTER
+    shell:
+        "python3 scripts/clusteread.py i {input}"
 
 rule separate_cluster:
     input:
