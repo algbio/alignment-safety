@@ -5,9 +5,9 @@ clusters = {}
 
 
 def print_usage():
-    print("Print cluster:   clusterread.py p <clustered db> <cluster file> <cluster id>")
-    print("Write cluster:   clusterread.py w <clustered db> <cluster file> <cluster id>")
-    print("Print info:      clusterread.py i <clustered db> <cluster file>")
+    print("Print cluster:   clusterread.py p <original db> <cluster file> <cluster id>")
+    print("Write cluster:   clusterread.py w <original db> <cluster file> <cluster id>")
+    print("Print info:      clusterread.py i <original db> <cluster file>")
 
 def read_clusters(filename):
     # check which file format clusters are
@@ -51,15 +51,15 @@ def print_info():
         l = len(clusters[key])
         if 0 < l <= ranges[0]:
             bins[0] += 1
-        if ranges[0] < l <= ranges[1]:
+        elif ranges[0] < l <= ranges[1]:
             bins[1] += 1
-        if ranges[1] < l <= ranges[2]:
+        elif ranges[1] < l <= ranges[2]:
             bins[2] += 1
-        if ranges[2] < l <= ranges[3]:
+        elif ranges[2] < l <= ranges[3]:
             bins[3] += 1
-        if ranges[3] < l <= ranges[4]:
+        elif ranges[3] < l <= ranges[4]:
             bins[4] += 1
-        if ranges[4] < l:
+        elif ranges[4] < l:
             bins[5] += 1
 
     print(f"Total number of clusters:       {len(clusters.keys())}")
@@ -74,6 +74,7 @@ def print_info():
             print(f"{ranges[i-1]+1:>4} +      : {bins[i]:6}")
         else:
             print(f"{ranges[i-1]+1:>4} - {ranges[i]:>4} : {bins[i]:6} ")
+            
 
 def separate_clusters(db_filename, cluster_key):
     f = open(db_filename, "r")
@@ -98,7 +99,6 @@ def separate_clusters(db_filename, cluster_key):
 
         
 def main():
-    print(sys.argv)
     if len(sys.argv) < 4:
         print_usage()
         return

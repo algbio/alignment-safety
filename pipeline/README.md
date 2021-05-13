@@ -17,15 +17,17 @@ make
 Install Raxml-ng:
 ```
 git clone https://github.com/amkozlov/raxml-ng
+cd raxml-ng
 mkdir build
 cd build
 cmake ..
 make
 ```
 
-Install ete3:
+ete3 and snakemake via Conda environment
 ```
-pip3 install ete3
+conda env create -f environment.yaml
+conda activate pipeline
 ```
 
 Before first run:

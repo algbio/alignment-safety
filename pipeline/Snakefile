@@ -24,14 +24,22 @@ rule multistep_cluster:
         f"data/{DB_FILENAME}.dmnd"
     output:
         f"data/{DB_FILENAME}.multistep"
+    params:
+        # fast, mid-sensitive, sensitive (default),
+        # more-sensitive, very-sensitive, ultra-sensitive
+        sens="sensitive"
     shell:
-        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo multi-step -d {input} -o {output}"
+        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo multi-step --cluster-steps {params.sens} -d {input} -o {output}"
 
 rule mcl_cluster:
     input:
         f"data/{DB_FILENAME}.dmnd"
     output:
         f"data/{DB_FILENAME}.mcl"
+    params:
+        # fast, mid-sensitive, sensitive (default),
+        # more-sensitive, very-sensitive, ultra-sensitive
+        sens="sensitive"
     shell:
         "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo mcl -d {input} -o {output}"
 

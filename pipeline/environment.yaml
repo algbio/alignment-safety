@@ -1,0 +1,7 @@
+name: pipeline
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - ete3
+  - snakemake-minimal
