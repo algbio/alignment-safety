@@ -1,7 +1,0 @@
-== Finding an alpha safe path in a DAG ==
-First implementation, the DAG is (for now) given as adjacency list.
-An alpha safe path is an s--t path which contains all edges which are part of
-\> [alpha * (amount of paths)] paths. For alpha >= 0.5, this is well defined.
-The DAG corresponds to all optimal alignments, and p path in this DAG
-corresponds to one specifig choice of optimal alignment. The edges correspond
-to the matching of two symbols.
