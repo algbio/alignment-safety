@@ -18,4 +18,6 @@ DAG, called alpha safe path, if alpha is chosen >= 50%.
 
 == How to run ==
 
-For now, main does not take any arguments.
+For now, main does not take any arguments. Compile for example with
+"g++ -std=c++17 -stdlib=libc++ ./alpha_safe_paths.cc -o alpha_safe_paths\
+  ./safety_windows.cc -o safety_windwos ./main.cc -o main"
