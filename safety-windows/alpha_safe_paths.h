@@ -10,9 +10,6 @@ std::vector<int> amount_paths(std::vector<std::vector<int>> &dag, int sink);
 // For each edge, calculate the % of s-t paths they are part in
 std::vector<std::vector<double>> path_ratios(std::vector<std::vector<int>> &dag);
 
-// Just find some s--t path. Assumes that t is the only sink
-std::vector<int> arbitrary_path(std::vector<std::vector<int>> &dag);
-
 // Find path from src to dest. Assertion error in case if such path does not exist
 void find_path(int src, int dest, std::vector<int> &path,
 		std::vector<std::vector<int>> &dag, std::vector<int> &order);

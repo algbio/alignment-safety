@@ -64,15 +64,6 @@ std::vector<std::vector<double>> path_ratios(std::vector<std::vector<int>> &dag)
 	return ratios;
 }
 
-std::vector<int> arbitrary_path(std::vector<std::vector<int>> &dag) {
-	std::vector<int> path;
-	int n = (int) dag.size();
-	for (int current = SRC; current != DEST; current = dag[current][0])
-		path.push_back(current);
-	path.push_back(DEST);
-	return path;
-}
-
 void find_path(int src, int dest, std::vector<int> &path, std::vector<std::vector<int>> &dag,
 		std::vector<int> &order) {
 	std::function<bool(int)> dfs = [&](int current) {
@@ -100,7 +91,6 @@ std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
 		double d = ratios[i][j];
 		if (d > alpha) needed.emplace_back(i, v);
 	}
-	if (needed.empty()) return arbitrary_path(dag);
 
 	std::vector<int> sorted = topsort(dag);
 	std::vector<int> order(n);
@@ -112,7 +102,8 @@ std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
 		find_path(last, u, path, dag, order);
 		last = v;
 	}
-	find_path(needed.back().second, DEST, path, dag, order);
+	if (last != DEST)
+		find_path(last, DEST, path, dag, order);
 
 	return path;
 }
