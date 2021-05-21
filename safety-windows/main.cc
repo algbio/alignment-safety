@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "alpha_safe_paths.h"
+#include "safety_windows.h"
 
 int main() {
 	std::cerr << std::fixed << std::setprecision(10); // debug output
@@ -46,5 +47,12 @@ int main() {
 	path = find_alpha_path(dag, ratios, alpha);
 	for (int v: path) std::cout << v << ' ';
 	std::cout << '\n';
-	return 0;
+
+	// Calculate the safety windows
+	std::cout << "Safety intervals:\n";
+	std::vector<double> rat_path = find_ratios(path, dag, ratios);
+	std::vector<std::pair<int, int>> windows = safety_windows(dag, path, rat_path, alpha);
+	for (auto [x,y]: windows) {
+		std::cout << x << ' ' << y << '\n';
+	}
 }

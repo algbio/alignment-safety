@@ -75,15 +75,15 @@ std::vector<int> arbitrary_path(std::vector<std::vector<int>> &dag) {
 
 void find_path(int src, int dest, std::vector<int> &path, std::vector<std::vector<int>> &dag,
 		std::vector<int> &order) {
-	if (src == dest) return;
-
 	std::function<bool(int)> dfs = [&](int current) {
 		if (order[current] > order[dest]) return false;
+		std::cerr << "PUSH " << current << std::endl;
 		path.push_back(current);
 		if (current == dest) return true;
 		for (int nxt: dag[current]) {
 			if (dfs(nxt)) return true;
 		}
+		std::cerr << "POP " << current << std::endl;
 		path.pop_back();
 		return false;
 	};

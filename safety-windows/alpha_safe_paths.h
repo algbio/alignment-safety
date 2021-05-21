@@ -1,4 +1,3 @@
-#include <iostream>
 #include <vector>
 
 // given a dag of optimal paths, find a path with almost safe (> alpha) paths
