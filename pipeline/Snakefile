@@ -1,5 +1,5 @@
 # download swiss protein db from: https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
-DB_FILE = "data/uniprot_sprot.fasta.gz"
+DB_FILE = "data/uniprot_sprot.fasta"
 CLUSTER = "sp|B8NLM9|ARTA_ASPFN"
 DIAMOND_PATH = "./../../diamond-2.0.8"
 RAXML_PATH = "./../../raxml-ng"
