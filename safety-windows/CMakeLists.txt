@@ -5,7 +5,7 @@ string(REPLACE " " "_" ProjectId ${ProjectId})
 project(${ProjectId})
 set(CMAKE_CXX_STANDARD 17)
 # all .cc/.cpp files
-set(SOURCES main.cc safety_windows.cc alpha_safe_paths.cc)
+set(SOURCES main.cc safety_windows.cc alpha_safe_paths.cc optimal_paths.cc)
 add_executable(${PROJECT_NAME} ${SOURCES})
 # compiler flags for debugging
 set(CMAKE_CXX_FLAGS "-g -W -O0")
