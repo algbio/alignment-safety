@@ -7,10 +7,10 @@
 #include "safety_windows.h"
 #include "optimal_paths.h"
 
-void print_usage(char **argv) {
-	// TODO: Use cerr if -h argument is not used
+int print_usage(char **argv, int help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile>\n";
 	std::cout << "Run \"" << argv[0] << " -h\" to show this help message.\n";
+	return help;
 }
 
 struct Protein {
@@ -25,15 +25,17 @@ int main(int argc, char **argv) {
 
 	const double alpha = 0.5;
 
-	if (argc <= 1 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "-f") != 0) {
-		print_usage(argv);
-		return 0;
+	if (argc >= 2 && strcmp(argv[1], "-h") == 0) {
+		return print_usage(argv, 0);
+	}
+
+	if (argc <= 1 || strcmp(argv[1], "-f") != 0) {
+		return print_usage(argv, 1);
 	}
 
 	if (argc <= 2) {
 		std::cerr << "Error: File missing\n";
-		print_usage(argv);
-		return 0;
+		return print_usage(argv, 1);
 	}
 
 	std::ifstream input(argv[2]);
