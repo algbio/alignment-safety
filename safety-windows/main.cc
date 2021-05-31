@@ -1,14 +1,23 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <fstream>
 
 #include "alpha_safe_paths.h"
 #include "safety_windows.h"
 #include "optimal_paths.h"
 
-void print_usage() {
-	std::cout << "Todo\n";
+void print_usage(char **argv) {
+	// TODO: Use cerr if -h argument is not used
+	std::cout << "How to run: " << argv[0] << " -f <clusterfile>\n";
+	std::cout << "Run \"" << argv[0] << " -h\" to show this help message.\n";
 }
+
+struct Protein {
+	std::string descriptor;
+	std::string sequence;
+	Protein(std::string descriptor) : descriptor(descriptor) {}
+};
 
 int main(int argc, char **argv) {
 	std::cerr << std::fixed << std::setprecision(10); // debug output
@@ -17,43 +26,63 @@ int main(int argc, char **argv) {
 	const double alpha = 0.5;
 
 	if (argc <= 1 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "-f") != 0) {
-		print_usage();
+		print_usage(argv);
 		return 0;
 	}
 
 	if (argc <= 2) {
-		std::cout << "Error: File missing\n";
-		print_usage();
+		std::cerr << "Error: File missing\n";
+		print_usage(argv);
 		return 0;
 	}
 
-	std::cout << "File " << argv[2] << '\n';
-	std::cout << "TODO: File handling\n";
-
-	// First, test new implementations
-	std::string a = "ABCDEF", b = "ACDEF";
-	std::vector<std::vector<int>> dp = opt_alignment(a, b);
-	int n = (int) a.size();
-	int m = (int) b.size();
-	std::cout << a << ' ' << b << '\n';
-	for (int i = 0; i <= n; i++) {
-		for (int j = 0; j <= m; j++) {
-			std::cout << dp[i][j] << " \n"[j == m];
+	std::ifstream input(argv[2]);
+	std::vector<Protein> proteins;
+	for (std::string line; std::getline(input, line); ) {
+		if ((int) line.size() <= 0) continue;
+		if (line[0] == '>') {
+			proteins.push_back(Protein(line));
+		} else {
+			proteins.back().sequence += line;
 		}
 	}
+	// proteins[0] will be the reference
 
-	Dag d = gen_dag(dp, a, b);
-	std::vector<std::vector<int>> adj = d.adj;
-	int k = (int) adj.size();
-	for (int i = 0; i < k; i++) {
-		std::cout << "Node " << i << ": ";
-		for (int v: adj[i]) std::cout << v << ' ';
+	int PS = (int) proteins.size();
+
+	std::cout << 0 << '\n' << PS << '\n';
+	for (int i = 1; i < PS; i++) {
+		std::cout << i << ' ';
+		const std::string &a = proteins[0].sequence;
+		const std::string &b = proteins[i].sequence;
+		std::vector<std::vector<int>> dp = opt_alignment(a, b);
+
+		Dag d = gen_dag(dp, a, b);
+		std::vector<std::vector<int>> adj = d.adj;
+		int k = (int) adj.size();
+
+		std::vector<std::vector<double>> ratios = path_ratios(adj);
+
+		std::vector<int> path = find_alpha_path(adj, ratios, alpha);
+
+		std::vector<double> r = find_ratios(path, adj, ratios);
+		std::vector<std::pair<int, int>> windows = safety_windows(adj, path, r, alpha);
+
+		/*std::map<std::pair<int, int>, int> trans = d.trans;
+		for (auto [a, b]: trans) {
+			std::cout << a.first << ' ' << a.second << ' ' << b << '\n';
+		}*/
+
+		std::map<int, std::pair<int, int>> transr = d.transr;
+		std::cout << windows.size();
+		for (auto [x, y]: windows) {
+			int a = transr[x].first, b = transr[y].first;
+			std::cout << ' ' << x << ' ' << y;
+		}
 		std::cout << '\n';
 	}
-	std::map<std::pair<int, int>, int> trans = d.trans;
-	for (auto [a, b]: trans) {
-		std::cout << a.first << ' ' << a.second << ' ' << b << '\n';
-	}
+
+
 	
 	
 	// test implementations

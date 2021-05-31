@@ -45,7 +45,9 @@ Dag gen_dag(const std::vector<std::vector<int>> &dp, const std::string &a,
 	// build the adjacency list
 	std::vector<std::vector<int>> adj(1);
 	std::map<std::pair<int, int>, int> trans; // translate to index
+	std::map<int, std::pair<int, int>> transr; // translate index to pair
 	trans[std::make_pair(n, m)] = 0;
+	transr[0] = std::make_pair(n, m);
 	int current = 0;
 	std::queue<std::pair<int, int>> q;
 	q.emplace(n, m);
@@ -53,6 +55,7 @@ Dag gen_dag(const std::vector<std::vector<int>> &dp, const std::string &a,
 	auto add_node = [&](const int &x, const int &y) {
 		if (trans.find(std::make_pair(x, y)) == trans.end()) {
 			trans[std::make_pair(x, y)] = ++current;
+			transr[current] = std::make_pair(x, y);
 			adj.push_back(std::vector<int>());
 			q.emplace(x, y);
 		}
@@ -87,5 +90,5 @@ Dag gen_dag(const std::vector<std::vector<int>> &dp, const std::string &a,
 		}
 	}
 
-	return { adj, trans };
+	return { adj, trans, transr };
 }
