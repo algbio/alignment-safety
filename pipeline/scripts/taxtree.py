@@ -42,8 +42,6 @@ def print_stats(tree):
         if hasattr(node, "rank"):
             if not node.rank in rank_counts.keys():
                 rank_counts[node.rank] = 0
-            if(node.rank == "species"):
-                print(node.get_age())
             rank_counts[node.rank] += 1
         degree_of_branching += len(node.children) > 1
     print(f"Degree of branching: {degree_of_branching}")
