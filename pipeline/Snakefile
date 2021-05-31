@@ -1,9 +1,13 @@
 # download swiss protein db from: https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
 DB_FILE = "data/uniprot_sprot.fasta"
-CLUSTER = "sp|B8NLM9|ARTA_ASPFN"
+CLUSTER = "sp|P0C9F5|1002L_ASFM2"
 DIAMOND_PATH = "./../../diamond-2.0.8"
 RAXML_PATH = "./../../raxml-ng"
 MUSCLE_PATH = "./../../muscle"
+# Minimum identity-% to report an alignment
+MIN_IDENTITY = "40"
+# multistep or mcl
+CLUSTER_ALGO = "multistep"
 
 # removes path and file extension from filename
 def clean_filename(filename):
@@ -19,34 +23,21 @@ rule diamond_bin_db:
     shell:
         "{DIAMOND_PATH}/bin/diamond makedb --in {input} -d {output}"
 
-rule multistep_cluster:
+rule diamond_cluster:
     input:
         f"data/{DB_FILENAME}.dmnd"
     output:
-        f"data/{DB_FILENAME}.multistep"
+        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
     params:
-        # fast, mid-sensitive, sensitive (default),
-        # more-sensitive, very-sensitive, ultra-sensitive
-        sens="sensitive"
+        id=MIN_IDENTITY,
+        algo=CLUSTER_ALGO
     shell:
-        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo multi-step --cluster-steps {params.sens} -d {input} -o {output}"
-
-rule mcl_cluster:
-    input:
-        f"data/{DB_FILENAME}.dmnd"
-    output:
-        f"data/{DB_FILENAME}.mcl"
-    params:
-        # fast, mid-sensitive, sensitive (default),
-        # more-sensitive, very-sensitive, ultra-sensitive
-        sens="sensitive"
-    shell:
-        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo mcl -d {input} -o {output}"
+        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.id} -d {input} -o {output}"
 
 rule cluster_info:
     input:
         f"{DB_FILE}",
-        f"data/{DB_FILENAME}.multistep"
+        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
     params:
         cluster_name=CLUSTER
     shell:
@@ -55,7 +46,7 @@ rule cluster_info:
 rule separate_cluster:
     input:
         f"{DB_FILE}",
-        f"data/{DB_FILENAME}.multistep"
+        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
     output:
         f"out/{CLUSTER}.fasta",
         f"out/{CLUSTER}.clean.fasta"
