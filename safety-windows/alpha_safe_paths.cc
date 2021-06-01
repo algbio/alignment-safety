@@ -82,15 +82,15 @@ void find_path(int src, int dest, std::vector<int> &path, std::vector<std::vecto
 std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
 		std::vector<std::vector<double>> &ratios, double alpha) {
 	int n = (int) ratios.size();
+	std::vector<int> sorted = topsort(dag);
 
 	std::vector<std::pair<int, int>> needed;
-	for (int i = 0; i < n; i++) for (int j = 0; j < (int) dag[i].size(); j++) {
-		int v = dag[i][j];
-		double d = ratios[i][j];
-		if (d > alpha) needed.emplace_back(i, v);
+	for (int i = 0; i < n; i++) for (int j = 0; j < (int) dag[sorted[i]].size(); j++) {
+		int v = dag[sorted[i]][j];
+		double d = ratios[sorted[i]][j];
+		if (d > alpha) needed.emplace_back(sorted[i], v);
 	}
 
-	std::vector<int> sorted = topsort(dag);
 	std::vector<int> order(n);
 	for (int i = 0; i < n; i++) order[sorted[i]] = i;
 

@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 		return print_usage(argv, 0);
 	}
 
-	if (argc <= 1 || strcmp(argv[1], "-f") != 0) {
+	if (argc <= 1 || argc > 3 || strcmp(argv[1], "-f") != 0) {
 		return print_usage(argv, 1);
 	}
 
@@ -79,44 +79,36 @@ int main(int argc, char **argv) {
 		std::cout << windows.size();
 		for (auto [x, y]: windows) {
 			int a = transr[x].first, b = transr[y].first;
-			std::cout << ' ' << x << ' ' << y;
+			std::cout << ' ' << a << ' ' << b;
 		}
 		std::cout << '\n';
 	}
 
 
 	
-	
+	/*
 	// test implementations
-	/*int n = 6;
+	int n = 6;
 	std::vector<std::vector<int>> dag(n);
-	dag[0] = { 1, 2 };
-	dag[1] = { 3, 4 };
-	dag[2] = { 5 };
-	dag[3] = { 4, 5 };
-	dag[4] = { 5 };
+	dag[0] = { 4 };
+	dag[1] = { 5 };
+	dag[2] = { 1 };
+	dag[3] = { 2 };
+	dag[4] = { 3 };
+
+	std::vector<int> sorted = topsort(dag);
+	for (int v: sorted) std::cerr << v << ' ';
+	std::cerr << std::endl;
 
 	std::vector<int> paths = amount_paths(dag, 5);
-	for (int i = 0; i < n; i++) std::cout << paths[i] << " \n"[i + 1 == n];
 
 	std::vector<std::vector<double>> ratios = path_ratios(dag);
-	for (int i = 0; i < n; i++) {
-		std::cout << "\nout from " << i << ":\n";
-		for (int j = 0; j < (int) dag[i].size(); j++) {
-			std::cout << dag[i][j] << ' ' << ratios[i][j] << '\n';
-		}
-	}
 
 	// test find_path function
 	std::vector<int> path;
-	std::vector<int> sorted = topsort(dag);
 	std::vector<int> order(n);
 	for (int i = 0; i < n; i++) order[sorted[i]] = i;
-	for (int i = 0; i < n; i++) std::cerr << order[i] << " \n"[i + 1 == n];
 	find_path(2, 5, path, dag, order);
-	std::cout << '\n';
-	for (int v: path) std::cout << v << ' ';
-	std::cout << '\n';
 
 	// test find_alpha_path function
 	std::cout << "\nFinal alpha safe path:\n";
