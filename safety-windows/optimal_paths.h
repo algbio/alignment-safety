@@ -5,6 +5,7 @@
 struct Dag {
 	std::vector<std::vector<int>> adj;
 	std::map<std::pair<int, int>, int> trans;
+	std::map<int, std::pair<int, int>> transr;
 };
 
 // Construct optimal alignment matrix

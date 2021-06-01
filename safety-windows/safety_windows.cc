@@ -26,7 +26,6 @@ std::vector<std::pair<int, int>> safety_windows(std::vector<std::vector<int>> &d
 	std::vector<std::pair<int, int>> windows;
 	double a = 1;
 	for (int L = 0, R = 0; R < k; a *= ratios[R], R++) {
-		std::cerr << "DBG: " << a << ' ' << L << ' ' << R << std::endl;
 		while (L < R && a <= alpha) {
 			a /= ratios[L];
 			L++;
