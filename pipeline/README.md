@@ -4,7 +4,7 @@
 - Muscle    http://www.drive5.com/muscle/
 - ete3      https://github.com/etetoolkit/ete
 
-Install Diamond:
+Compile Diamond from source:
 ```
 git clone https://github.com/bbuchfink/diamond
 cd diamond-2.0.9
@@ -14,7 +14,7 @@ cmake -DEXTRA=ON ..
 make
 ```
 
-Install Raxml-ng:
+Compile Raxml-ng from source:
 ```
 git clone https://github.com/amkozlov/raxml-ng
 cd raxml-ng

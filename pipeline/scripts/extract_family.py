@@ -10,8 +10,12 @@ def read_clusters(filename):
             if not line:
                 break
             data = line.rstrip("\n").split("\t")
-            family = data[6]
+            scop_class = data[3]
+            scop_fold = data[4]
+            scop_superfamily = data[5]
+            scop_family = data[6]
             nr_accession = data[1]
+            family = scop_class + "-" + scop_fold + "-" + scop_superfamily + "-" + scop_family
             if not family in families:
                 families[family] = []
             families[family].append(nr_accession)
@@ -21,17 +25,19 @@ def read_clusters(filename):
         m_i = ""
         # Largest family
         for family in families.keys():
+            print(f"{family} : {len(families[family])}")
             if m < len(families[family]):
                 m = len(families[family])
                 m_i = family
 
         print(f"{m_i} : {m}")
 
-    # Write families to file
+    # Write family to file
     # for family in families.keys():
-    #     with open("./data/scop_families/family_" + family, "a") as file:
-    #         for nr_accession in families[family]:
-    #             file.write(nr_accession + "\n")
+    # fam = "a-118-1-27"
+    # with open("./data/scop_families/family_" + fam, "a") as file:
+    #     for nr_accession in families[fam]:
+    #         file.write(nr_accession + "\n")
 
 
 def main():
