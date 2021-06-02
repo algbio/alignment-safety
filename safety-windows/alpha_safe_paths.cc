@@ -2,6 +2,7 @@
 #include <vector>
 #include <set>
 #include <stack>
+#include <unordered_map>
 
 #include "alpha_safe_paths.h"
 
@@ -35,11 +36,11 @@ std::vector<int> topsort(std::vector<std::vector<int>> &dag) {
 }
 
 // TODO: consider returning vector<double>, or use a bigint library
-std::vector<int> amount_paths(std::vector<std::vector<int>> &dag, int sink) {
+std::vector<double> amount_paths(std::vector<std::vector<int>> &dag, int sink) {
 	int n = (int) dag.size();
 	std::vector<int> sorted = topsort(dag);
 
-	std::vector<int> am(n, 0);
+	std::vector<double> am(n, 0);
 	am[sink] = 1;
 	for (int i = n - 1; i >= 0; i--) {
 		for (int v: dag[sorted[i]]) am[sorted[i]] += am[v];
@@ -54,8 +55,8 @@ std::vector<std::vector<double>> path_ratios(std::vector<std::vector<int>> &dag)
 	for (int i = 0; i < n; i++) for (int v: dag[i]) rdag[v].push_back(i);
 
 	// TODO: perhaps create a dag class with source/sink variables
-	std::vector<int> am = amount_paths(dag, DEST);
-	std::vector<int> ram = amount_paths(rdag, SRC);
+	std::vector<double> am = amount_paths(dag, DEST);
+	std::vector<double> ram = amount_paths(rdag, SRC);
 
 	std::vector<std::vector<double>> ratios(n);
 	for (int i = 0; i < n; i++) for (int v: dag[i]) {
@@ -66,9 +67,13 @@ std::vector<std::vector<double>> path_ratios(std::vector<std::vector<int>> &dag)
 
 void find_path(int src, int dest, std::vector<int> &path, std::vector<std::vector<int>> &dag,
 		std::vector<int> &order) {
+	//std::cerr << "FIND PATH DBG: " << src << ' ' << dest << std::endl;
+	std::unordered_map<int, bool> vis;
 	std::function<bool(int)> dfs = [&](int current) {
 		if (order[current] > order[dest]) return false;
+		if (vis[current]) return false;
 		path.push_back(current);
+		vis[current] = true;
 		if (current == dest) return true;
 		for (int nxt: dag[current]) {
 			if (dfs(nxt)) return true;
@@ -85,10 +90,15 @@ std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
 	std::vector<int> sorted = topsort(dag);
 
 	std::vector<std::pair<int, int>> needed;
-	for (int i = 0; i < n; i++) for (int j = 0; j < (int) dag[sorted[i]].size(); j++) {
-		int v = dag[sorted[i]][j];
-		double d = ratios[sorted[i]][j];
-		if (d > alpha) needed.emplace_back(sorted[i], v);
+	for (int i = 0; i < n; i++) {
+		int u = sorted[i];
+		int am = 0;
+		for (int j = 0; j < (int) dag[u].size(); j++) {
+			int v = dag[u][j];
+			double d = ratios[u][j];
+			if (d > alpha) needed.emplace_back(u, v), am++;
+		}
+		if (am > 1) assert(false);
 	}
 
 	std::vector<int> order(n);

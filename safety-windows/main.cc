@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
 	std::cerr << std::fixed << std::setprecision(10); // debug output
 	std::cout << std::fixed << std::setprecision(10); // debug output
 
-	const double alpha = 0.5;
+	const double alpha = 0.6;
 
 	if (argc >= 2 && strcmp(argv[1], "-h") == 0) {
 		return print_usage(argv, 0);
@@ -62,6 +62,15 @@ int main(int argc, char **argv) {
 		Dag d = gen_dag(dp, a, b);
 		std::vector<std::vector<int>> adj = d.adj;
 		int k = (int) adj.size();
+
+		/*{
+			std::cout << "ADJ DBG:" << std::endl;
+			for (int i = 0; i < k; i++) {
+				std::cout << i;
+				for (int v: adj[i]) std::cout << ' ' << v;
+				std::cout << std::endl;
+			}
+		}*/
 
 		std::vector<std::vector<double>> ratios = path_ratios(adj);
 
