@@ -1,8 +1,12 @@
+import os
 import sys
 import argparse
 
 clusters = {}
+key_map = {}
 
+def belongs_to_cluster(protein_id):
+    return key_map[protein_id]
 
 def print_usage():
     print("Print cluster:   clusterread.py p <original db> <cluster file> <cluster id>")
@@ -23,6 +27,7 @@ def read_clusters(filename):
                 clusters[names[1]] = []
                 cluster_count += 1
 
+            key_map[names[0]] = names[1]
             clusters[names[1]].append(names[0])
         print("Cluster count: %d" % cluster_count)
     finally:
@@ -74,9 +79,34 @@ def print_info():
             print(f"{ranges[i-1]+1:>4} +      : {bins[i]:6}")
         else:
             print(f"{ranges[i-1]+1:>4} - {ranges[i]:>4} : {bins[i]:6} ")
-            
 
-def separate_clusters(db_filename, cluster_key):
+def separate_clusters(db_filename, clustering_path):
+    if not os.path.exists(clustering_path):
+        print(clustering_path)
+        os.makedirs(clustering_path)
+    with open(db_filename, "r") as f:
+        db_fasta = ("\n" + f.read()).split("\n>")
+        i = 0
+        for protein_fasta in db_fasta:
+            if i % 2000 == 0:
+                print(f"progress: {i * 100.0 / len(db_fasta):.1f}%")
+            if not protein_fasta:
+                continue
+            id, sequence = parse_fasta(protein_fasta)
+            cluster_id = belongs_to_cluster(id)
+            with open(clustering_path + "/" + cluster_id + ".fasta", "a") as out:
+                out.write(">" + protein_fasta + "\n")
+            with open(clustering_path + "/" + cluster_id + ".clean.fasta", "a") as out:
+                out.write(">" + id + "\n" + sequence + "\n")
+            i += 1
+
+            
+def parse_fasta(protein_fasta):
+    id = protein_fasta.split(" ")[0]
+    sequence = ''.join(protein_fasta.split("\n")[1:])
+    return (id, sequence)
+
+def separate_cluster(db_filename, cluster_key):
     f = open(db_filename, "r")
     out = open("./out/" + cluster_key + ".fasta", "w")
     out_clean = open("./out/" + cluster_key + ".clean.fasta", "w")
@@ -85,11 +115,9 @@ def separate_clusters(db_filename, cluster_key):
         # new line at the beginning of the file so file can be split with "\n>"
         out.write("\n")
         for protein in proteins:
-            protein_data = protein.split("\n")
-            protein_id = protein_data[0].split(" ")[0]
-            seq = ''.join(protein_data[1:])
+            protein_id, sequence = parse_fasta(protein)
             if protein_id in clusters[cluster_key]:
-                out_clean.write(">" + protein_id + "\n" + seq + "\n")
+                out_clean.write(">" + protein_id + "\n" + sequence + "\n")
                 out.write(">" + protein + "\n")
     finally:
         f.close()
@@ -102,12 +130,18 @@ def main():
     if len(sys.argv) < 4:
         print_usage()
         return
+
     read_clusters(sys.argv[3])
+
     if len(clusters) < 1:
         print("No clusters read...")
         return
 
-    if sys.argv[1] == "i" and len(sys.argv) == 4:
+    if sys.argv[1] == "a" and len(sys.argv) == 4:
+        separate_clusters(sys.argv[2], sys.argv[3] + ".clusters")
+        return
+
+    elif sys.argv[1] == "i" and len(sys.argv) == 4:
         print_info()
         return
 
@@ -125,7 +159,7 @@ def main():
     elif sys.argv[1] == "w" and len(sys.argv) == 5:
         print("Writing to file...")
         if sys.argv[4] in clusters:
-            separate_clusters(sys.argv[2], sys.argv[4])
+            separate_cluster(sys.argv[2], sys.argv[4])
             print("Fasta file written succesfully...")
         else:
             print("No cluster found with cluster id: " + sys.argv[4])

@@ -1,11 +1,11 @@
 # download swiss protein db from: https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
-DB_FILE = "data/scop_families/family_a-118-1-27.fasta"
+DB_FILE = "data/uniprot_sprot.fasta"
 CLUSTER = ""
 DIAMOND_PATH = "./../../diamond-2.0.8"
 RAXML_PATH = "./../../raxml-ng"
 MUSCLE_PATH = "./../../muscle"
 # Minimum identity-% to report an alignment
-MIN_IDENTITY = "40"
+MIN_IDENTITY = "70"
 # multi-step or mcl
 CLUSTER_ALGO = "multi-step"
 
@@ -30,9 +30,14 @@ rule diamond_cluster:
         f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
     params:
         id=MIN_IDENTITY,
-        algo=CLUSTER_ALGO
+        algo=CLUSTER_ALGO,
+        # id > 70%          : --fast
+        # 40% < id < 70%    : --sensitive
+        # 25% < id < 40%    : --very-sensitive
+        # id < 25%          : --ultra-sensitive
+        sens="--sensitive"
     shell:
-        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.id} -d {input} -o {output}"
+        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.id} {params.sens} -d {input} -o {output}"
 
 rule cluster_info:
     input:
@@ -42,6 +47,7 @@ rule cluster_info:
         cluster_name=CLUSTER
     shell:
         "python3 scripts/clusteread.py i {input}"
+
 
 rule separate_cluster:
     input:
