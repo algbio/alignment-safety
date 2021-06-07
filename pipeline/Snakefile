@@ -4,6 +4,7 @@ CLUSTER = ""
 DIAMOND_PATH = "./../../diamond-2.0.8"
 RAXML_PATH = "./../../raxml-ng"
 MUSCLE_PATH = "./../../muscle"
+HMMER_PATH = "./../../hmmer-3.3.2"
 # Minimum identity-% to report an alignment
 MIN_IDENTITY = "40"
 # multi-step or mcl
@@ -23,6 +24,31 @@ def agg_input(wildcards):
     CLUSTER_IDS, = glob_wildcards(os.path.join(checkpoint_output, "{id}.clean.fasta"))
     a = expand(WORK_DIR + "/clean/{i}.clean.fasta", i=CLUSTER_IDS)
     return a
+
+rule hmm_search:
+    input:
+        expand(WORK_DIR + "/hmmsearch/{id}.out", id=CLUSTER_IDS),
+
+rule:
+    input:
+        fasta = WORK_DIR + "/fasta/{id}.fasta",
+        hmm = WORK_DIR + "/profiles/{id}.hmm"
+    output:
+        WORK_DIR + "/hmmsearch/{id}.out"
+    shell:
+        "{HMMER_PATH}/bin/hmmsearch {input.hmm} {input.fasta} > {output}"
+
+rule hmm_profiles:
+    input:
+        expand(WORK_DIR + "/profiles/{id}.hmm", id=CLUSTER_IDS)
+
+rule:
+    input:
+        WORK_DIR + "/msa/{id}.fasta"
+    output:
+        WORK_DIR + "/profiles/{id}.hmm"
+    shell:
+        "{HMMER_PATH}/bin/hmmbuild {output} {input}"
 
 rule msa:
     input:
