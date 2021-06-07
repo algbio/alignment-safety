@@ -94,7 +94,9 @@ def separate_clusters(db_filename, clustering_path, min_size, max_size):
         f.write(f"Database: {db_filename}\n")
         f.write(f"Clustering parameters: {clustering_path}\n")
         f.write(get_info())
-        f.write(f"Cluster size range treshold: {min_size}-{max_size}")
+        f.write(f"Cluster size range treshold: {min_size}-{max_size}\n")
+
+    c = 0
     with open(db_filename, "r") as f:
         db_fasta = ("\n" + f.read()).split("\n>")
         i = 0
@@ -106,11 +108,15 @@ def separate_clusters(db_filename, clustering_path, min_size, max_size):
             id, sequence = parse_fasta(protein_fasta)
             cluster_id = belongs_to_cluster(id)
             if(min_size <= len(clusters[cluster_id]) <= max_size):
-                with open(clustering_path + "/fasta/" + cluster_id + ".fasta", "a") as out:
+                c += 1
+                cleaned = cluster_id.split("|")[1]
+                with open(clustering_path + "/fasta/" + cleaned + ".fasta", "a") as out:
                     out.write(">" + protein_fasta + "\n")
-                with open(clustering_path + "/clean/" + cluster_id + ".clean.fasta", "a") as out:
+                with open(clustering_path + "/clean/" + cleaned + ".clean.fasta", "a") as out:
                     out.write(">" + id + "\n" + sequence + "\n")
             i += 1
+    with open(clustering_path + "/info.txt", "a") as f:
+        f.write(f"Total number of sequences: {c}\n")
 
             
 def parse_fasta(protein_fasta):
