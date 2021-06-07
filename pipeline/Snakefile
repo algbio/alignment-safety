@@ -5,15 +5,22 @@ DIAMOND_PATH = "./../../diamond-2.0.8"
 RAXML_PATH = "./../../raxml-ng"
 MUSCLE_PATH = "./../../muscle"
 # Minimum identity-% to report an alignment
-MIN_IDENTITY = "70"
+MIN_IDENTITY = "40"
 # multi-step or mcl
 CLUSTER_ALGO = "multi-step"
+
 
 # removes path and file extension from filename
 def clean_filename(filename):
     return filename.split("/")[-1].split(".")[0]
 
 DB_FILENAME = clean_filename(DB_FILE)
+CLUSTER_FILES, = glob_wildcards("data/uniprot_sprot.40.multi-step.clusters/{file}.fasta")
+WORK_DIR = f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}.clusters"
+
+# rule all:
+#     input:
+#         expand("data/uniprot_sprot.40.multi-step.clusters/{id}.fasta", id=CLUSTER_FILES)
 
 rule diamond_bin_db:
     input:
@@ -48,7 +55,6 @@ rule cluster_info:
     shell:
         "python3 scripts/clusteread.py i {input}"
 
-
 rule separate_cluster:
     input:
         f"{DB_FILE}",
@@ -60,6 +66,19 @@ rule separate_cluster:
         cluster_name=CLUSTER
     shell:
         "python3 scripts/clusteread.py w {input} \"{params.cluster_name}\""
+
+rule separate_clusters:
+    input:
+        f"{DB_FILE}",
+        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
+    output:
+        directory(f"{WORK_DIR}/clean/"),
+        directory(f"{WORK_DIR}/fasta/")
+    params:
+        min_size = 50,
+        max_size = 1000
+    shell:
+        "python3 scripts/clusteread.py a {input} {params.min_size} {params.max_size}"
 
 rule muscle:
     input:
@@ -102,3 +121,10 @@ rule taxtree:
         f"out/{CLUSTER}.tax.tree"
     shell:
         "python3 scripts/taxtree.py \"{input}\""
+
+rule taxtree_all:
+    input:
+        expand("data/uniprot_sprot.40.multi-step.clusters/{id}.fasta", id=CLUSTER_FILES)
+    shell:
+        "echo {input}"
+    

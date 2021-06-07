@@ -5,11 +5,13 @@ import argparse
 clusters = {}
 key_map = {}
 
+
 def belongs_to_cluster(protein_id):
     return key_map[protein_id]
 
 def print_usage():
     print("Print cluster:   clusterread.py p <original db> <cluster file> <cluster id>")
+    print("Print cluster:   clusterread.py a <original db> <cluster file> <min size> <max size>")
     print("Write cluster:   clusterread.py w <original db> <cluster file> <cluster id>")
     print("Print info:      clusterread.py i <original db> <cluster file>")
 
@@ -37,7 +39,8 @@ def read_clusters(filename):
                 clusters[new_key] = clusters.pop(key)
         f.close()
 
-def print_info():
+def get_info():
+    info = ""
     s_len, s_name = 1000000,""
     b_len, b_name = 0, ""
     for key in clusters.keys():
@@ -67,23 +70,31 @@ def print_info():
         elif ranges[4] < l:
             bins[5] += 1
 
-    print(f"Total number of clusters:       {len(clusters.keys())}")
-    print(f"Size of the smallest cluster:   {s_len}, {s_name}")
-    print(f"Size of the biggest cluster:    {b_len},  {b_name}")
-    print("Distribution of cluster sizes:")
-    print("Size range  : Cluster count")
+    info += f"Total number of clusters:       {len(clusters.keys())}\n"
+    info += f"Size of the smallest cluster:   {s_len}, {s_name}\n"
+    info += f"Size of the biggest cluster:    {b_len},  {b_name}\n"
+    info += "Distribution of cluster sizes:\n"
+    info += "Size range  : Cluster count\n"
     for i in range(6):
         if i == 0:
-            print(f"{0:>4} - {ranges[i]:>4} : {bins[i]:6}")
+            info += f"{0:>4} - {ranges[i]:>4} : {bins[i]:6}\n"
         elif i == 5:
-            print(f"{ranges[i-1]+1:>4} +      : {bins[i]:6}")
+            info += f"{ranges[i-1]+1:>4} +      : {bins[i]:6}\n"
         else:
-            print(f"{ranges[i-1]+1:>4} - {ranges[i]:>4} : {bins[i]:6} ")
+            info += f"{ranges[i-1]+1:>4} - {ranges[i]:>4} : {bins[i]:6}\n"
+    return info
 
-def separate_clusters(db_filename, clustering_path):
-    if not os.path.exists(clustering_path):
-        print(clustering_path)
-        os.makedirs(clustering_path)
+def separate_clusters(db_filename, clustering_path, min_size, max_size):
+    print(clustering_path)
+    if not os.path.exists(clustering_path + "/fasta"):
+        os.makedirs(clustering_path + "/fasta")
+    if not os.path.exists(clustering_path + "/clean"):
+        os.makedirs(clustering_path + "/clean")
+    with open(clustering_path + "/info.txt", "w") as f:
+        f.write(f"Database: {db_filename}\n")
+        f.write(f"Clustering parameters: {clustering_path}\n")
+        f.write(get_info())
+        f.write(f"Cluster size range treshold: {min_size}-{max_size}")
     with open(db_filename, "r") as f:
         db_fasta = ("\n" + f.read()).split("\n>")
         i = 0
@@ -94,10 +105,11 @@ def separate_clusters(db_filename, clustering_path):
                 continue
             id, sequence = parse_fasta(protein_fasta)
             cluster_id = belongs_to_cluster(id)
-            with open(clustering_path + "/" + cluster_id + ".fasta", "a") as out:
-                out.write(">" + protein_fasta + "\n")
-            with open(clustering_path + "/" + cluster_id + ".clean.fasta", "a") as out:
-                out.write(">" + id + "\n" + sequence + "\n")
+            if(min_size <= len(clusters[cluster_id]) <= max_size):
+                with open(clustering_path + "/fasta/" + cluster_id + ".fasta", "a") as out:
+                    out.write(">" + protein_fasta + "\n")
+                with open(clustering_path + "/clean/" + cluster_id + ".clean.fasta", "a") as out:
+                    out.write(">" + id + "\n" + sequence + "\n")
             i += 1
 
             
@@ -137,12 +149,12 @@ def main():
         print("No clusters read...")
         return
 
-    if sys.argv[1] == "a" and len(sys.argv) == 4:
-        separate_clusters(sys.argv[2], sys.argv[3] + ".clusters")
+    if sys.argv[1] == "a" and len(sys.argv) == 6:
+        separate_clusters(sys.argv[2], sys.argv[3] + ".clusters", int(sys.argv[4]), int(sys.argv[5]))
         return
 
     elif sys.argv[1] == "i" and len(sys.argv) == 4:
-        print_info()
+        print(get_info())
         return
 
     elif sys.argv[1] == "p" and len(sys.argv) == 5:
