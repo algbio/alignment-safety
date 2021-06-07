@@ -3,6 +3,7 @@
 #include <set>
 #include <stack>
 #include <unordered_map>
+#include <gmp.h>
 
 #include "alpha_safe_paths.h"
 
@@ -98,7 +99,7 @@ std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
 			double d = ratios[u][j];
 			if (d > alpha) needed.emplace_back(u, v), am++;
 		}
-		if (am > 1) assert(false);
+		assert(am <= 1);
 	}
 
 	std::vector<int> order(n);
