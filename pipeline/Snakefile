@@ -31,12 +31,12 @@ rule hmm_search:
 
 rule:
     input:
-        fasta = WORK_DIR + "/fasta/{id}.fasta",
+        fasta = WORK_DIR + "/clean/{id}.clean.fasta",
         hmm = WORK_DIR + "/profiles/{id}.hmm"
     output:
         WORK_DIR + "/hmmsearch/{id}.out"
     shell:
-        "{HMMER_PATH}/bin/hmmsearch {input.hmm} {input.fasta} > {output}"
+        "{HMMER_PATH}/bin/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta}"
 
 rule hmm_profiles:
     input:
