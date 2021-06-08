@@ -9,11 +9,10 @@ find_package(GMP REQUIRED)
 # all .cc/.cpp files
 set(SOURCES main.cc safety_windows.cc alpha_safe_paths.cc optimal_paths.cc)
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} gmp libgmp)
 # compiler flags for debugging
 set(CMAKE_CXX_FLAGS "-g -W -O0")
 # if .h files are in other folder?
-include_directories(./)
-include_directories(${GOBJECT_INCLUDE_DIR})
+include_directories(./ ${GMP_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} gmp libgmp.so)
 # runnable output file
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "main")

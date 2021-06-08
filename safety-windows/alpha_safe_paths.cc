@@ -3,7 +3,8 @@
 #include <set>
 #include <stack>
 #include <unordered_map>
-#include <gmp.h>
+
+#include <gmpxx.h>
 
 #include "alpha_safe_paths.h"
 
@@ -36,12 +37,11 @@ std::vector<int> topsort(std::vector<std::vector<int>> &dag) {
 	return sorted;
 }
 
-// TODO: consider returning vector<double>, or use a bigint library
-std::vector<double> amount_paths(std::vector<std::vector<int>> &dag, int sink) {
+std::vector<mpz_class> amount_paths(std::vector<std::vector<int>> &dag, int sink) {
 	int n = (int) dag.size();
 	std::vector<int> sorted = topsort(dag);
 
-	std::vector<double> am(n, 0);
+	std::vector<mpz_class> am(n, mpz_class(0));
 	am[sink] = 1;
 	for (int i = n - 1; i >= 0; i--) {
 		for (int v: dag[sorted[i]]) am[sorted[i]] += am[v];
@@ -49,19 +49,24 @@ std::vector<double> amount_paths(std::vector<std::vector<int>> &dag, int sink) {
 	return am;
 }
 
-std::vector<std::vector<double>> path_ratios(std::vector<std::vector<int>> &dag) {
+std::vector<std::vector<mpq_class>> path_ratios(std::vector<std::vector<int>> &dag) {
 	int n = (int) dag.size();
 
 	std::vector<std::vector<int>> rdag(n);
 	for (int i = 0; i < n; i++) for (int v: dag[i]) rdag[v].push_back(i);
 
 	// TODO: perhaps create a dag class with source/sink variables
-	std::vector<double> am = amount_paths(dag, DEST);
-	std::vector<double> ram = amount_paths(rdag, SRC);
+	std::vector<mpz_class> am = amount_paths(dag, DEST);
+	std::vector<mpz_class> ram = amount_paths(rdag, SRC);
 
-	std::vector<std::vector<double>> ratios(n);
+	std::vector<std::vector<mpq_class>> ratios(n);
+
 	for (int i = 0; i < n; i++) for (int v: dag[i]) {
-		ratios[i].push_back((double) am[v] * ram[i] / am[SRC]);
+		// nxt = am[v] * am[i] / am[SRC]
+		mpq_class nxt = am[v];
+		nxt /= am[SRC];
+		nxt *= am[i];
+		ratios[i].push_back(nxt);
 	}
 	return ratios;
 }
@@ -86,7 +91,7 @@ void find_path(int src, int dest, std::vector<int> &path, std::vector<std::vecto
 }
 
 std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
-		std::vector<std::vector<double>> &ratios, double alpha) {
+		std::vector<std::vector<mpq_class>> &ratios, mpq_class alpha) {
 	int n = (int) ratios.size();
 	std::vector<int> sorted = topsort(dag);
 
@@ -96,7 +101,7 @@ std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
 		int am = 0;
 		for (int j = 0; j < (int) dag[u].size(); j++) {
 			int v = dag[u][j];
-			double d = ratios[u][j];
+			mpq_class d = ratios[u][j];
 			if (d > alpha) needed.emplace_back(u, v), am++;
 		}
 		assert(am <= 1);
