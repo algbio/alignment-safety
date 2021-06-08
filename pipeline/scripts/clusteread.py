@@ -148,7 +148,7 @@ def main():
     if len(sys.argv) < 4:
         print_usage()
         return
-
+    print(sys.argv)
     read_clusters(sys.argv[3])
 
     if len(clusters) < 1:
@@ -156,7 +156,7 @@ def main():
         return
 
     if sys.argv[1] == "a" and len(sys.argv) == 6:
-        separate_clusters(sys.argv[2], sys.argv[3] + ".clusters", int(sys.argv[4]), int(sys.argv[5]))
+        separate_clusters(sys.argv[2], "/".join(sys.argv[3].split("/")[:2]), int(sys.argv[4]), int(sys.argv[5]))
         return
 
     elif sys.argv[1] == "i" and len(sys.argv) == 4:

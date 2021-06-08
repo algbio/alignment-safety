@@ -16,7 +16,7 @@ def clean_filename(filename):
     return filename.split("/")[-1].split(".")[0]
 
 DB_FILENAME = clean_filename(DB_FILE)
-WORK_DIR = f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}.clusters"
+WORK_DIR = f"out/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
 CLUSTER_IDS, = glob_wildcards(WORK_DIR + "/clean/{id}.clean.fasta")
 
 def agg_input(wildcards):
@@ -69,7 +69,7 @@ rule:
 checkpoint separate_clusters:
     input:
         f"{DB_FILE}",
-        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
+        f"{WORK_DIR}/{DB_FILENAME}.clusters"
     output:
         WORK_DIR + "/info.txt",
         directory(f"{WORK_DIR}/clean"),
@@ -93,18 +93,18 @@ rule diamond_cluster:
     input:
         f"data/{DB_FILENAME}.dmnd"
     output:
-        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
+        f"{WORK_DIR}/{DB_FILENAME}.clusters"
     params:
         identity=MIN_IDENTITY,
         algo=CLUSTER_ALGO,
         sens=CLUSTER_SENSITIVITY
     shell:
-        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.id} {params.sens} -d {input} -o {output}"
+        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.identity} {params.sens} -d {input} -o {output}"
 
 rule cluster_info:
     input:
         f"{DB_FILE}",
-        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
+        f"{WORK_DIR}/{DB_FILENAME}.clusters"
     params:
         cluster_name=CLUSTER
     shell:
@@ -113,7 +113,7 @@ rule cluster_info:
 rule separate_cluster:
     input:
         f"{DB_FILE}",
-        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
+        f"{WORK_DIR}/{DB_FILENAME}.clusters"
     output:
         f"out/{CLUSTER}.fasta",
         f"out/{CLUSTER}.clean.fasta"
