@@ -1,14 +1,14 @@
-# download swiss protein db from: https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
-DB_FILE = "data/uniprot_sprot.fasta"
+configfile: 'snakemake.yaml'
+
+DB_FILE = config["db_file"]
 CLUSTER = ""
-DIAMOND_PATH = "./../../diamond-2.0.8"
-RAXML_PATH = "./../../raxml-ng"
-MUSCLE_PATH = "./../../muscle"
-HMMER_PATH = "./../../hmmer-3.3.2"
-# Minimum identity-% to report an alignment
-MIN_IDENTITY = "40"
-# multi-step or mcl
-CLUSTER_ALGO = "multi-step"
+DIAMOND_PATH = config["diamond"]
+RAXML_PATH = config["raxml"]
+MUSCLE_PATH = config["muscle"]
+HMMER_PATH = config["hmmer"]
+MIN_IDENTITY = config["min_identity"]
+CLUSTER_ALGO = config["clustering_algorithm"]
+CLUSTER_SENSITIVITY = config["sensitivity"]
 
 
 # removes path and file extension from filename
@@ -75,8 +75,8 @@ checkpoint separate_clusters:
         directory(f"{WORK_DIR}/clean"),
         directory(f"{WORK_DIR}/fasta")
     params:
-        min_size = 95,
-        max_size = 100
+        min_size = 50,
+        max_size = 10000
     shell:
         "python3 scripts/clusteread.py a {input} {params.min_size} {params.max_size}"
 
@@ -95,13 +95,9 @@ rule diamond_cluster:
     output:
         f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
     params:
-        id=MIN_IDENTITY,
+        identity=MIN_IDENTITY,
         algo=CLUSTER_ALGO,
-        # id > 70%          : --fast
-        # 40% < id < 70%    : --sensitive
-        # 25% < id < 40%    : --very-sensitive
-        # id < 25%          : --ultra-sensitive
-        sens="--sensitive"
+        sens=CLUSTER_SENSITIVITY
     shell:
         "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.id} {params.sens} -d {input} -o {output}"
 
