@@ -1,14 +1,14 @@
-# download swiss protein db from: https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
-DB_FILE = "data/uniprot_sprot.fasta"
+configfile: 'snakemake.yaml'
+
+DB_FILE = config["db_file"]
 CLUSTER = ""
-DIAMOND_PATH = "./../../diamond-2.0.8"
-RAXML_PATH = "./../../raxml-ng"
-MUSCLE_PATH = "./../../muscle"
-HMMER_PATH = "./../../hmmer-3.3.2"
-# Minimum identity-% to report an alignment
-MIN_IDENTITY = "40"
-# multi-step or mcl
-CLUSTER_ALGO = "multi-step"
+DIAMOND_PATH = config["diamond"]
+RAXML_PATH = config["raxml"]
+MUSCLE_PATH = config["muscle"]
+HMMER_PATH = config["hmmer"]
+MIN_IDENTITY = config["min_identity"]
+CLUSTER_ALGO = config["clustering_algorithm"]
+CLUSTER_SENSITIVITY = config["sensitivity"]
 
 
 # removes path and file extension from filename
@@ -16,7 +16,7 @@ def clean_filename(filename):
     return filename.split("/")[-1].split(".")[0]
 
 DB_FILENAME = clean_filename(DB_FILE)
-WORK_DIR = f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}.clusters"
+WORK_DIR = f"out/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
 CLUSTER_IDS, = glob_wildcards(WORK_DIR + "/clean/{id}.clean.fasta")
 
 def agg_input(wildcards):
@@ -31,12 +31,12 @@ rule hmm_search:
 
 rule:
     input:
-        fasta = WORK_DIR + "/fasta/{id}.fasta",
+        fasta = WORK_DIR + "/clean/{id}.clean.fasta",
         hmm = WORK_DIR + "/profiles/{id}.hmm"
     output:
         WORK_DIR + "/hmmsearch/{id}.out"
     shell:
-        "{HMMER_PATH}/bin/hmmsearch {input.hmm} {input.fasta} > {output}"
+        "{HMMER_PATH}/bin/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta}"
 
 rule hmm_profiles:
     input:
@@ -69,14 +69,14 @@ rule:
 checkpoint separate_clusters:
     input:
         f"{DB_FILE}",
-        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
+        f"{WORK_DIR}/{DB_FILENAME}.clusters"
     output:
         WORK_DIR + "/info.txt",
         directory(f"{WORK_DIR}/clean"),
         directory(f"{WORK_DIR}/fasta")
     params:
-        min_size = 95,
-        max_size = 100
+        min_size = 50,
+        max_size = 10000
     shell:
         "python3 scripts/clusteread.py a {input} {params.min_size} {params.max_size}"
 
@@ -93,22 +93,18 @@ rule diamond_cluster:
     input:
         f"data/{DB_FILENAME}.dmnd"
     output:
-        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
+        f"{WORK_DIR}/{DB_FILENAME}.clusters"
     params:
-        id=MIN_IDENTITY,
+        identity=MIN_IDENTITY,
         algo=CLUSTER_ALGO,
-        # id > 70%          : --fast
-        # 40% < id < 70%    : --sensitive
-        # 25% < id < 40%    : --very-sensitive
-        # id < 25%          : --ultra-sensitive
-        sens="--sensitive"
+        sens=CLUSTER_SENSITIVITY
     shell:
-        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.id} {params.sens} -d {input} -o {output}"
+        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.identity} {params.sens} -d {input} -o {output}"
 
 rule cluster_info:
     input:
         f"{DB_FILE}",
-        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
+        f"{WORK_DIR}/{DB_FILENAME}.clusters"
     params:
         cluster_name=CLUSTER
     shell:
@@ -117,7 +113,7 @@ rule cluster_info:
 rule separate_cluster:
     input:
         f"{DB_FILE}",
-        f"data/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
+        f"{WORK_DIR}/{DB_FILENAME}.clusters"
     output:
         f"out/{CLUSTER}.fasta",
         f"out/{CLUSTER}.clean.fasta"

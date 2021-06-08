@@ -31,4 +31,4 @@ conda activate pipeline
 ```
 
 Before first run:
-- Add paths to Snakefile
+- Add paths to "snakemake.yaml"-configuration file

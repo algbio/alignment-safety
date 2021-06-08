@@ -3,5 +3,7 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
+  - pandas
   - ete3
   - snakemake-minimal
+  - ipykernel
