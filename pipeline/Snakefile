@@ -16,84 +16,89 @@ def clean_filename(filename):
     return filename.split("/")[-1].split(".")[0]
 
 DB_FILENAME = clean_filename(DB_FILE)
-WORK_DIR = f"out/{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}"
-CLUSTER_IDS, = glob_wildcards(WORK_DIR + "/clean/{id}.clean.fasta")
+WORK_DIR = os.path.join("out", f"{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}")
+CLUSTER_IDS, = glob_wildcards(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
 
 def agg_input(wildcards):
     checkpoint_output = checkpoints.separate_clusters.get(**wildcards).output[1]
     CLUSTER_IDS, = glob_wildcards(os.path.join(checkpoint_output, "{id}.clean.fasta"))
-    a = expand(WORK_DIR + "/clean/{i}.clean.fasta", i=CLUSTER_IDS)
+    a = expand(os.path.join(WORK_DIR, "clean", "{i}.clean.fasta"), i=CLUSTER_IDS)
     return a
 
+# hmmsearch for all clusters
 rule hmm_search:
     input:
-        expand(WORK_DIR + "/hmmsearch/{id}.out", id=CLUSTER_IDS),
+        expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS),
 
 rule:
     input:
-        fasta = WORK_DIR + "/clean/{id}.clean.fasta",
-        hmm = WORK_DIR + "/profiles/{id}.hmm"
+        fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"),
+        hmm = os.path.join(WORK_DIR, "profiles", "{id}.hmm")
     output:
-        WORK_DIR + "/hmmsearch/{id}.out"
+        os.path.join(WORK_DIR, "hmmsearch", "{id}.out")
     shell:
         "{HMMER_PATH}/bin/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta}"
 
+# creates needed hmm-profiles for hmmsearch
 rule hmm_profiles:
     input:
-        expand(WORK_DIR + "/profiles/{id}.hmm", id=CLUSTER_IDS)
+        expand(os.path.join(WORK_DIR, "profiles", "{id}.hmm"), id=CLUSTER_IDS)
 
 rule:
     input:
-        WORK_DIR + "/msa/{id}.fasta"
+        os.path.join(WORK_DIR, "msa", "{id}.fasta")
     output:
-        WORK_DIR + "/profiles/{id}.hmm"
+        temp(os.path.join(WORK_DIR, "profiles", "{id}.hmm"))
     shell:
         "{HMMER_PATH}/bin/hmmbuild {output} {input}"
 
+# MSA for all clusters with Muscle
 rule msa:
     input:
-        WORK_DIR + "/info.txt",
-        expand(WORK_DIR + "/msa/{id}.fasta", id=CLUSTER_IDS)
+        os.path.join(WORK_DIR, "info.txt"),
+        expand(os.path.join(WORK_DIR, "msa", "{id}.fasta"), id=CLUSTER_IDS)
     run:
         # For some reason it runs general rule below only if we have some dummy code here???
         print("Done!")
 
 rule:
     input:
-        WORK_DIR + "/clean/{id}.clean.fasta"
+        os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")
     output:
-        WORK_DIR + "/msa/{id}.fasta"
+        os.path.join(WORK_DIR, "msa", "{id}.fasta")
     shell:
         "{MUSCLE_PATH}/muscle3.8.31_i86darwin64 -in {input} -out {output}"
 
+# Separates all clusters (that fit the threshold) into separate fasta-files
 checkpoint separate_clusters:
     input:
         f"{DB_FILE}",
-        f"{WORK_DIR}/{DB_FILENAME}.clusters"
+        os.path.join(WORK_DIR, f"{DB_FILENAME}.clusters")
     output:
-        WORK_DIR + "/info.txt",
-        directory(f"{WORK_DIR}/clean"),
-        directory(f"{WORK_DIR}/fasta")
+        os.path.join(WORK_DIR, "info.txt"),
+        directory(os.path.join(WORK_DIR, "clean")),
+        directory(os.path.join(WORK_DIR, "fasta"))
     params:
-        min_size = 50,
-        max_size = 10000
+        min_size = config["cluster_min_size"],
+        max_size = config["cluster_max_size"]
     shell:
         "python3 scripts/clusteread.py a {input} {params.min_size} {params.max_size}"
 
-
+# Generates diamond binary database for clustering
 rule diamond_bin_db:
     input:
         f"{DB_FILE}"
     output:
-        f"data/{DB_FILENAME}.dmnd"
+        os.path.join("data", f"{DB_FILENAME}.dmnd")
     shell:
         "{DIAMOND_PATH}/bin/diamond makedb --in {input} -d {output}"
 
+# Clustering
 rule diamond_cluster:
     input:
-        f"data/{DB_FILENAME}.dmnd"
+        os.path.join("data", f"{DB_FILENAME}.dmnd")
     output:
-        f"{WORK_DIR}/{DB_FILENAME}.clusters"
+        os.path.join(WORK_DIR, f"{DB_FILENAME}.clusters")
     params:
         identity=MIN_IDENTITY,
         algo=CLUSTER_ALGO,
@@ -101,69 +106,74 @@ rule diamond_cluster:
     shell:
         "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.identity} {params.sens} -d {input} -o {output}"
 
+# Prints some info about one cluster
 rule cluster_info:
     input:
         f"{DB_FILE}",
-        f"{WORK_DIR}/{DB_FILENAME}.clusters"
+        os.path.join(WORK_DIR, f"{DB_FILENAME}.clusters")
     params:
         cluster_name=CLUSTER
     shell:
         "python3 scripts/clusteread.py i {input}"
 
+# Separates one cluster with id=CLUSTER
 rule separate_cluster:
     input:
         f"{DB_FILE}",
-        f"{WORK_DIR}/{DB_FILENAME}.clusters"
+        os.path.join(WORK_DIR, f"{DB_FILENAME}.clusters")
     output:
-        f"out/{CLUSTER}.fasta",
-        f"out/{CLUSTER}.clean.fasta"
+        os.path.join("out", f"{CLUSTER}.fasta"),
+        os.path.join("out", f"{CLUSTER}.clean.fasta")
     params:
         cluster_name=CLUSTER
     shell:
         "python3 scripts/clusteread.py w {input} \"{params.cluster_name}\""
 
-
-
+# MSA for one cluster
 rule muscle:
     input:
-        f"out/{CLUSTER}.clean.fasta"
+        os.path.join("out", f"{CLUSTER}.clean.fasta")
     output:
-        f"out/{CLUSTER}.msa.fasta"
+        os.path.join("out", f"{CLUSTER}.msa.fasta")
     shell:
         "{MUSCLE_PATH}/muscle3.8.31_i86darwin64 -in \"{input}\" -out \"{output}\""
 
-
+# Preprocessing for ML phylogenetic tree
 rule raxml_check:
     input:
-        f"out/{CLUSTER}.msa.fasta"
+        os.path.join("out", f"{CLUSTER}.msa.fasta")
     output:
-        f"out/{CLUSTER}.raxml.rba"
+        os.path.join("out", f"{CLUSTER}.raxml.rba")
     params:
         cluster_name=CLUSTER
     shell:
         "{RAXML_PATH}/bin/raxml-ng --parse --msa \"{input}\" --model LG+G --prefix \"./out/{params.cluster_name}\""
 
+# Builds ML phylogenetic tree
 rule raxml:
     input:
-        f"out/{CLUSTER}.raxml.rba"
+        os.path.join("out", f"{CLUSTER}.raxml.rba")
     output:
-        f"out/{CLUSTER}.raxml.bestTree"
+        os.path.join("out", f"{CLUSTER}.raxml.bestTree")
     params:
         cluster_name=CLUSTER
     shell:
         "{RAXML_PATH}/bin/raxml-ng --msa \"{input}\" LG+G --prefix \"./out/{params.cluster_name}\""    
 
+# Prints stats of the best phylogenetic tree
 rule raxml_stats:
     input:
-        f"out/{CLUSTER}.raxml.bestTree"
+        os.path.join("out", f"{CLUSTER}.raxml.bestTree")
     shell:
         "python3 scripts/raxml_stats.py \"{input}\""
 
+# Build taxonomic tree using taxonomic ids
+# Searches for "OX=taxonomic_id", in fasta-file
 rule taxtree:
     input:
-        f"out/{CLUSTER}.fasta"
+        os.path.join("out", f"{CLUSTER}.fasta")
     output:
-        f"out/{CLUSTER}.tax.tree"
+        os.path.join("out", f"{CLUSTER}.tax.tree")
     shell:
         "python3 scripts/taxtree.py \"{input}\""
 
