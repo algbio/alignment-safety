@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
 	std::cerr << std::fixed << std::setprecision(10); // debug output
 	std::cout << std::fixed << std::setprecision(10); // debug output
 
-	const double alpha = 0.6;
+	const mpq_class alpha = 0.5;
 
 	if (argc >= 2 && strcmp(argv[1], "-h") == 0) {
 		return print_usage(argv, 0);
@@ -72,11 +72,11 @@ int main(int argc, char **argv) {
 			}
 		}*/
 
-		std::vector<std::vector<double>> ratios = path_ratios(adj);
+		std::vector<std::vector<mpq_class>> ratios = path_ratios(adj);
 
 		std::vector<int> path = find_alpha_path(adj, ratios, alpha);
 
-		std::vector<double> r = find_ratios(path, adj, ratios);
+		std::vector<mpq_class> r = find_ratios(path, adj, ratios);
 		std::vector<std::pair<int, int>> windows = safety_windows(adj, path, r, alpha);
 
 		/*std::map<std::pair<int, int>, int> trans = d.trans;
