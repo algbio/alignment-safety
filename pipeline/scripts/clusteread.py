@@ -86,11 +86,11 @@ def get_info():
 
 def separate_clusters(db_filename, clustering_path, min_size, max_size):
     print(clustering_path)
-    if not os.path.exists(clustering_path + "/fasta"):
-        os.makedirs(clustering_path + "/fasta")
-    if not os.path.exists(clustering_path + "/clean"):
-        os.makedirs(clustering_path + "/clean")
-    with open(clustering_path + "/info.txt", "w") as f:
+    if not os.path.exists(os.path.join(clustering_path, "fasta")):
+        os.makedirs(os.path.join(clustering_path, "fasta"))
+    if not os.path.exists(os.path.join(clustering_path, "clean")):
+        os.makedirs(os.path.join(clustering_path, "clean"))
+    with open(os.path.join(clustering_path, "info.txt"), "w") as f:
         f.write(f"Database: {db_filename}\n")
         f.write(f"Clustering parameters: {clustering_path}\n")
         f.write(get_info())
@@ -110,12 +110,12 @@ def separate_clusters(db_filename, clustering_path, min_size, max_size):
             if(min_size <= len(clusters[cluster_id]) <= max_size):
                 c += 1
                 cleaned = cluster_id.split("|")[1]
-                with open(clustering_path + "/fasta/" + cleaned + ".fasta", "a") as out:
+                with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
                     out.write(">" + protein_fasta + "\n")
-                with open(clustering_path + "/clean/" + cleaned + ".clean.fasta", "a") as out:
+                with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
                     out.write(">" + id + "\n" + sequence + "\n")
             i += 1
-    with open(clustering_path + "/info.txt", "a") as f:
+    with open(os.path.join(clustering_path, "info.txt"), "a") as f:
         f.write(f"Total number of sequences: {c}\n")
 
             
@@ -126,8 +126,8 @@ def parse_fasta(protein_fasta):
 
 def separate_cluster(db_filename, cluster_key):
     f = open(db_filename, "r")
-    out = open("./out/" + cluster_key + ".fasta", "w")
-    out_clean = open("./out/" + cluster_key + ".clean.fasta", "w")
+    out = open(os.path.join("out", cluster_key + ".fasta"), "w")
+    out_clean = open(os.path.join("out", cluster_key + ".clean.fasta"), "w")
     try:
         proteins = f.read().split("\n>")
         # new line at the beginning of the file so file can be split with "\n>"
