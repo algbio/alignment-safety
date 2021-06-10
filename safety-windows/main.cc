@@ -52,6 +52,7 @@ int main(int argc, char **argv) {
 
 	int PS = (int) proteins.size();
 
+	// reference protein and amount of proteins in the cluster
 	std::cout << 0 << '\n' << PS << '\n';
 	for (int i = 1; i < PS; i++) {
 		std::cout << i << ' ';
@@ -63,32 +64,41 @@ int main(int argc, char **argv) {
 		std::vector<std::vector<int>> adj = d.adj;
 		int k = (int) adj.size();
 
-		/*{
-			std::cout << "ADJ DBG:" << std::endl;
-			for (int i = 0; i < k; i++) {
-				std::cout << i;
-				for (int v: adj[i]) std::cout << ' ' << v;
-				std::cout << std::endl;
-			}
-		}*/
-
 		std::vector<std::vector<mpq_class>> ratios = path_ratios(adj);
 
 		std::vector<int> path = find_alpha_path(adj, ratios, alpha);
 
 		std::vector<mpq_class> r = find_ratios(path, adj, ratios);
-		std::vector<std::pair<int, int>> windows = safety_windows(adj, path, r, alpha);
+		std::vector<std::pair<int, int>> windows_tmp = safety_windows(adj, r, path, alpha);
+
+		std::vector<std::pair<int, int>> windows;
+		auto outside = [&](const int &L, const int &R) {
+			if (windows.empty()) return false;
+			auto [bL, bR] = windows.back();
+			return bL >= L && bR <= R;
+		};
+		auto inside = [&](const int &L, const int &R) {
+			if (windows.empty()) return false;
+			auto [bL, bR] = windows.back();
+			return L >= bL && R <= bR;
+		};
+		
+		std::map<int, std::pair<int, int>> transr = d.transr;
+		for (int i = 0; i < (int) windows_tmp.size(); i++) {
+			auto [LT, RT] = windows_tmp[i];
+			int L = transr[LT].first, R = transr[RT].first;
+			while (outside(L, R)) windows.pop_back();
+			if (!inside(L, R)) windows.emplace_back(L, R);
+		}
 
 		/*std::map<std::pair<int, int>, int> trans = d.trans;
 		for (auto [a, b]: trans) {
 			std::cout << a.first << ' ' << a.second << ' ' << b << '\n';
 		}*/
 
-		std::map<int, std::pair<int, int>> transr = d.transr;
 		std::cout << windows.size();
 		for (auto [x, y]: windows) {
-			int a = transr[x].first, b = transr[y].first;
-			std::cout << ' ' << a << ' ' << b;
+			std::cout << ' ' << x << ' ' << y;
 		}
 		std::cout << '\n';
 	}

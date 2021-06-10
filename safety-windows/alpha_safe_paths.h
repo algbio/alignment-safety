@@ -6,7 +6,7 @@
 std::vector<int> topsort(std::vector<std::vector<int>> &dag);
 
 // For each vertex, save the amount of paths starting from the vertex to the sink
-std::vector<mpz_class> amount_paths(std::vector<std::vector<int>> &dag, int sink);
+std::vector<mpz_class> amount_paths(std::vector<std::vector<int>> &dag);
 
 // For each edge, calculate the % of s-t paths they are part in
 std::vector<std::vector<mpq_class>> path_ratios(std::vector<std::vector<int>> &dag);
