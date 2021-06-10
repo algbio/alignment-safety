@@ -1,9 +1,15 @@
 import os
 import sys
 import argparse
+import time
+from typing import KeysView
+from ete3 import NCBITaxa
+ncbi = NCBITaxa()
+from taxtree import get_highest_taxonomic_id, read_cluster_ids
 
 clusters = {}
 key_map = {}
+
 
 
 def belongs_to_cluster(protein_id):
@@ -15,9 +21,8 @@ def print_usage():
     print("Write cluster:   clusterread.py w <original db> <cluster file> <cluster id>")
     print("Print info:      clusterread.py i <original db> <cluster file>")
 
-def read_clusters(filename):
+def read_clusters(db_file, filename, min_size, max_size):
     # check which file format clusters are
-    mcl = filename.split(".")[-1] == "mcl"
     f = open(filename, "r")
     try:
         cluster_count = 0
@@ -29,15 +34,35 @@ def read_clusters(filename):
                 clusters[names[1]] = []
                 cluster_count += 1
 
-            key_map[names[0]] = names[1]
             clusters[names[1]].append(names[0])
-        print("Cluster count: %d" % cluster_count)
+        print(f"Total number of clusters in DB: {len(clusters.keys())}")
     finally:
-        if mcl:
-            for key in list(clusters.keys()):
-                new_key = clusters[key][0]
-                clusters[new_key] = clusters.pop(key)
         f.close()
+        # Delete clusters that dont fit min-max criteria
+        for key in list(clusters.keys()):
+            if min_size > len(clusters[key]) or len(clusters[key]) > max_size:
+                del clusters[key]
+        
+        ids_to_taxids = {}
+        ids_to_taxids = read_cluster_ids(db_file)
+        tax_tree = ncbi.get_topology(ids_to_taxids.values())
+        print(f"Reading taxonomic ids...")
+        for key in list(clusters.keys()):
+            taxids = [ids_to_taxids[_] for _ in clusters[key]]
+            highest_tax = get_highest_taxonomic_id(taxids, tax_tree)
+            highest_id = ""
+            for id in clusters[key]:
+                if ids_to_taxids[id] == highest_tax:
+                    highest_id = id
+                    break
+            clusters[highest_id] = clusters.pop(key)
+        
+        # Rename clusters to their highest taxonomic node
+        for key in clusters.keys():
+            for prot in clusters[key]:
+                key_map[prot] = key
+                
+
 
 def get_info():
     info = ""
@@ -84,8 +109,8 @@ def get_info():
             info += f"{ranges[i-1]+1:>4} - {ranges[i]:>4} : {bins[i]:6}\n"
     return info
 
+
 def separate_clusters(db_filename, clustering_path, min_size, max_size):
-    print(clustering_path)
     if not os.path.exists(os.path.join(clustering_path, "fasta")):
         os.makedirs(os.path.join(clustering_path, "fasta"))
     if not os.path.exists(os.path.join(clustering_path, "clean")):
@@ -97,26 +122,38 @@ def separate_clusters(db_filename, clustering_path, min_size, max_size):
         f.write(f"Cluster size range treshold: {min_size}-{max_size}\n")
 
     c = 0
+    db_fasta = ""
     with open(db_filename, "r") as f:
-        db_fasta = ("\n" + f.read()).split("\n>")
-        i = 0
-        for protein_fasta in db_fasta:
-            if i % 2000 == 0:
-                print(f"progress: {i * 100.0 / len(db_fasta):.1f}%")
-            if not protein_fasta:
-                continue
-            id, sequence = parse_fasta(protein_fasta)
+        db_fasta = ("\n" + f.read()).split("\n>")[1:]
+
+    print("Writing reference sequences to fasta-files...")
+    for protein_fasta in db_fasta:
+        id, sequence = parse_fasta(protein_fasta)
+        if id in key_map.keys() and id == belongs_to_cluster(id):
+            cleaned = id.split("|")[1]
+            c += 1
+            with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
+                out.write(">" + protein_fasta + "\n")
+            with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
+                out.write(">" + id + "\n" + sequence + "\n")
+
+    print("Separating clusters to fasta-files...")
+    for protein_fasta in db_fasta:
+        if not protein_fasta:
+            continue
+        id, sequence = parse_fasta(protein_fasta)
+        if id in key_map.keys():
             cluster_id = belongs_to_cluster(id)
-            if(min_size <= len(clusters[cluster_id]) <= max_size):
-                c += 1
-                cleaned = cluster_id.split("|")[1]
-                with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
-                    out.write(">" + protein_fasta + "\n")
-                with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
-                    out.write(">" + id + "\n" + sequence + "\n")
-            i += 1
+            c += 1
+            cleaned = cluster_id.split("|")[1]
+            
+            with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
+                out.write(">" + protein_fasta + "\n")
+            with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
+                out.write(">" + id + "\n" + sequence + "\n")
     with open(os.path.join(clustering_path, "info.txt"), "a") as f:
         f.write(f"Total number of sequences: {c}\n")
+        f.write(f"Total number of clusters: {len(clusters.keys())}\n")
 
             
 def parse_fasta(protein_fasta):
@@ -148,15 +185,18 @@ def main():
     if len(sys.argv) < 4:
         print_usage()
         return
-    print(sys.argv)
-    read_clusters(sys.argv[3])
+    min_size = 10
+    max_size = 1000
+    if len(sys.argv) == 6:
+        min_size = int(sys.argv[4])
+        max_size = int(sys.argv[5])
+    read_clusters(sys.argv[2], sys.argv[3], min_size, max_size)
 
     if len(clusters) < 1:
         print("No clusters read...")
         return
-
     if sys.argv[1] == "a" and len(sys.argv) == 6:
-        separate_clusters(sys.argv[2], "/".join(sys.argv[3].split("/")[:2]), int(sys.argv[4]), int(sys.argv[5]))
+        separate_clusters(sys.argv[2], "/".join(sys.argv[3].split("/")[:2]), min_size, max_size)
         return
 
     elif sys.argv[1] == "i" and len(sys.argv) == 4:
