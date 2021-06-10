@@ -82,6 +82,7 @@ Dag gen_dag(const std::vector<std::vector<int>> &dp, const std::string &a,
 	// source should have index 0 and dest should have index current (it's
 	// still the other way round)
 	std::swap(trans[std::make_pair(0, 0)], trans[std::make_pair(n, m)]);
+	swap(transr[0], transr[current]);
 	std::swap(adj[0], adj[current]);
 	for (int i = 0; i <= current; i++) {
 		for (int j = 0; j < (int) adj[i].size(); j++) {

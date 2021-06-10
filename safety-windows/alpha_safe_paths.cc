@@ -37,9 +37,10 @@ std::vector<int> topsort(std::vector<std::vector<int>> &dag) {
 	return sorted;
 }
 
-std::vector<mpz_class> amount_paths(std::vector<std::vector<int>> &dag, int sink) {
+std::vector<mpz_class> amount_paths(std::vector<std::vector<int>> &dag) {
 	int n = (int) dag.size();
 	std::vector<int> sorted = topsort(dag);
+	int sink = sorted.back();
 
 	std::vector<mpz_class> am(n, mpz_class(0));
 	am[sink] = 1;
@@ -56,16 +57,15 @@ std::vector<std::vector<mpq_class>> path_ratios(std::vector<std::vector<int>> &d
 	for (int i = 0; i < n; i++) for (int v: dag[i]) rdag[v].push_back(i);
 
 	// TODO: perhaps create a dag class with source/sink variables
-	std::vector<mpz_class> am = amount_paths(dag, DEST);
-	std::vector<mpz_class> ram = amount_paths(rdag, SRC);
+	std::vector<mpz_class> am = amount_paths(dag);
+	std::vector<mpz_class> ram = amount_paths(rdag);
 
 	std::vector<std::vector<mpq_class>> ratios(n);
 
 	for (int i = 0; i < n; i++) for (int v: dag[i]) {
-		// nxt = am[v] * am[i] / am[SRC]
-		mpq_class nxt = am[v];
+		// nxt = am[v] * ram[i] / am[SRC]
+		mpq_class nxt = am[v] * ram[i];
 		nxt /= am[SRC];
-		nxt *= am[i];
 		ratios[i].push_back(nxt);
 	}
 	return ratios;
@@ -102,6 +102,7 @@ std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
 		for (int j = 0; j < (int) dag[u].size(); j++) {
 			int v = dag[u][j];
 			mpq_class d = ratios[u][j];
+			assert(d <= 1);
 			if (d > alpha) needed.emplace_back(u, v), am++;
 		}
 		assert(am <= 1);
