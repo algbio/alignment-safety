@@ -53,11 +53,11 @@ int main(int argc, char **argv) {
 	int PS = (int) proteins.size();
 
 	// reference protein and amount of proteins in the cluster
-	std::cout << 0 << '\n' << PS << '\n';
+	std::cout << 0 << ' ' << proteins[0].sequence << '\n' << PS << '\n';
 	for (int i = 1; i < PS; i++) {
-		std::cout << i << ' ';
 		const std::string &a = proteins[0].sequence;
 		const std::string &b = proteins[i].sequence;
+		std::cout << i << ' ' << b << ' ';
 		std::vector<std::vector<int>> dp = opt_alignment(a, b);
 
 		Dag d = gen_dag(dp, a, b);
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 		std::vector<int> path = find_alpha_path(adj, ratios, alpha);
 
 		std::vector<mpq_class> r = find_ratios(path, adj, ratios);
-		std::vector<std::pair<int, int>> windows_tmp = safety_windows(adj, r, path, alpha);
+		std::vector<std::pair<int, int>> windows_tmp = safety_windows(r, path, alpha);
 
 		std::vector<std::pair<int, int>> windows;
 		auto outside = [&](const int &L, const int &R) {
