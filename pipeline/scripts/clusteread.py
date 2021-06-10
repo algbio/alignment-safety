@@ -1,70 +1,126 @@
 import os
-import sys
 import argparse
-import time
-from typing import KeysView
 from ete3 import NCBITaxa
 ncbi = NCBITaxa()
 from taxtree import get_highest_taxonomic_id, read_cluster_ids
 
-clusters = {}
-key_map = {}
 
+def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
+    clusters = {}
+    key_map = {}
+    with open(filename, "r") as f:
+        while True:
+            line = f.readline()
+            if not line:
+                break
 
-
-def belongs_to_cluster(protein_id):
-    return key_map[protein_id]
-
-def print_usage():
-    print("Print cluster:   clusterread.py p <original db> <cluster file> <cluster id>")
-    print("Print cluster:   clusterread.py a <original db> <cluster file> <min size> <max size>")
-    print("Write cluster:   clusterread.py w <original db> <cluster file> <cluster id>")
-    print("Print info:      clusterread.py i <original db> <cluster file>")
-
-def read_clusters(db_file, filename, min_size, max_size):
-    # check which file format clusters are
-    f = open(filename, "r")
-    try:
-        cluster_count = 0
-        lines = f.readlines()
-        for line in lines:
             names = line.split()
             # if cluster does not exist yet
             if not names[1] in clusters:
                 clusters[names[1]] = []
-                cluster_count += 1
-
+            
+            key_map[names[0]] = names[1]
             clusters[names[1]].append(names[0])
-        print(f"Total number of clusters in DB: {len(clusters.keys())}")
-    finally:
-        f.close()
-        # Delete clusters that dont fit min-max criteria
-        for key in list(clusters.keys()):
-            if min_size > len(clusters[key]) or len(clusters[key]) > max_size:
-                del clusters[key]
-        
-        ids_to_taxids = {}
-        ids_to_taxids = read_cluster_ids(db_file)
-        tax_tree = ncbi.get_topology(ids_to_taxids.values())
-        print(f"Reading taxonomic ids...")
-        for key in list(clusters.keys()):
-            taxids = [ids_to_taxids[_] for _ in clusters[key]]
-            highest_tax = get_highest_taxonomic_id(taxids, tax_tree)
-            highest_id = ""
-            for id in clusters[key]:
-                if ids_to_taxids[id] == highest_tax:
-                    highest_id = id
-                    break
-            clusters[highest_id] = clusters.pop(key)
-        
-        # Rename clusters to their highest taxonomic node
-        for key in clusters.keys():
-            for prot in clusters[key]:
-                key_map[prot] = key
-                
+    print(f"Total number of clusters in DB: {len(clusters.keys())}")
 
+    if not use_taxids:
+        return (clusters, key_map)
+    # Delete clusters that dont fit min-max criteria
+    for key in list(clusters.keys()):
+        if min_size > len(clusters[key]) or len(clusters[key]) > max_size:
+            del clusters[key]
+    
+    ids_to_taxids = {}
+    ids_to_taxids = read_cluster_ids(db_file)
+    tax_tree = ncbi.get_topology(ids_to_taxids.values())
+    print(f"Reading taxonomic ids...")
+    for key in list(clusters.keys()):
+        taxids = [ids_to_taxids[_] for _ in clusters[key]]
+        highest_tax = get_highest_taxonomic_id(taxids, tax_tree)
+        highest_id = ""
+        for id in clusters[key]:
+            if ids_to_taxids[id] == highest_tax:
+                highest_id = id
+                break
+        clusters[highest_id] = clusters.pop(key)
+    
+    # Rename clusters to their highest taxonomic node
+    for key in clusters.keys():
+        for prot in clusters[key]:
+            key_map[prot] = key
 
-def get_info():
+    return (clusters, key_map)
+
+# Separates all clusters
+def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size, max_size):
+    if not os.path.exists(os.path.join(clustering_path, "fasta")):
+        os.makedirs(os.path.join(clustering_path, "fasta"))
+    if not os.path.exists(os.path.join(clustering_path, "clean")):
+        os.makedirs(os.path.join(clustering_path, "clean"))
+    with open(os.path.join(clustering_path, "info.txt"), "w") as f:
+        f.write(f"Database: {db_filename}\n")
+        f.write(f"Clustering parameters: {clustering_path}\n")
+        f.write(get_info(clusters))
+        f.write(f"Cluster size range treshold: {min_size}-{max_size}\n")
+
+    c = 0
+    db_fasta = ""
+    with open(db_filename, "r") as f:
+        db_fasta = ("\n" + f.read()).split("\n>")[1:]
+
+    print("Writing reference sequences to fasta-files...")
+    for protein_fasta in db_fasta:
+        id, sequence = parse_fasta(protein_fasta)
+        if id in key_map.keys() and id == key_map[id]:
+            cleaned = id.split("|")[1]
+            c += 1
+            with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
+                out.write(">" + protein_fasta + "\n")
+            with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
+                out.write(">" + id + "\n" + sequence + "\n")
+
+    print("Separating clusters to fasta-files...")
+    for protein_fasta in db_fasta:
+        if not protein_fasta:
+            continue
+        id, sequence = parse_fasta(protein_fasta)
+        if id in key_map.keys():
+            cluster_id = key_map[id]
+            c += 1
+            cleaned = cluster_id.split("|")[1]
+            
+            with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
+                out.write(">" + protein_fasta + "\n")
+            with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
+                out.write(">" + id + "\n" + sequence + "\n")
+    with open(os.path.join(clustering_path, "info.txt"), "a") as f:
+        f.write(f"Total number of sequences: {c}\n")
+        f.write(f"Total number of clusters: {len(clusters.keys())}\n")
+
+            
+def parse_fasta(protein_fasta):
+    id = protein_fasta.split(" ")[0]
+    sequence = ''.join(protein_fasta.split("\n")[1:])
+    return (id, sequence)
+
+# Separates one cluster
+def separate_cluster(clusters, db_filename, cluster_key):
+    db_fasta = ""
+    with open(db_filename, "r") as f:
+        db_fasta = ("\n" + f.read()).split("\n>")[1:]
+
+    with open(os.path.join("out", cluster_key + ".fasta"), "w") as out:
+        for protein in db_fasta:
+            protein_id, sequence = parse_fasta(protein)
+            if protein_id in clusters[cluster_key]:
+                out.write(">" + protein + "\n")
+    with open(os.path.join("out", cluster_key + ".clean.fasta"), "w") as out:
+        for protein in db_fasta:
+            protein_id, sequence = parse_fasta(protein)
+            if protein_id in clusters[cluster_key]:
+                out.write(">" + protein + "\n")
+
+def get_info(clusters):
     info = ""
     s_len, s_name = 1000000,""
     b_len, b_name = 0, ""
@@ -109,121 +165,62 @@ def get_info():
             info += f"{ranges[i-1]+1:>4} - {ranges[i]:>4} : {bins[i]:6}\n"
     return info
 
-
-def separate_clusters(db_filename, clustering_path, min_size, max_size):
-    if not os.path.exists(os.path.join(clustering_path, "fasta")):
-        os.makedirs(os.path.join(clustering_path, "fasta"))
-    if not os.path.exists(os.path.join(clustering_path, "clean")):
-        os.makedirs(os.path.join(clustering_path, "clean"))
-    with open(os.path.join(clustering_path, "info.txt"), "w") as f:
-        f.write(f"Database: {db_filename}\n")
-        f.write(f"Clustering parameters: {clustering_path}\n")
-        f.write(get_info())
-        f.write(f"Cluster size range treshold: {min_size}-{max_size}\n")
-
-    c = 0
-    db_fasta = ""
-    with open(db_filename, "r") as f:
-        db_fasta = ("\n" + f.read()).split("\n>")[1:]
-
-    print("Writing reference sequences to fasta-files...")
-    for protein_fasta in db_fasta:
-        id, sequence = parse_fasta(protein_fasta)
-        if id in key_map.keys() and id == belongs_to_cluster(id):
-            cleaned = id.split("|")[1]
-            c += 1
-            with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
-                out.write(">" + protein_fasta + "\n")
-            with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
-                out.write(">" + id + "\n" + sequence + "\n")
-
-    print("Separating clusters to fasta-files...")
-    for protein_fasta in db_fasta:
-        if not protein_fasta:
-            continue
-        id, sequence = parse_fasta(protein_fasta)
-        if id in key_map.keys():
-            cluster_id = belongs_to_cluster(id)
-            c += 1
-            cleaned = cluster_id.split("|")[1]
-            
-            with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
-                out.write(">" + protein_fasta + "\n")
-            with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
-                out.write(">" + id + "\n" + sequence + "\n")
-    with open(os.path.join(clustering_path, "info.txt"), "a") as f:
-        f.write(f"Total number of sequences: {c}\n")
-        f.write(f"Total number of clusters: {len(clusters.keys())}\n")
-
-            
-def parse_fasta(protein_fasta):
-    id = protein_fasta.split(" ")[0]
-    sequence = ''.join(protein_fasta.split("\n")[1:])
-    return (id, sequence)
-
-def separate_cluster(db_filename, cluster_key):
-    f = open(db_filename, "r")
-    out = open(os.path.join("out", cluster_key + ".fasta"), "w")
-    out_clean = open(os.path.join("out", cluster_key + ".clean.fasta"), "w")
-    try:
-        proteins = f.read().split("\n>")
-        # new line at the beginning of the file so file can be split with "\n>"
-        out.write("\n")
-        for protein in proteins:
-            protein_id, sequence = parse_fasta(protein)
-            if protein_id in clusters[cluster_key]:
-                out_clean.write(">" + protein_id + "\n" + sequence + "\n")
-                out.write(">" + protein + "\n")
-    finally:
-        f.close()
-
-    out.close()
-    out_clean.close()
-
-        
-def main():
-    if len(sys.argv) < 4:
-        print_usage()
-        return
-    min_size = 10
-    max_size = 1000
-    if len(sys.argv) == 6:
-        min_size = int(sys.argv[4])
-        max_size = int(sys.argv[5])
-    read_clusters(sys.argv[2], sys.argv[3], min_size, max_size)
-
+def main(args):
+    clusters, key_map = read_clusters(args.db, args.clusters, args.min, args.max, False)
     if len(clusters) < 1:
         print("No clusters read...")
         return
-    if sys.argv[1] == "a" and len(sys.argv) == 6:
-        separate_clusters(sys.argv[2], "/".join(sys.argv[3].split("/")[:2]), min_size, max_size)
-        return
 
-    elif sys.argv[1] == "i" and len(sys.argv) == 4:
-        print(get_info())
-        return
+    if args.action == "a":
+        separate_clusters(clusters, key_map, args.db, "/".join(args.clusters.split("/")[:2]), args.min, args.max, args.taxid)
 
-    elif sys.argv[1] == "p" and len(sys.argv) == 5:
-        if not sys.argv[3] in clusters:
+    elif args.action == "i":
+        print(get_info(clusters))
+
+    elif args.action == "p":
+        if not args.id in clusters:
             print("Cluster not found...")
             return
-        
         cluster_size = 0
-        for protein in clusters[sys.argv[4]]:
+        for protein in clusters[args.id]:
             print(protein)
             cluster_size += 1
         print("Cluster size: %d" % cluster_size)
 
-    elif sys.argv[1] == "w" and len(sys.argv) == 5:
+    elif args.action == "w":
         print("Writing to file...")
-        if sys.argv[4] in clusters:
-            separate_cluster(sys.argv[2], sys.argv[4])
+        if args.id in clusters:
+            separate_cluster(clusters, args.db, args.id)
             print("Fasta file written succesfully...")
         else:
-            print("No cluster found with cluster id: " + sys.argv[4])
-    else:
-        print_usage()
+            print("No cluster found with cluster id: " + args.id)
 
+
+def check_args(parser, args):
+    if args.action == "a":
+        return True
+    elif args.action == "i":
+        return True
+    elif args.action == "p":
+        if not "id" in vars(args):
+            parser.error("Action \"p\" requires --id")
+        return "id" in vars(args)
+    elif args.action == "w":
+        if not "id" in vars(args):
+            parser.error("Action \"w\" requires --id")
+        return "id" in vars(args)
+    else:
+        return False
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", type=str, help="a/i/p/w : separate all/print info/print cluster/write cluster")
+    parser.add_argument("db", type=str, help="database in fasta-format")
+    parser.add_argument("clusters", type=str, help="cluster file")
+    parser.add_argument("--min", type=int, default=10, help="minimum size of the cluster {10}")
+    parser.add_argument("--max", type=int, default=1000, help="maximum size of the cluster {1000}")
+    parser.add_argument("--id", type=str, help="cluster id to separate")
+    parser.add_argument("--taxid", action="store_true", help="TODO")
+    args = parser.parse_args()
+    if check_args(parser, args):
+        main(args)
