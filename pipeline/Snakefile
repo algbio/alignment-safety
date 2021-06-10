@@ -26,7 +26,7 @@ def agg_input(wildcards):
     return a
 
 # hmmsearch for all clusters
-rule hmm_search:
+rule hmmsearch:
     input:
         expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS),
 
@@ -40,7 +40,7 @@ rule:
         "{HMMER_PATH}/bin/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta}"
 
 # creates needed hmm-profiles for hmmsearch
-rule hmm_profiles:
+rule hmmbuild:
     input:
         expand(os.path.join(WORK_DIR, "profiles", "{id}.hmm"), id=CLUSTER_IDS)
 
