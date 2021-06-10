@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <vector>
 #include <fstream>
+#include <unordered_map>
 
 #include "alpha_safe_paths.h"
 #include "safety_windows.h"
@@ -60,13 +61,37 @@ int main(int argc, char **argv) {
 		std::cout << i << ' ' << b << ' ';
 		std::vector<std::vector<int>> dp = opt_alignment(a, b);
 
+		/*std::cerr << std::endl << "DBG" << std::endl;
+		for (int i = 0; i < (int) dp.size(); i++) {
+			for (int j = 0; j < (int) dp[i].size(); j++) {
+				std::cerr << dp[i][j] << " \n"[j + 1 == (int) dp[i].size()];
+			}
+		}
+		std::cerr << "END OF DBG" << std::endl;*/
+
 		Dag d = gen_dag(dp, a, b);
 		std::vector<std::vector<int>> adj = d.adj;
 		int k = (int) adj.size();
 
+		/*std::cerr << "ADJ DBG" << std::endl;
+		for (int i = 0; i < k; i++) {
+			std::cerr << i << ' ';
+			for (int v: adj[i]) std::cerr << v << ' ';
+			std::cerr << std::endl;
+		}
+		std::cerr << "END OF ADJ DBG" << std::endl;*/
+
 		std::vector<std::vector<mpq_class>> ratios = path_ratios(adj);
 
 		std::vector<int> path = find_alpha_path(adj, ratios, alpha);
+		std::unordered_map<int, int> cnt;
+		for (int v: path) {
+			assert(cnt[v] == 0);
+			cnt[v]++;
+		}
+		/*std::cerr << "PATH DBG" << std::endl;
+		for (int v: path) std::cerr << v << ' ';
+		std::cerr << std::endl << "END OF PATH DBG" << std::endl;*/
 
 		std::vector<mpq_class> r = find_ratios(path, adj, ratios);
 		std::vector<std::pair<int, int>> windows_tmp = safety_windows(r, path, alpha);
