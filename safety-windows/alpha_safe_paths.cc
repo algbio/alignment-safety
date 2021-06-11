@@ -108,6 +108,10 @@ std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
 		assert(am <= 1);
 	}
 
+	/*std::cerr << "NEEDED DBG" << std::endl;
+	for (auto [x,y]: needed) std::cerr << x << ' ' << y << std::endl;
+	std::cerr << "NEEDED DBG END" << std::endl;*/
+
 	std::vector<int> order(n);
 	for (int i = 0; i < n; i++) order[sorted[i]] = i;
 
@@ -117,8 +121,7 @@ std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
 		find_path(last, u, path, dag, order);
 		last = v;
 	}
-	if (last != DEST)
-		find_path(last, DEST, path, dag, order);
+	find_path(last, DEST, path, dag, order);
 
 	return path;
 }
