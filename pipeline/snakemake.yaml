@@ -6,12 +6,12 @@ raxml: './../../raxml-ng'
 muscle: './../../muscle'
 hmmer: './../../hmmer-3.3.2'
 # Minimum identity-% to report an alignment
-min_identity: '70'
+min_identity: '40'
 # id > 70%          : --fast
 # 40% < id < 70%    : --sensitive
 # 25% < id < 40%    : --very-sensitive
 # id < 25%          : --ultra-sensitive
-sensitivity: '--sensitive'
+sensitivity: '--very-sensitive'
 # multi-step or mcl
 clustering_algorithm: 'multi-step'
 # Clusters smaller/bigger than these limits will not be considered

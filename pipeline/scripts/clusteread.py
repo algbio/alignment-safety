@@ -1,7 +1,7 @@
+import sys
 import os
 import argparse
 from ete3 import NCBITaxa
-ncbi = NCBITaxa()
 from taxtree import get_highest_taxonomic_id, read_cluster_ids
 
 
@@ -19,7 +19,6 @@ def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
             if not names[1] in clusters:
                 clusters[names[1]] = []
             
-            key_map[names[0]] = names[1]
             clusters[names[1]].append(names[0])
     print(f"Total number of clusters in DB: {len(clusters.keys())}")
 
@@ -32,7 +31,8 @@ def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
     
     ids_to_taxids = {}
     ids_to_taxids = read_cluster_ids(db_file)
-    tax_tree = ncbi.get_topology(ids_to_taxids.values())
+    ncbi = NCBITaxa()
+    tax_tree = ncbi.get_topology(ids_to_taxids.values(), intermediate_nodes=True)
     print(f"Reading taxonomic ids...")
     for key in list(clusters.keys()):
         taxids = [ids_to_taxids[_] for _ in clusters[key]]
@@ -74,21 +74,22 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
         if id in key_map.keys() and id == key_map[id]:
             cleaned = id.split("|")[1]
             c += 1
+            sys.stdout.write("\r%d%%" % int(c * 100.0 / len(clusters.keys())))
             with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
                 out.write(">" + protein_fasta + "\n")
             with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
 
-    print("Separating clusters to fasta-files...")
+    print("\nSeparating clusters to fasta-files...")
     for protein_fasta in db_fasta:
         if not protein_fasta:
             continue
         id, sequence = parse_fasta(protein_fasta)
         if id in key_map.keys():
             cluster_id = key_map[id]
-            c += 1
             cleaned = cluster_id.split("|")[1]
-            
+            c += 1
+            sys.stdout.write("\r%d%%" % int((c-len(clusters.keys())) * 100.0 / len(key_map.keys())))
             with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
                 out.write(">" + protein_fasta + "\n")
             with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
@@ -96,6 +97,7 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
     with open(os.path.join(clustering_path, "info.txt"), "a") as f:
         f.write(f"Total number of sequences: {c}\n")
         f.write(f"Total number of clusters: {len(clusters.keys())}\n")
+    print("")
 
             
 def parse_fasta(protein_fasta):
@@ -166,13 +168,13 @@ def get_info(clusters):
     return info
 
 def main(args):
-    clusters, key_map = read_clusters(args.db, args.clusters, args.min, args.max, False)
+    clusters, key_map = read_clusters(args.db, args.clusters, args.min, args.max, args.taxid)
     if len(clusters) < 1:
         print("No clusters read...")
         return
 
     if args.action == "a":
-        separate_clusters(clusters, key_map, args.db, "/".join(args.clusters.split("/")[:2]), args.min, args.max, args.taxid)
+        separate_clusters(clusters, key_map, args.db, "/".join(args.clusters.split("/")[:2]), args.min, args.max)
 
     elif args.action == "i":
         print(get_info(clusters))

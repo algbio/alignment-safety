@@ -82,7 +82,7 @@ checkpoint separate_clusters:
         min_size = config["cluster_min_size"],
         max_size = config["cluster_max_size"]
     shell:
-        "python3 scripts/clusteread.py a {input} --min {params.min_size} --max {params.max_size}"
+        "python3 scripts/clusteread.py a {input} --min {params.min_size} --max {params.max_size} --taxid"
 
 # Generates diamond binary database for clustering
 rule diamond_bin_db:
@@ -176,6 +176,3 @@ rule taxtree:
         os.path.join("out", f"{CLUSTER}.tax.tree")
     shell:
         "python3 scripts/taxtree.py \"{input}\""
-
-
-    
