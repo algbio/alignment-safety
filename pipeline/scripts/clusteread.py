@@ -51,12 +51,15 @@ def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
 
     return (clusters, key_map)
 
+def mkdir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 # Separates all clusters
 def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size, max_size):
-    if not os.path.exists(os.path.join(clustering_path, "fasta")):
-        os.makedirs(os.path.join(clustering_path, "fasta"))
-    if not os.path.exists(os.path.join(clustering_path, "clean")):
-        os.makedirs(os.path.join(clustering_path, "clean"))
+    mkdir(os.path.join(clustering_path, "fasta"))
+    mkdir(os.path.join(clustering_path, "clean"))
+    mkdir(os.path.join(clustering_path, "refs"))
     with open(os.path.join(clustering_path, "info.txt"), "w") as f:
         f.write(f"Database: {db_filename}\n")
         f.write(f"Clustering parameters: {clustering_path}\n")
@@ -79,17 +82,19 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
                 out.write(">" + protein_fasta + "\n")
             with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
+            with open(os.path.join(clustering_path, "refs", cleaned + ".ref.fasta"), "a") as out:
+                out.write(">" + id + "\n" + sequence + "\n")
 
     print("\nSeparating clusters to fasta-files...")
     for protein_fasta in db_fasta:
         if not protein_fasta:
             continue
         id, sequence = parse_fasta(protein_fasta)
-        if id in key_map.keys():
+        if id in key_map.keys() and id != key_map[id]:
             cluster_id = key_map[id]
             cleaned = cluster_id.split("|")[1]
             c += 1
-            sys.stdout.write("\r%d%%" % int((c-len(clusters.keys())) * 100.0 / len(key_map.keys())))
+            sys.stdout.write("\r%d%%" % int((c-len(clusters.keys()+1)) * 100.0 / len(key_map.keys())))
             with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
                 out.write(">" + protein_fasta + "\n")
             with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
