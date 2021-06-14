@@ -94,7 +94,7 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             cluster_id = key_map[id]
             cleaned = cluster_id.split("|")[1]
             c += 1
-            sys.stdout.write("\r%d%%" % int((c-len(clusters.keys()+1)) * 100.0 / len(key_map.keys())))
+            sys.stdout.write("\r%d%%" % int((c-len(clusters.keys())+1) * 100.0 / len(key_map.keys())))
             with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
                 out.write(">" + protein_fasta + "\n")
             with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
