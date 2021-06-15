@@ -9,6 +9,7 @@ HMMER_PATH = config["hmmer"]
 MIN_IDENTITY = config["min_identity"]
 CLUSTER_ALGO = config["clustering_algorithm"]
 CLUSTER_SENSITIVITY = config["sensitivity"]
+FAMILY_DB = config["family_db"]
 
 
 # removes path and file extension from filename
@@ -25,10 +26,24 @@ def agg_input(wildcards):
     a = expand(os.path.join(WORK_DIR, "clean", "{i}.clean.fasta"), i=CLUSTER_IDS)
     return a
 
+# search sequences agaianst a pfam domain database
+rule hmmscan:
+    input:
+        expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS)
+
+rule:
+    input:
+        db = FAMILY_DB,
+        fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")
+    output:
+        os.path.join(WORK_DIR, "hmmscan", "{id}.out")
+    shell:
+        "{HMMER_PATH}/bin/hmmscan --tblout {output} --noali {input.db} {input.fasta} > /dev/null"
+
 # phmmer for all clusters
 rule phmmer:
     input:
-        expand(os.path.join(WORK_DIR, "phmmer", "{id}.out"), id=CLUSTER_IDS),
+        expand(os.path.join(WORK_DIR, "phmmer", "{id}.out"), id=CLUSTER_IDS)
 
 rule:
     input:
@@ -37,7 +52,7 @@ rule:
     output:
         os.path.join(WORK_DIR, "phmmer", "{id}.out")
     shell:
-        "{HMMER_PATH}/bin/phmmer --tblout {output} --noali {input.ref} {input.fasta}"
+        "{HMMER_PATH}/bin/phmmer --tblout {output} --noali {input.ref} {input.fasta} > /dev/null"
 
 # hmmsearch for all clusters
 rule hmmsearch:
@@ -51,7 +66,7 @@ rule:
     output:
         os.path.join(WORK_DIR, "hmmsearch", "{id}.out")
     shell:
-        "{HMMER_PATH}/bin/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta}"
+        "{HMMER_PATH}/bin/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta} > /dev/null"
 
 # creates needed hmm-profiles for hmmsearch
 rule hmmbuild:
