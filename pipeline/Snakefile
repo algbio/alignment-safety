@@ -26,6 +26,18 @@ def agg_input(wildcards):
     a = expand(os.path.join(WORK_DIR, "clean", "{i}.clean.fasta"), i=CLUSTER_IDS)
     return a
 
+rule identity:
+    input:
+        expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS)
+
+rule:
+    input:
+        msa = os.path.join(WORK_DIR, "msa", "{id}.fasta")
+    output:
+        os.path.join(WORK_DIR, "id", "{id}.out")
+    shell:
+        "{HMMER_PATH}/bin/esl-alipid {input.msa} > {output}"
+
 # search sequences agaianst a pfam domain database
 rule hmmscan:
     input:
