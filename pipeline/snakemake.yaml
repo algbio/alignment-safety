@@ -1,6 +1,7 @@
 # download e.g. swiss protein db from: 
 # https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
 db_file: 'data/uniprot_sprot.fasta'
+family_db: 'data/pfam/Pfam-A.hmm'
 diamond: './../../diamond-2.0.8'
 raxml: './../../raxml-ng'
 muscle: './../../muscle'

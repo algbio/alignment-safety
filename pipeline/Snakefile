@@ -9,6 +9,7 @@ HMMER_PATH = config["hmmer"]
 MIN_IDENTITY = config["min_identity"]
 CLUSTER_ALGO = config["clustering_algorithm"]
 CLUSTER_SENSITIVITY = config["sensitivity"]
+FAMILY_DB = config["family_db"]
 
 
 # removes path and file extension from filename
@@ -25,6 +26,46 @@ def agg_input(wildcards):
     a = expand(os.path.join(WORK_DIR, "clean", "{i}.clean.fasta"), i=CLUSTER_IDS)
     return a
 
+rule identity:
+    input:
+        expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS)
+
+rule:
+    input:
+        msa = os.path.join(WORK_DIR, "msa", "{id}.fasta")
+    output:
+        os.path.join(WORK_DIR, "id", "{id}.out")
+    shell:
+        "{HMMER_PATH}/bin/esl-alipid {input.msa} > {output}"
+
+# search sequences agaianst a pfam domain database
+rule hmmscan:
+    input:
+        expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS)
+
+rule:
+    input:
+        db = FAMILY_DB,
+        fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")
+    output:
+        os.path.join(WORK_DIR, "hmmscan", "{id}.out")
+    shell:
+        "{HMMER_PATH}/bin/hmmscan --tblout {output} --noali {input.db} {input.fasta} > /dev/null"
+
+# phmmer for all clusters
+rule phmmer:
+    input:
+        expand(os.path.join(WORK_DIR, "phmmer", "{id}.out"), id=CLUSTER_IDS)
+
+rule:
+    input:
+        ref = os.path.join(WORK_DIR, "refs", "{id}.ref.fasta"),
+        fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"),
+    output:
+        os.path.join(WORK_DIR, "phmmer", "{id}.out")
+    shell:
+        "{HMMER_PATH}/bin/phmmer --tblout {output} --noali {input.ref} {input.fasta} > /dev/null"
+
 # hmmsearch for all clusters
 rule hmmsearch:
     input:
@@ -37,7 +78,7 @@ rule:
     output:
         os.path.join(WORK_DIR, "hmmsearch", "{id}.out")
     shell:
-        "{HMMER_PATH}/bin/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta}"
+        "{HMMER_PATH}/bin/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta} > /dev/null"
 
 # creates needed hmm-profiles for hmmsearch
 rule hmmbuild:
@@ -77,12 +118,13 @@ checkpoint separate_clusters:
     output:
         os.path.join(WORK_DIR, "info.txt"),
         directory(os.path.join(WORK_DIR, "clean")),
-        directory(os.path.join(WORK_DIR, "fasta"))
+        directory(os.path.join(WORK_DIR, "fasta")),
+        directory(os.path.join(WORK_DIR, "refs"))
     params:
         min_size = config["cluster_min_size"],
         max_size = config["cluster_max_size"]
     shell:
-        "python3 scripts/clusteread.py a {input} --min {params.min_size} --max {params.max_size}"
+        "python3 scripts/clusteread.py a {input} --min {params.min_size} --max {params.max_size} --taxid"
 
 # Generates diamond binary database for clustering
 rule diamond_bin_db:
@@ -176,6 +218,3 @@ rule taxtree:
         os.path.join("out", f"{CLUSTER}.tax.tree")
     shell:
         "python3 scripts/taxtree.py \"{input}\""
-
-
-    

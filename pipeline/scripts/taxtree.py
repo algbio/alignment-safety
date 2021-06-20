@@ -29,15 +29,16 @@ def get_highest_taxonomic_id(taxids, tax_tree):
 
 def subtree():
     ids = list(ids_to_taxid.values())
-    tax_tree = ncbi.get_topology(ids)
+    tax_tree = ncbi.get_topology(ids, intermediate_nodes=True)
     for protein_id in ids_to_taxid.keys():
         tax_id = ids_to_taxid[protein_id]
         parent = tax_tree.search_nodes(taxid=tax_id)[0]
         parent.add_child(name=protein_id)
 
     print_stats(tax_tree)
-    # print(tax_tree.get_ascii(attributes=["rank", "name"]))
-    tax_tree.write(features=[], format=2, outfile="./out/" + cluster_name + ".tax.tree")
+    print(tax_tree.get_ascii(attributes=["taxid", "name"]))
+    print(get_highest_taxonomic_id(ids, tax_tree))
+    # tax_tree.write(features=[], format=2, outfile="./out/" + cluster_name + ".tax.tree")
 
 def print_stats(tree):
     rank_counts = {}
