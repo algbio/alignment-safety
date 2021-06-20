@@ -26,6 +26,14 @@ int main(int argc, char **argv) {
 
 	const mpq_class alpha = 0.5;
 
+	/*
+	std::string a = "EBCDE";
+	std::string b = "ABCDFE";
+	std::vector<std::vector<std::vector<int>>> dp = opt_alignment(build_dp_matrix(a, b), 0, 0);
+	int n = a.size(), m = b.size();
+	std::cout << dp[n][m][0] << std::endl;
+	*/
+
 	if (argc >= 2 && strcmp(argv[1], "-h") == 0) {
 		return print_usage(argv, 0);
 	}
@@ -59,39 +67,19 @@ int main(int argc, char **argv) {
 		const std::string &a = proteins[0].sequence;
 		const std::string &b = proteins[i].sequence;
 		std::cout << i << ' ' << b << ' ';
-		std::vector<std::vector<int>> dp = opt_alignment(a, b);
 
-		/*std::cerr << std::endl << "DBG" << std::endl;
-		for (int i = 0; i < (int) dp.size(); i++) {
-			for (int j = 0; j < (int) dp[i].size(); j++) {
-				std::cerr << dp[i][j] << " \n"[j + 1 == (int) dp[i].size()];
-			}
-		}
-		std::cerr << "END OF DBG" << std::endl;*/
-
-		Dag d = gen_dag(dp, a, b);
+		Dag d = gen_dag(a, b);
 		std::vector<std::vector<int>> adj = d.adj;
 		int k = (int) adj.size();
 
-		/*std::cerr << "ADJ DBG" << std::endl;
-		for (int i = 0; i < k; i++) {
-			std::cerr << i << ' ';
-			for (int v: adj[i]) std::cerr << v << ' ';
-			std::cerr << std::endl;
-		}
-		std::cerr << "END OF ADJ DBG" << std::endl;*/
+		std::vector<std::vector<mpq_class>> ratios = path_ratios(d);
 
-		std::vector<std::vector<mpq_class>> ratios = path_ratios(adj);
-
-		std::vector<int> path = find_alpha_path(adj, ratios, alpha);
+		std::vector<int> path = find_alpha_path(d, ratios, alpha);
 		std::unordered_map<int, int> cnt;
 		for (int v: path) {
 			assert(cnt[v] == 0);
 			cnt[v]++;
 		}
-		/*std::cerr << "PATH DBG" << std::endl;
-		for (int v: path) std::cerr << v << ' ';
-		std::cerr << std::endl << "END OF PATH DBG" << std::endl;*/
 
 		std::vector<mpq_class> r = find_ratios(path, adj, ratios);
 		std::vector<std::pair<int, int>> windows_tmp = safety_windows(r, path, alpha);
@@ -116,10 +104,6 @@ int main(int argc, char **argv) {
 			if (!inside(L, R)) windows.emplace_back(L, R);
 		}
 
-		/*std::map<std::pair<int, int>, int> trans = d.trans;
-		for (auto [a, b]: trans) {
-			std::cout << a.first << ' ' << a.second << ' ' << b << '\n';
-		}*/
 
 		std::cout << windows.size();
 		for (auto [x, y]: windows) {

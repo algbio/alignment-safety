@@ -7,9 +7,8 @@
 #include <gmpxx.h>
 
 #include "alpha_safe_paths.h"
+#include "optimal_paths.h"
 
-#define SRC 0
-#define DEST (n-1)
 
 const double eps = 1e-6;
 
@@ -50,7 +49,8 @@ std::vector<mpz_class> amount_paths(std::vector<std::vector<int>> &dag) {
 	return am;
 }
 
-std::vector<std::vector<mpq_class>> path_ratios(std::vector<std::vector<int>> &dag) {
+std::vector<std::vector<mpq_class>> path_ratios(Dag &d) {
+	std::vector<std::vector<int>> dag = d.adj;
 	int n = (int) dag.size();
 
 	std::vector<std::vector<int>> rdag(n);
@@ -61,6 +61,8 @@ std::vector<std::vector<mpq_class>> path_ratios(std::vector<std::vector<int>> &d
 	std::vector<mpz_class> ram = amount_paths(rdag);
 
 	std::vector<std::vector<mpq_class>> ratios(n);
+
+	int SRC = d.src;
 
 	for (int i = 0; i < n; i++) for (int v: dag[i]) {
 		// nxt = am[v] * ram[i] / am[SRC]
@@ -90,8 +92,9 @@ void find_path(int src, int dest, std::vector<int> &path, std::vector<std::vecto
 	assert(dfs(src));
 }
 
-std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
+std::vector<int> find_alpha_path(Dag &d,
 		std::vector<std::vector<mpq_class>> &ratios, mpq_class alpha) {
+	std::vector<std::vector<int>> dag = d.adj;
 	int n = (int) ratios.size();
 	std::vector<int> sorted = topsort(dag);
 
@@ -116,12 +119,12 @@ std::vector<int> find_alpha_path(std::vector<std::vector<int>> &dag,
 	for (int i = 0; i < n; i++) order[sorted[i]] = i;
 
 	std::vector<int> path;
-	int last = SRC;
+	int last = d.src;
 	for (auto [u,v]: needed) {
 		find_path(last, u, path, dag, order);
 		last = v;
 	}
-	find_path(last, DEST, path, dag, order);
+	find_path(last, d.sink, path, dag, order);
 
 	return path;
 }

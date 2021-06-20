@@ -1,15 +1,37 @@
+#pragma once
 #include <vector>
 #include <map>
 #include <string>
+#include <array>
 
+// Dag here is supposed to be the subgraph constructed with the gen_dag function
 struct Dag {
 	std::vector<std::vector<int>> adj;
-	std::map<std::pair<int, int>, int> trans;
+	int src, sink;
+	std::map<std::pair<int, int>, std::array<int, 3>> trans;
 	std::map<int, std::pair<int, int>> transr;
 };
 
-// Construct optimal alignment matrix
-std::vector<std::vector<int>> opt_alignment(const std::string &a, const std::string &b);
+struct Node {
+	int N_index, M_index, type;
+	int cost;
+	Node (int N_index, int M_index, int type, int cost) : N_index(N_index),
+			M_index(M_index), type(type), cost(cost)
+	{}
+};
 
-// Find the sub-graph of the optimal alignment matrix with optimal paths
-Dag gen_dag(const std::vector<std::vector<int>> &dp, const std::string &a, const std::string &b);
+// Just plain dijkstra
+std::vector<std::vector<std::vector<int>>>
+dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
+		const int sn, const int sm);
+
+// Construct alignment paths
+std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const std::string &a,
+		const std::string &b);
+
+// Construct optimal alignment score matrix
+std::vector<std::vector<std::vector<int>>>
+opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj, int sn, int sm);
+
+// Find the sub-graph of the alignment paths with (sub-)optimal paths
+Dag gen_dag(const std::string &a, const std::string &b);
