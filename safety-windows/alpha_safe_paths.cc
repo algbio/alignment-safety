@@ -3,6 +3,7 @@
 #include <set>
 #include <stack>
 #include <unordered_map>
+#include <assert.h>
 
 #include <gmpxx.h>
 
@@ -46,7 +47,6 @@ std::vector<mpz_class> amount_paths(std::vector<std::vector<int>> &dag) {
 	for (int i = n - 1; i >= 0; i--) {
 		for (int v: dag[sorted[i]]) am[sorted[i]] += am[v];
 	}
-	for (int i = 0; i < n; i++) assert(am[i] <= am[sorted.front()]);
 	return am;
 }
 
@@ -60,6 +60,8 @@ std::vector<std::vector<mpq_class>> path_ratios(Dag &d) {
 	// TODO: perhaps create a dag class with source/sink variables
 	std::vector<mpz_class> am = amount_paths(dag);
 	std::vector<mpz_class> ram = amount_paths(rdag);
+
+	for (int i = 0; i < n; i++) assert(am[i] <= am[d.src]);
 
 	std::vector<std::vector<mpq_class>> ratios(n);
 
