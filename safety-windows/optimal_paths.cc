@@ -20,14 +20,7 @@ dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 
 	auto cmp = [&](const Node &a, const Node &b) {
 		if (a.cost > b.cost) return true;
-		if (a.cost < b.cost) return false;
-
-		// compare the rest (TODO: can this be done more elegantly?)
-		std::tuple<int, int, int> A = { a.N_index, a.M_index, a.type };
-		std::tuple<int, int, int> B = { b.N_index, b.M_index, b.type };
-		std::vector<std::tuple<int, int, int>> tmp = { A, B };
-		sort(tmp.begin(), tmp.end(), std::greater<std::tuple<int, int, int>>());
-		return tmp[0] == A;
+		if (a.cost <= b.cost) return false;
 	};
 
 	std::priority_queue<Node, std::vector<Node>, decltype(cmp)> q(cmp);
@@ -96,7 +89,7 @@ opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &ad
 	return dijkstra(adj, sn, sm);
 }
 
-Dag gen_dag(const std::string &a, const std::string &b) {
+Dag gen_dag(const std::string &a, const std::string &b, const double TH) {
 	std::vector<std::vector<std::vector<std::vector<Node>>>> e = build_dp_matrix(a, b);
 	int n = (int) e.size() - 1;
 	assert(n > 0);
@@ -133,10 +126,10 @@ Dag gen_dag(const std::string &a, const std::string &b) {
 	};
 
 	for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) for (int k = 0; k <= 2; k++) {
-		if (dp[i][j][k] + dpr[i][j][k] != OPT) continue;
+		if (dp[i][j][k] + dpr[i][j][k] > TH * OPT) continue;
 		add_node(Node(i, j, k, 0));
 		for (const Node &nxt: e[i][j][k]) {
-			if (dp[nxt.N_index][nxt.M_index][nxt.type] + dpr[nxt.N_index][nxt.M_index][nxt.type] != OPT) continue;
+			if (dp[nxt.N_index][nxt.M_index][nxt.type] + dpr[nxt.N_index][nxt.M_index][nxt.type] > TH * OPT) continue;
 			if (dp[nxt.N_index][nxt.M_index][nxt.type] == dp[i][j][k] + nxt.cost) {
 				add_node(nxt);
 				adj[trans[std::make_pair(i, j)][k]].push_back(trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]);

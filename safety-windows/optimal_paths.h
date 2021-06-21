@@ -34,4 +34,4 @@ std::vector<std::vector<std::vector<int>>>
 opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj, int sn, int sm);
 
 // Find the sub-graph of the alignment paths with (sub-)optimal paths
-Dag gen_dag(const std::string &a, const std::string &b);
+Dag gen_dag(const std::string &a, const std::string &b, const double TH = 1.0);
