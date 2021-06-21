@@ -46,11 +46,12 @@ std::vector<mpz_class> amount_paths(std::vector<std::vector<int>> &dag) {
 	for (int i = n - 1; i >= 0; i--) {
 		for (int v: dag[sorted[i]]) am[sorted[i]] += am[v];
 	}
+	for (int i = 0; i < n; i++) assert(am[i] <= am[sorted.front()]);
 	return am;
 }
 
 std::vector<std::vector<mpq_class>> path_ratios(Dag &d) {
-	std::vector<std::vector<int>> dag = d.adj;
+	std::vector<std::vector<int>> &dag = d.adj;
 	int n = (int) dag.size();
 
 	std::vector<std::vector<int>> rdag(n);
@@ -94,7 +95,7 @@ void find_path(int src, int dest, std::vector<int> &path, std::vector<std::vecto
 
 std::vector<int> find_alpha_path(Dag &d,
 		std::vector<std::vector<mpq_class>> &ratios, mpq_class alpha) {
-	std::vector<std::vector<int>> dag = d.adj;
+	std::vector<std::vector<int>> &dag = d.adj;
 	int n = (int) ratios.size();
 	std::vector<int> sorted = topsort(dag);
 
