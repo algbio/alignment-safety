@@ -10,6 +10,7 @@ MIN_IDENTITY = config["min_identity"]
 CLUSTER_ALGO = config["clustering_algorithm"]
 CLUSTER_SENSITIVITY = config["sensitivity"]
 FAMILY_DB = config["family_db"]
+SAFETY_PATH = config["safety"]
 
 
 # removes path and file extension from filename
@@ -26,9 +27,21 @@ def agg_input(wildcards):
     a = expand(os.path.join(WORK_DIR, "clean", "{i}.clean.fasta"), i=CLUSTER_IDS)
     return a
 
+rule safe:
+    input:
+        expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS)
+
+rule:
+    input:
+        fasta = os.path.join(WORK_DIR, "fasta", "{id}.fasta")
+    output:
+        os.path.join(WORK_DIR, "safety", "{id}.out")
+    shell:
+        "{SAFETY_PATH}/main -f {input.fasta} > {output}"
+
 rule identity:
     input:
-        expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS)
+        expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS)
 
 rule:
     input:
