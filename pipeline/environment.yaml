@@ -7,3 +7,6 @@ dependencies:
   - ete3
   - snakemake-minimal
   - ipykernel
+  - fastcluster
+  
+# to update "conda env update --name pipeline --file environment.yml"
