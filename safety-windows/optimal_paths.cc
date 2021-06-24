@@ -20,7 +20,7 @@ dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 
 	auto cmp = [&](const Node &a, const Node &b) {
 		if (a.cost > b.cost) return true;
-		if (a.cost <= b.cost) return false;
+		return false;
 	};
 
 	std::priority_queue<Node, std::vector<Node>, decltype(cmp)> q(cmp);
@@ -49,14 +49,10 @@ dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 }
 
 std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const std::string &a,
-		const std::string &b) {
+		const std::string &b, const int SAME_COST, const int DIFF_COST, const int GAP_COST,
+		const int START_GAP) {
 	int n = (int) a.size();
 	int m = (int) b.size();
-
-	const int SAME_COST = 0;
-	const int DIFF_COST = 1;
-	const int GAP_COST = 1;
-	const int START_GAP = 0;
 
 	// create affine linear gap cost graph (see README for illustration)
 	std::vector<std::vector<std::vector<std::vector<Node>>>> adj(n + 1,
@@ -89,8 +85,9 @@ opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &ad
 	return dijkstra(adj, sn, sm);
 }
 
-Dag gen_dag(const std::string &a, const std::string &b, const double TH) {
-	std::vector<std::vector<std::vector<std::vector<Node>>>> e = build_dp_matrix(a, b);
+Dag gen_dag(const std::string &a, const std::string &b, const double TH, const int SAME_COST,
+		const int DIFF_COST, const int GAP_COST, const int START_GAP) {
+	std::vector<std::vector<std::vector<std::vector<Node>>>> e = build_dp_matrix(a, b, SAME_COST, DIFF_COST, GAP_COST, START_GAP);
 	int n = (int) e.size() - 1;
 	assert(n > 0);
 	int m = (int) e[0].size() - 1;
