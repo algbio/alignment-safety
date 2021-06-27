@@ -85,7 +85,7 @@ opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &ad
 	return dijkstra(adj, sn, sm);
 }
 
-Dag gen_dag(const std::string &a, const std::string &b, const double TH, const int SAME_COST,
+Dag gen_dag(const std::string &a, const std::string &b, const mpq_class TH, const int SAME_COST,
 		const int DIFF_COST, const int GAP_COST, const int START_GAP) {
 	std::vector<std::vector<std::vector<std::vector<Node>>>> e = build_dp_matrix(a, b, SAME_COST, DIFF_COST, GAP_COST, START_GAP);
 	int n = (int) e.size() - 1;
@@ -127,7 +127,7 @@ Dag gen_dag(const std::string &a, const std::string &b, const double TH, const i
 		add_node(Node(i, j, k, 0));
 		for (const Node &nxt: e[i][j][k]) {
 			if (dp[nxt.N_index][nxt.M_index][nxt.type] + dpr[nxt.N_index][nxt.M_index][nxt.type] > TH * OPT) continue;
-			if (dp[nxt.N_index][nxt.M_index][nxt.type] == dp[i][j][k] + nxt.cost) {
+			if (dpr[nxt.N_index][nxt.M_index][nxt.type] + dp[i][j][k] + nxt.cost <= TH * OPT) {
 				add_node(nxt);
 				adj[trans[std::make_pair(i, j)][k]].push_back(trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]);
 			}

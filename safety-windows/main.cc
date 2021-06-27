@@ -35,8 +35,7 @@ int main(int argc, char **argv) {
 	std::cerr << std::fixed << std::setprecision(10); // debug output
 	std::cout << std::fixed << std::setprecision(10); // debug output
 
-	mpq_class alpha = 0.75;
-	double TH = 1;
+	mpq_class alpha = 0.75, TH = 1;
 
 	/*
 	std::string a = "EBCDE";
@@ -118,10 +117,6 @@ int main(int argc, char **argv) {
 		std::cerr << "Warning: for alpha values < 0.5, the program will not behave well defined and might crash.\n";
 	}
 
-	if (TH > 1.0) {
-		std::cerr << "Note: Due to a bug, setting a custom threshold does not work just yet.\n";
-	}
-
 
 	std::ifstream input(file);
 	std::vector<Protein> proteins;
@@ -144,7 +139,7 @@ int main(int argc, char **argv) {
 		const std::string &b = proteins[i].sequence;
 		std::cout << i << ' ' << b << ' ';
 
-		Dag d = gen_dag(a, b, 1.0, SAME_COST, DIFF_COST, GAP_COST, START_GAP); // fix custom threshold bug!
+		Dag d = gen_dag(a, b, TH, SAME_COST, DIFF_COST, GAP_COST, START_GAP); // fix custom threshold bug!
 		std::vector<std::vector<int>> adj = d.adj;
 		int k = (int) adj.size();
 
