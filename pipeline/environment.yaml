@@ -8,5 +8,9 @@ dependencies:
   - snakemake-minimal
   - ipykernel
   - fastcluster
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - jinja2
   
-# to update "conda env update --name pipeline --file environment.yml"
+# to update "conda env update --name pipeline --file environment.yaml"
