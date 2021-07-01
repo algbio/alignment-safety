@@ -12,5 +12,7 @@ dependencies:
   - seaborn
   - scikit-learn
   - jinja2
+  - biopython
+  - panel
   
 # to update "conda env update --name pipeline --file environment.yaml"
