@@ -10,6 +10,35 @@
 
 #include "optimal_paths.h"
 
+// translate fasta file letters to amino acid symbols (see http://www.math.utep.edu/Faculty/mleung/bioinformatics/aacodon.html)
+//                       A   B  C  D  E   F  G  H  I   J   K   L   M  N   O   P  Q  R   S   T   U   V   W   X   Y   Z
+std::vector<int> LTA = { 0, -1, 4, 3, 6, 13, 7, 8, 9, -1, 11, 10, 12, 2, -1, 14, 5, 1, 15, 16, -1, 19, 17, -1, 18, -1 };
+
+// BLOSUM63 matrix
+std::vector<std::vector<int>> cost_matrix = {
+	// Ala  Arg  Asn  Asp  Cys  Gln  Glu  Gly  His  Ile  Leu  Lys  Met  Phe  Pro  Ser  Thr  Trp  Tyr  Val
+	{  -4,   1,   2,   2,   0,   1,   1,   0,   2,   1,   1,   1,   1,   2,   1,  -1,   0,   3,   2,   0 }, // Ala
+	{   1,  -5,   0,   2,   3,  -1,   0,   2,   0,   3,   2,  -2,   1,   3,   2,   1,   1,   3,   2,   3 }, // Arg
+	{   2,   0,  -6,  -1,   3,   0,   0,   0,  -1,   3,   3,   0,   2,   3,   2,  -1,   0,   4,   2,   3 }, // Asn
+	{   2,   2,  -1,  -6,   3,   0,  -2,   1,   1,   3,   4,   1,   3,   3,   1,   0,   1,   4,   3,   3 }, // Asp
+	{   0,   3,   3,   3,  -9,   3,   4,   3,   3,   1,   1,   3,   1,   2,   3,   1,   1,   2,   2,   1 }, // Cys
+	{   1,  -1,   0,   0,   3,  -5,  -2,   2,   0,   3,   2,  -1,   0,   3,   1,   0,   1,   2,   1,   2 }, // Gln
+	{   1,   0,   0,  -2,   4,  -2,  -5,   2,   0,   3,   3,  -1,   2,   3,   1,   0,   1,   3,   2,   2 }, // Glu
+	{   0,   2,   0,   1,   3,   2,   2,  -6,   2,   4,   4,   2,   3,   3,   2,   0,   2,   2,   3,   3 }, // Gly
+	{   2,   0,  -1,   1,   3,   0,   0,   2,  -8,   3,   3,   1,   2,   1,   2,   1,   2,   2,  -2,   3 }, // His
+	{   1,   3,   3,   3,   1,   3,   3,   4,   3,  -4,  -2,   3,  -1,   0,   3,   2,   1,   3,   1,  -3 }, // Ile
+	{   1,   2,   3,   4,   1,   2,   3,   4,   3,  -2,  -4,   2,  -2,   0,   3,   2,   1,   2,   1,  -1 }, // Leu
+	{   1,  -2,   0,   1,   3,  -1,  -1,   2,   1,   3,   2,  -5,   1,   3,   1,   0,   1,   3,   2,   2 }, // Lys
+	{   1,   1,   2,   3,   1,   0,   2,   3,   2,  -1,  -2,   1,  -5,   0,   2,   1,   1,   1,   1,  -1 }, // Met
+	{   2,   3,   3,   3,   2,   3,   3,   3,   1,   0,   0,   3,   0,  -6,   4,   2,   2,  -1,  -3,   1 }, // Phe
+	{   1,   2,   2,   1,   3,   1,   1,   2,   2,   3,   3,   1,   2,   4,  -7,   1,   1,   4,   3,   2 }, // Pro
+	{  -1,   1,  -1,   0,   1,   0,   0,   0,   1,   2,   2,   0,   1,   2,   1,  -4,  -1,   3,   2,   2 }, // Ser
+	{   0,   1,   0,   1,   1,   1,   1,   2,   2,   1,   1,   1,   1,   2,   1,  -1,  -5,   2,   2,   0 }, // Thr
+	{   3,   3,   4,   4,   2,   2,   3,   2,   2,   3,   2,   3,   1,  -1,   4,   3,   2,  -11, -2,   3 }, // Trp
+	{   2,   2,   2,   3,   2,   1,   2,   3,  -2,   1,   1,   2,   1,  -3,   3,   2,   2,  -2,  -7,   1 }, // Tyr
+	{   0,   3,   3,   3,   1,   2,   2,   3,   3,  -3,  -1,   2,  -1,   1,   2,   2,   0,   3,   1,  -4 }, // Val
+};
+
 std::vector<std::vector<std::vector<int>>>
 dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 		const int sn, const int sm) {
@@ -49,8 +78,7 @@ dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 }
 
 std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const std::string &a,
-		const std::string &b, const int SAME_COST, const int DIFF_COST, const int GAP_COST,
-		const int START_GAP) {
+		const std::string &b, const int GAP_COST, const int START_GAP) {
 	int n = (int) a.size();
 	int m = (int) b.size();
 
@@ -61,7 +89,7 @@ std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const s
 	for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) {
 		if (i + 1 <= n && j + 1 <= m)
 			adj[i][j][0].push_back(Node(i + 1, j + 1, 0,
-					(a[i] == b[j] ? SAME_COST : DIFF_COST)));
+					cost_matrix[LTA[a[i] - 'A']][LTA[b[j] - 'A']]));
 
 		if (i + 1 <= n) {
 			adj[i][j][0].push_back(Node(i + 1, j, 1, START_GAP + GAP_COST));
@@ -85,9 +113,8 @@ opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &ad
 	return dijkstra(adj, sn, sm);
 }
 
-Dag gen_dag(const std::string &a, const std::string &b, const mpq_class TH, const int SAME_COST,
-		const int DIFF_COST, const int GAP_COST, const int START_GAP) {
-	std::vector<std::vector<std::vector<std::vector<Node>>>> e = build_dp_matrix(a, b, SAME_COST, DIFF_COST, GAP_COST, START_GAP);
+Dag gen_dag(const std::string &a, const std::string &b, const mpq_class TH, const int GAP_COST, const int START_GAP) {
+	std::vector<std::vector<std::vector<std::vector<Node>>>> e = build_dp_matrix(a, b, GAP_COST, START_GAP);
 	int n = (int) e.size() - 1;
 	assert(n > 0);
 	int m = (int) e[0].size() - 1;
