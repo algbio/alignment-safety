@@ -27,6 +27,14 @@ def agg_input(wildcards):
     a = expand(os.path.join(WORK_DIR, "clean", "{i}.clean.fasta"), i=CLUSTER_IDS)
     return a
 
+rule all:
+    input:
+        expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS),
+        expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS),
+        expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS),
+        expand(os.path.join(WORK_DIR, "phmmer", "{id}.out"), id=CLUSTER_IDS),
+        expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS),
+
 rule safe:
     input:
         expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS)
@@ -65,6 +73,20 @@ rule:
     shell:
         "{HMMER_PATH}/bin/hmmscan --tblout {output} --noali {input.db} {input.fasta} > /dev/null"
 
+# search sequences agaianst a pfam domain database
+rule hmmscan_align:
+    input:
+        expand(os.path.join(WORK_DIR, "hmmscan_align", "{id}.out"), id=CLUSTER_IDS)
+
+rule:
+    input:
+        db = FAMILY_DB,
+        fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")
+    output:
+        os.path.join(WORK_DIR, "hmmscan_align", "{id}.out")
+    shell:
+        "{HMMER_PATH}/bin/hmmscan -o {output} {input.db} {input.fasta}"
+
 # phmmer for all clusters
 rule phmmer:
     input:
@@ -82,7 +104,7 @@ rule:
 # hmmsearch for all clusters
 rule hmmsearch:
     input:
-        expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS),
+        expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS)
 
 rule:
     input:
