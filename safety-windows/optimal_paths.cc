@@ -11,11 +11,11 @@
 #include "optimal_paths.h"
 
 // translate fasta file letters to amino acid symbols (see http://www.math.utep.edu/Faculty/mleung/bioinformatics/aacodon.html)
-//                       A   B  C  D  E   F  G  H  I   J   K   L   M  N   O   P  Q  R   S   T   U   V   W   X   Y   Z
-std::vector<int> LTA = { 0, -1, 4, 3, 6, 13, 7, 8, 9, -1, 11, 10, 12, 2, -1, 14, 5, 1, 15, 16, -1, 19, 17, -1, 18, -1 };
+//                    A   B  C  D  E   F  G  H  I   J   K   L   M  N   O   P  Q  R   S   T   U   V   W   X   Y   Z
+const int LTA[26] = { 0, -1, 4, 3, 6, 13, 7, 8, 9, -1, 11, 10, 12, 2, -1, 14, 5, 1, 15, 16, -1, 19, 17, -1, 18, -1 };
 
-// BLOSUM63 matrix
-std::vector<std::vector<int>> cost_matrix = {
+// BLOSUM62 matrix
+int cost_matrix[26][26] = {
 	// Ala  Arg  Asn  Asp  Cys  Gln  Glu  Gly  His  Ile  Leu  Lys  Met  Phe  Pro  Ser  Thr  Trp  Tyr  Val
 	{  -4,   1,   2,   2,   0,   1,   1,   0,   2,   1,   1,   1,   1,   2,   1,  -1,   0,   3,   2,   0 }, // Ala
 	{   1,  -5,   0,   2,   3,  -1,   0,   2,   0,   3,   2,  -2,   1,   3,   2,   1,   1,   3,   2,   3 }, // Arg
@@ -87,9 +87,16 @@ std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const s
 			std::vector<std::vector<std::vector<Node>>>(m + 1,
 			std::vector<std::vector<Node>>(3)));
 	for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) {
+		if (LTA[a[i] - 'A'] == -1) {
+			std::cerr << "ERROR: WRONG CHARACTER in a string: " << a[i] << std::endl;
+		}
+		if (LTA[b[j] - 'A'] == -1) {
+			std::cerr << "ERROR: WRONG CHARACTER in b string: " << b[j] << std::endl;
+		}
 		if (i + 1 <= n && j + 1 <= m)
 			adj[i][j][0].push_back(Node(i + 1, j + 1, 0,
 					cost_matrix[LTA[a[i] - 'A']][LTA[b[j] - 'A']]));
+					//a[i] != b[j]));
 
 		if (i + 1 <= n) {
 			adj[i][j][0].push_back(Node(i + 1, j, 1, START_GAP + GAP_COST));

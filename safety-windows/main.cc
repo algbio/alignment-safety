@@ -14,8 +14,8 @@
 int print_usage(char **argv, int help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile> [OPTION...]\n\n";
 	std::cout << "\t-a, --alpha\tFloating value, choose edges that appear in (alpha*100)% of all\n\t            \t(sub-)optimal paths in the alpha-safe path. (Default: 0.75)\n";
-	std::cout << "\t-d, --gapcost\tInteger, set the cost of aligning a character to a gap. (Default: 2)\n";
-	std::cout << "\t-e, --startgap\tInteger, set the cost of starting a gap alignment. (Default: 10)\n";
+	std::cout << "\t-d, --gapcost\tInteger, set the cost of aligning a character to a gap. (Default: 1)\n";
+	std::cout << "\t-e, --startgap\tInteger, set the cost of starting a gap alignment. (Default: 11)\n";
 	std::cout << "\t-g, --threshold\tFloating value, set the treshold for suboptimality. (Default: 1.0, Range: [1.0,infinity))\n";
 	std::cout << "\t-h, --help\tShows this help message.\n";
 	return help;
@@ -44,8 +44,7 @@ int main(int argc, char **argv) {
 	*/
 
 	int GAP_COST = 1;
-	int START_GAP = 0;
-
+	int START_GAP = 11;
 	std::string file;
 	bool help_flag = false;
 	bool read_file = false;

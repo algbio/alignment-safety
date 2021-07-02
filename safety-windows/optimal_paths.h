@@ -37,4 +37,4 @@ opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &ad
 
 // Find the sub-graph of the alignment paths with (sub-)optimal paths
 Dag gen_dag(const std::string &a, const std::string &b, const mpq_class TH = 1.0,
-		const int GAP_COST = 1, const int START_GAP = 11); // BLOSUM63 costs
+		const int GAP_COST = 1, const int START_GAP = 11); // BLOSUM62 costs
