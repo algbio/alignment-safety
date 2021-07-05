@@ -22,12 +22,17 @@ def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
             clusters[names[1]].append(names[0])
     print(f"Total number of clusters in DB: {len(clusters.keys())}")
 
-    if not use_taxids:
-        return (clusters, key_map)
     # Delete clusters that dont fit min-max criteria
     for key in list(clusters.keys()):
         if min_size > len(clusters[key]) or len(clusters[key]) > max_size:
             del clusters[key]
+            
+    if not use_taxids:
+        for key in clusters.keys():
+            for prot in clusters[key]:
+                key_map[prot] = key
+        return (clusters, key_map)
+
     
     ids_to_taxids = {}
     ids_to_taxids = read_cluster_ids(db_file)
@@ -78,11 +83,11 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             cleaned = id.split("|")[1]
             c += 1
             sys.stdout.write("\r%d%%" % int(c * 100.0 / len(clusters.keys())))
-            with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "w") as out:
                 out.write(">" + protein_fasta + "\n")
-            with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "w") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
-            with open(os.path.join(clustering_path, "refs", cleaned + ".ref.fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "refs", cleaned + ".ref.fasta"), "w") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
 
     print("\nSeparating clusters to fasta-files...")
@@ -94,15 +99,15 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             cluster_id = key_map[id]
             cleaned = cluster_id.split("|")[1]
             c += 1
-            sys.stdout.write("\r%d%%" % int((c-len(clusters.keys())+1) * 100.0 / len(key_map.keys())))
+            sys.stdout.write("\r%d%%" % int(c * 100.0 / len(key_map.keys())))
             with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
                 out.write(">" + protein_fasta + "\n")
             with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
+    print("")
     with open(os.path.join(clustering_path, "info.txt"), "a") as f:
         f.write(f"Total number of sequences: {c}\n")
         f.write(f"Total number of clusters: {len(clusters.keys())}\n")
-    print("")
 
             
 def parse_fasta(protein_fasta):
