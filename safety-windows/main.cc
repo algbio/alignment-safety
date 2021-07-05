@@ -14,6 +14,7 @@
 int print_usage(char **argv, int help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile> [OPTION...]\n\n";
 	std::cout << "\t-a, --alpha\tFloating value, choose edges that appear in (alpha*100)% of all\n\t            \t(sub-)optimal paths in the alpha-safe path. (Default: 0.75)\n";
+	std::cout << "\t-c, --costmat\tReads the aligning cost of two symbols from a text file. The text file is a lower triangular matrix with 20 lines. (Default: BLOSUM62)\n";
 	std::cout << "\t-d, --gapcost\tInteger, set the cost of aligning a character to a gap. (Default: 1)\n";
 	std::cout << "\t-e, --startgap\tInteger, set the cost of starting a gap alignment. (Default: 11)\n";
 	std::cout << "\t-g, --threshold\tFloating value, set the treshold for suboptimality. (Default: 1.0, Range: [1.0,infinity))\n";
@@ -45,9 +46,10 @@ int main(int argc, char **argv) {
 
 	int GAP_COST = 1;
 	int START_GAP = 11;
-	std::string file;
+	std::string file, cost_matrix_file;
 	bool help_flag = false;
 	bool read_file = false;
+	bool read_cost_matrix = false;
 
 	int c;
 	while (1) {
@@ -55,6 +57,7 @@ int main(int argc, char **argv) {
 		static struct option long_options[] = {
 			{ "verbose", no_argument, &verbose_flag, 1 }, // this does nothing for now
 			{ "alpha", required_argument, 0, 'a' },
+			{ "costmat", required_argument, 0, 'c' },
 			{ "gapcost", required_argument, 0, 'd' },
 			{ "startgap", required_argument, 0, 'e' },
 			{ "threshold", required_argument, 0, 'g' },
@@ -64,13 +67,16 @@ int main(int argc, char **argv) {
 		};
 	
 		int option_index = 0;
-		c = getopt_long(argc, argv, "a:d:e:g:f:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "a:c:d:e:g:f:h", long_options, &option_index);
 		if (c == -1) break;
 
 		switch (c) {
 			case 'a':
 				alpha = std::stof(optarg);
 				break;
+			case 'c':
+				read_cost_matrix = true;
+				cost_matrix_file = optarg;
 			case 'd':
 				GAP_COST = atoi(optarg);
 				break;
@@ -109,6 +115,39 @@ int main(int argc, char **argv) {
 		std::cerr << "Warning: Threshold behavior not deifned in case OPT is negative.\n";
 	}
 
+	// BLOSUM62 matrix
+	int cost_matrix[20][20] = {
+		// Ala  Arg  Asn  Asp  Cys  Gln  Glu  Gly  His  Ile  Leu  Lys  Met  Phe  Pro  Ser  Thr  Trp  Tyr  Val
+		{  -4,   1,   2,   2,   0,   1,   1,   0,   2,   1,   1,   1,   1,   2,   1,  -1,   0,   3,   2,   0 }, // Ala
+		{   1,  -5,   0,   2,   3,  -1,   0,   2,   0,   3,   2,  -2,   1,   3,   2,   1,   1,   3,   2,   3 }, // Arg
+		{   2,   0,  -6,  -1,   3,   0,   0,   0,  -1,   3,   3,   0,   2,   3,   2,  -1,   0,   4,   2,   3 }, // Asn
+		{   2,   2,  -1,  -6,   3,   0,  -2,   1,   1,   3,   4,   1,   3,   3,   1,   0,   1,   4,   3,   3 }, // Asp
+		{   0,   3,   3,   3,  -9,   3,   4,   3,   3,   1,   1,   3,   1,   2,   3,   1,   1,   2,   2,   1 }, // Cys
+		{   1,  -1,   0,   0,   3,  -5,  -2,   2,   0,   3,   2,  -1,   0,   3,   1,   0,   1,   2,   1,   2 }, // Gln
+		{   1,   0,   0,  -2,   4,  -2,  -5,   2,   0,   3,   3,  -1,   2,   3,   1,   0,   1,   3,   2,   2 }, // Glu
+		{   0,   2,   0,   1,   3,   2,   2,  -6,   2,   4,   4,   2,   3,   3,   2,   0,   2,   2,   3,   3 }, // Gly
+		{   2,   0,  -1,   1,   3,   0,   0,   2,  -8,   3,   3,   1,   2,   1,   2,   1,   2,   2,  -2,   3 }, // His
+		{   1,   3,   3,   3,   1,   3,   3,   4,   3,  -4,  -2,   3,  -1,   0,   3,   2,   1,   3,   1,  -3 }, // Ile
+		{   1,   2,   3,   4,   1,   2,   3,   4,   3,  -2,  -4,   2,  -2,   0,   3,   2,   1,   2,   1,  -1 }, // Leu
+		{   1,  -2,   0,   1,   3,  -1,  -1,   2,   1,   3,   2,  -5,   1,   3,   1,   0,   1,   3,   2,   2 }, // Lys
+		{   1,   1,   2,   3,   1,   0,   2,   3,   2,  -1,  -2,   1,  -5,   0,   2,   1,   1,   1,   1,  -1 }, // Met
+		{   2,   3,   3,   3,   2,   3,   3,   3,   1,   0,   0,   3,   0,  -6,   4,   2,   2,  -1,  -3,   1 }, // Phe
+		{   1,   2,   2,   1,   3,   1,   1,   2,   2,   3,   3,   1,   2,   4,  -7,   1,   1,   4,   3,   2 }, // Pro
+		{  -1,   1,  -1,   0,   1,   0,   0,   0,   1,   2,   2,   0,   1,   2,   1,  -4,  -1,   3,   2,   2 }, // Ser
+		{   0,   1,   0,   1,   1,   1,   1,   2,   2,   1,   1,   1,   1,   2,   1,  -1,  -5,   2,   2,   0 }, // Thr
+		{   3,   3,   4,   4,   2,   2,   3,   2,   2,   3,   2,   3,   1,  -1,   4,   3,   2,  -11, -2,   3 }, // Trp
+		{   2,   2,   2,   3,   2,   1,   2,   3,  -2,   1,   1,   2,   1,  -3,   3,   2,   2,  -2,  -7,   1 }, // Tyr
+		{   0,   3,   3,   3,   1,   2,   2,   3,   3,  -3,  -1,   2,  -1,   1,   2,   2,   0,   3,   1,  -4 }, // Val
+	};
+
+	if (read_cost_matrix) {
+		std::ifstream costmat(cost_matrix_file);
+		for (int i = 0; i < 20; i++) for (int j = 0; j <= i; j++) {
+			costmat >> cost_matrix[i][j];
+			cost_matrix[j][i] = cost_matrix[i][j];
+		}
+	}
+
 	std::ifstream input(file);
 	std::vector<Protein> proteins;
 	for (std::string line; std::getline(input, line); ) {
@@ -130,7 +169,7 @@ int main(int argc, char **argv) {
 		const std::string &b = proteins[i].sequence;
 		std::cout << i << ' ' << b << ' ';
 
-		Dag d = gen_dag(a, b, TH, GAP_COST, START_GAP);
+		Dag d = gen_dag(a, b, cost_matrix, TH, GAP_COST, START_GAP);
 		std::vector<std::vector<int>> adj = d.adj;
 		int k = (int) adj.size();
 
