@@ -26,7 +26,7 @@ def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
     for key in list(clusters.keys()):
         if min_size > len(clusters[key]) or len(clusters[key]) > max_size:
             del clusters[key]
-            
+
     if not use_taxids:
         for key in clusters.keys():
             for prot in clusters[key]:
@@ -96,6 +96,8 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             continue
         id, sequence = parse_fasta(protein_fasta)
         if id in key_map.keys() and id != key_map[id]:
+            if(sequence.count("X") > 0):
+                continue
             cluster_id = key_map[id]
             cleaned = cluster_id.split("|")[1]
             c += 1

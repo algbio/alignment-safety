@@ -10,6 +10,7 @@ MIN_IDENTITY = config["min_identity"]
 CLUSTER_ALGO = config["clustering_algorithm"]
 CLUSTER_SENSITIVITY = config["sensitivity"]
 FAMILY_DB = config["family_db"]
+FAMILY_PROFILE = FAMILY_DB.replace("seed", "hmm")
 SAFETY_PATH = config["safety"]
 
 
@@ -26,14 +27,14 @@ def agg_input(wildcards):
     CLUSTER_IDS, = glob_wildcards(os.path.join(checkpoint_output, "{id}.clean.fasta"))
     a = expand(os.path.join(WORK_DIR, "clean", "{i}.clean.fasta"), i=CLUSTER_IDS)
     return a
-
+#Q09FY5
 rule all:
     input:
         expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS),
-        expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS),
-        expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "phmmer", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS),
+        # expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS),
+        # expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS),
 
 rule safe:
     input:
@@ -44,6 +45,7 @@ rule:
         fasta = os.path.join(WORK_DIR, "fasta", "{id}.fasta")
     output:
         os.path.join(WORK_DIR, "safety", "{id}.out")
+
     shell:
         "{SAFETY_PATH}/main -f {input.fasta} > {output}"
 
@@ -66,12 +68,16 @@ rule hmmscan:
 
 rule:
     input:
-        db = FAMILY_DB,
+        FAMILY_PROFILE + ".h3f",
+        FAMILY_PROFILE + ".h3i",
+        FAMILY_PROFILE + ".h3m",
+        FAMILY_PROFILE + ".h3p",
+        profile = FAMILY_PROFILE,
         fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")
     output:
         os.path.join(WORK_DIR, "hmmscan", "{id}.out")
     shell:
-        "{HMMER_PATH}/bin/hmmscan --tblout {output} --noali {input.db} {input.fasta} > /dev/null"
+        "{HMMER_PATH}/bin/hmmscan --tblout {output} --noali {input.profile} {input.fasta} > /dev/null"
 
 # search sequences agaianst a pfam domain database
 rule hmmscan_align:
@@ -80,12 +86,35 @@ rule hmmscan_align:
 
 rule:
     input:
-        db = FAMILY_DB,
+        FAMILY_PROFILE + ".h3f",
+        FAMILY_PROFILE + ".h3i",
+        FAMILY_PROFILE + ".h3m",
+        FAMILY_PROFILE + ".h3p",
+        profile = FAMILY_PROFILE,
         fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")
     output:
         os.path.join(WORK_DIR, "hmmscan_align", "{id}.out")
     shell:
-        "{HMMER_PATH}/bin/hmmscan -o {output} {input.db} {input.fasta}"
+        "{HMMER_PATH}/bin/hmmscan -o {output} {input.profile} {input.fasta}"
+
+rule:
+    input:
+        db = FAMILY_DB,
+    output:
+        profile = FAMILY_PROFILE
+    shell:
+        "{HMMER_PATH}/bin/hmmbuild {output.profile} {input.db}"
+
+rule:
+    input:
+        profile = FAMILY_PROFILE
+    output:
+        FAMILY_PROFILE + ".h3f",
+        FAMILY_PROFILE + ".h3i",
+        FAMILY_PROFILE + ".h3m",
+        FAMILY_PROFILE + ".h3p"
+    shell:
+        "{HMMER_PATH}/bin/hmmpress {input.profile}"
 
 # phmmer for all clusters
 rule phmmer:
