@@ -11,8 +11,8 @@
 #include "optimal_paths.h"
 
 // translate fasta file letters to amino acid symbols (see http://www.math.utep.edu/Faculty/mleung/bioinformatics/aacodon.html)
-//                    A  B  C  D  E   F  G  H  I   J   K   L   M  N   O   P  Q  R   S   T   U   V   W   X   Y  Z
-const int LTA[26] = { 0, 2, 4, 3, 6, 13, 7, 8, 9, -1, 11, 10, 12, 2, -1, 14, 5, 1, 15, 16, -1, 19, 17, -1, 18, 5 };
+//                    A   B  C  D  E   F  G  H  I   J   K   L   M  N   O   P  Q  R   S   T   U   V   W   X   Y   Z
+const int LTA[26] = { 0, 20, 4, 3, 6, 13, 7, 8, 9, -1, 11, 10, 12, 2, -1, 14, 5, 1, 15, 16, -1, 19, 17, -1, 18, 20 };
 
 std::vector<std::vector<std::vector<int>>>
 dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
@@ -53,7 +53,8 @@ dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 }
 
 std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const std::string &a,
-		const std::string &b, const int GAP_COST, const int START_GAP, const int cost_matrix[20][20]) {
+		const std::string &b, const int GAP_COST, const int START_GAP, const int cost_matrix[21][21],
+		int sign) {
 	int n = (int) a.size();
 	int m = (int) b.size();
 
@@ -62,25 +63,35 @@ std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const s
 			std::vector<std::vector<std::vector<Node>>>(m + 1,
 			std::vector<std::vector<Node>>(3)));
 	for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) {
-		if (LTA[a[i] - 'A'] == -1) {
-			std::cerr << "ERROR: WRONG CHARACTER in a string: " << a[i] << std::endl;
+		if (i < n) {
+			if (a[i] < 'A' || a[i] > 'Z') {
+				std::cerr << "ERROR: INVALID CHARACTER in the reference string: " << a[i] << std::endl;
+			}
+			if (LTA[a[i] - 'A'] == -1) {
+				std::cerr << "ERROR: WRONG CHARACTER in the reference string: " << a[i] << std::endl;
+			}
 		}
-		if (LTA[b[j] - 'A'] == -1) {
-			std::cerr << "ERROR: WRONG CHARACTER in b string: " << b[j] << std::endl;
+		if (j < m) {
+			if (b[j] < 'A' || b[j] > 'Z') {
+				std::cerr << "ERROR: INVALID CHARACTER in the comparing string: " << b[j] << std::endl;
+			}
+			if (LTA[b[j] - 'A'] == -1) {
+				std::cerr << "ERROR: WRONG CHARACTER in the comparing string: " << b[j] << std::endl;
+			}
 		}
 		if (i + 1 <= n && j + 1 <= m)
 			adj[i][j][0].push_back(Node(i + 1, j + 1, 0,
-					cost_matrix[LTA[a[i] - 'A']][LTA[b[j] - 'A']]));
+					sign * cost_matrix[LTA[a[i] - 'A']][LTA[b[j] - 'A']]));
 					//a[i] != b[j]));
 
 		if (i + 1 <= n) {
-			adj[i][j][0].push_back(Node(i + 1, j, 1, START_GAP + GAP_COST));
-			adj[i][j][1].push_back(Node(i + 1, j, 1, GAP_COST));
+			adj[i][j][0].push_back(Node(i + 1, j, 1, sign * (START_GAP + GAP_COST)));
+			adj[i][j][1].push_back(Node(i + 1, j, 1, sign * GAP_COST));
 		}
 
 		if (j + 1 <= m) {
-			adj[i][j][0].push_back(Node(i, j + 1, 2, START_GAP + GAP_COST));
-			adj[i][j][2].push_back(Node(i, j + 1, 2, GAP_COST));
+			adj[i][j][0].push_back(Node(i, j + 1, 2, sign * (START_GAP + GAP_COST)));
+			adj[i][j][2].push_back(Node(i, j + 1, 2, sign * GAP_COST));
 		}
 
 		adj[i][j][1].push_back(Node(i, j, 0, 0));
@@ -95,13 +106,15 @@ opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &ad
 	return dijkstra(adj, sn, sm);
 }
 
-Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[20][20],
+Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[21][21],
 		const mpq_class TH, const int GAP_COST, const int START_GAP) {
-	std::vector<std::vector<std::vector<std::vector<Node>>>> e = build_dp_matrix(a, b, GAP_COST, START_GAP, cost_matrix);
+	std::vector<std::vector<std::vector<std::vector<Node>>>> e = build_dp_matrix(a, b, GAP_COST, START_GAP, cost_matrix, 1);
 	int n = (int) e.size() - 1;
 	assert(n > 0);
 	int m = (int) e[0].size() - 1;
 	assert(m > 0);
+
+	// find smallest distances for each node
 	std::vector<std::vector<std::vector<std::vector<Node>>>> er(n + 1, std::vector<std::vector<std::vector<Node>>>(m + 1, std::vector<std::vector<Node>>(3)));
 	for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) for (int k = 0; k <= 2; k++) {
 		for (Node nxt: e[i][j][k])
@@ -112,8 +125,12 @@ Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[20
 	std::vector<std::vector<std::vector<int>>> dpr = opt_alignment(er, n, m);
 	assert(dp[n][m][0] == dpr[0][0][0]);
 
+	// find the largest distance
+	std::vector<std::vector<std::vector<std::vector<Node>>>> el = build_dp_matrix(a, b, GAP_COST, START_GAP, cost_matrix, -1);
+	const int WORST = (-1) * opt_alignment(el, 0, 0)[n][m][0];
+
 	const int OPT = dp[n][m][0];
-	std::vector<std::vector<int>> res;
+	assert(OPT <= WORST);
 	int current = 0;
 	std::vector<std::vector<int>> adj(1);
 	std::map<std::pair<int, int>, std::array<int, 3>> trans; // translate to index
@@ -132,15 +149,17 @@ Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[20
 		}
 	};
 
+	auto check_th = [&](const int k, const int OPT, const int WORST, mpq_class TH) {
+		return k == OPT;
+	};
+
 	for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) for (int k = 0; k <= 2; k++) {
-		if (dp[i][j][k] + dpr[i][j][k] > TH * OPT) continue;
+		if (!check_th(dp[i][j][k] + dpr[i][j][k], OPT, WORST, TH)) continue;
 		add_node(Node(i, j, k, 0));
 		for (const Node &nxt: e[i][j][k]) {
-			if (dp[nxt.N_index][nxt.M_index][nxt.type] + dpr[nxt.N_index][nxt.M_index][nxt.type] > TH * OPT) continue;
-			if (dpr[nxt.N_index][nxt.M_index][nxt.type] + dp[i][j][k] + nxt.cost <= TH * OPT) {
-				add_node(nxt);
-				adj[trans[std::make_pair(i, j)][k]].push_back(trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]);
-			}
+			if (!check_th(dp[nxt.N_index][nxt.M_index][nxt.type] + dpr[nxt.N_index][nxt.M_index][nxt.type], OPT, WORST, TH)) continue;
+			add_node(nxt);
+			adj[trans[std::make_pair(i, j)][k]].push_back(trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]);
 		}
 	}
 

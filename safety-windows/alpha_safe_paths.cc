@@ -11,8 +11,6 @@
 #include "optimal_paths.h"
 
 
-const double eps = 1e-6;
-
 // given a dag of optimal paths, find a path with almost safe (> alpha) paths
 
 std::vector<int> topsort(std::vector<std::vector<int>> &dag) {
