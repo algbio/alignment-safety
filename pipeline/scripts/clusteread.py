@@ -2,6 +2,7 @@ import sys
 import os
 import argparse
 from ete3 import NCBITaxa
+import random
 from taxtree import get_highest_taxonomic_id, read_cluster_ids
 
 
@@ -61,10 +62,15 @@ def mkdir(path):
         os.makedirs(path)
 
 # Separates all clusters
-def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size, max_size):
+def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size, max_size, n=-1):
     mkdir(os.path.join(clustering_path, "fasta"))
     mkdir(os.path.join(clustering_path, "clean"))
     mkdir(os.path.join(clustering_path, "refs"))
+
+    included = clusters.keys()
+    if n > 0:
+        included = random.sample(clusters.keys(), min(len(clusters.keys()), n))
+            
     with open(os.path.join(clustering_path, "info.txt"), "w") as f:
         f.write(f"Database: {db_filename}\n")
         f.write(f"Clustering parameters: {clustering_path}\n")
@@ -79,10 +85,10 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
     print("Writing reference sequences to fasta-files...")
     for protein_fasta in db_fasta:
         id, sequence = parse_fasta(protein_fasta)
-        if id in key_map.keys() and id == key_map[id]:
+        if id in included and id == key_map[id]:
             cleaned = id.split("|")[1]
             c += 1
-            sys.stdout.write("\r%d%%" % int(c * 100.0 / len(clusters.keys())))
+            sys.stdout.write("\r%d%%" % int(c * 100.0 / len(included)))
             with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "w") as out:
                 out.write(">" + protein_fasta + "\n")
             with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "w") as out:
@@ -95,13 +101,13 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
         if not protein_fasta:
             continue
         id, sequence = parse_fasta(protein_fasta)
-        if id in key_map.keys() and id != key_map[id]:
+        if id in key_map.keys() and key_map[id] in included and id != key_map[id]:
             if(sequence.count("X") > 0):
                 continue
             cluster_id = key_map[id]
             cleaned = cluster_id.split("|")[1]
             c += 1
-            sys.stdout.write("\r%d%%" % int(c * 100.0 / len(key_map.keys())))
+            # sys.stdout.write("\r%d%%" % int(c * 100.0 / len(key_map.keys())))
             with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
                 out.write(">" + protein_fasta + "\n")
             with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
@@ -109,7 +115,7 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
     print("")
     with open(os.path.join(clustering_path, "info.txt"), "a") as f:
         f.write(f"Total number of sequences: {c}\n")
-        f.write(f"Total number of clusters: {len(clusters.keys())}\n")
+        f.write(f"Total number of clusters: {len(included)}\n")
 
             
 def parse_fasta(protein_fasta):
@@ -186,7 +192,7 @@ def main(args):
         return
 
     if args.action == "a":
-        separate_clusters(clusters, key_map, args.db, "/".join(args.clusters.split("/")[:2]), args.min, args.max)
+        separate_clusters(clusters, key_map, args.db, "/".join(args.clusters.split("/")[:2]), args.min, args.max, args.n)
 
     elif args.action == "i":
         print(get_info(clusters))
@@ -233,6 +239,7 @@ if __name__ == '__main__':
     parser.add_argument("clusters", type=str, help="cluster file")
     parser.add_argument("--min", type=int, default=10, help="minimum size of the cluster {10}")
     parser.add_argument("--max", type=int, default=1000, help="maximum size of the cluster {1000}")
+    parser.add_argument("--n", type=int, default=-1, help="if specified, n-number of random clusters will be selected")
     parser.add_argument("--id", type=str, help="cluster id to separate")
     parser.add_argument("--taxid", action="store_true", help="TODO")
     args = parser.parse_args()
