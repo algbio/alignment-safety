@@ -158,8 +158,10 @@ Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[21
 		add_node(Node(i, j, k, 0));
 		for (const Node &nxt: e[i][j][k]) {
 			if (!check_th(dp[nxt.N_index][nxt.M_index][nxt.type] + dpr[nxt.N_index][nxt.M_index][nxt.type], OPT, WORST, TH)) continue;
-			add_node(nxt);
-			adj[trans[std::make_pair(i, j)][k]].push_back(trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]);
+			if (check_th(dpr[nxt.N_index][nxt.M_index][nxt.type] + dp[i][j][k] + nxt.cost, OPT, WORST, TH)) {
+				add_node(nxt);
+				adj[trans[std::make_pair(i, j)][k]].push_back(trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]);
+			}
 		}
 	}
 
