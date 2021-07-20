@@ -3,10 +3,11 @@ import os
 import argparse
 from ete3 import NCBITaxa
 import random
-from taxtree import get_highest_taxonomic_id, read_cluster_ids
+from taxtree import get_highest_taxonomic_id, read_cluster_taxids
 
 
 def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
+    mcl = ".mcl" in filename
     clusters = {}
     key_map = {}
     with open(filename, "r") as f:
@@ -16,6 +17,8 @@ def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
                 break
 
             names = line.split()
+            if names[1] == "-1":
+                continue
             # if cluster does not exist yet
             if not names[1] in clusters:
                 clusters[names[1]] = []
@@ -27,6 +30,11 @@ def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
     for key in list(clusters.keys()):
         if min_size > len(clusters[key]) or len(clusters[key]) > max_size:
             del clusters[key]
+    
+    if mcl:
+        for key in list(clusters.keys()):
+                new_key = clusters[key][0]
+                clusters[new_key] = clusters.pop(key)
 
     if not use_taxids:
         for key in clusters.keys():
@@ -36,9 +44,9 @@ def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
 
     
     ids_to_taxids = {}
-    ids_to_taxids = read_cluster_ids(db_file)
+    ids_to_taxids = read_cluster_taxids(db_file)
     ncbi = NCBITaxa()
-    tax_tree = ncbi.get_topology(ids_to_taxids.values(), intermediate_nodes=True)
+    tax_tree = ncbi.get_topology(ids_to_taxids.values(), intermediate_nodes=False)
     print(f"Reading taxonomic ids...")
     for key in list(clusters.keys()):
         taxids = [ids_to_taxids[_] for _ in clusters[key]]
@@ -239,9 +247,9 @@ if __name__ == '__main__':
     parser.add_argument("clusters", type=str, help="cluster file")
     parser.add_argument("--min", type=int, default=10, help="minimum size of the cluster {10}")
     parser.add_argument("--max", type=int, default=1000, help="maximum size of the cluster {1000}")
-    parser.add_argument("--n", type=int, default=-1, help="if specified, n-number of random clusters will be selected")
+    parser.add_argument("--n", type=int, default=-1, help="If specified, n-number of random clusters will be selected")
     parser.add_argument("--id", type=str, help="cluster id to separate")
-    parser.add_argument("--taxid", action="store_true", help="TODO")
+    parser.add_argument("--taxid", action="store_true", help="Reference will be chosen as the highest node in taxonomy tree")
     args = parser.parse_args()
     if check_args(parser, args):
         main(args)

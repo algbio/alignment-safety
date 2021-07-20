@@ -27,14 +27,14 @@ def agg_input(wildcards):
     CLUSTER_IDS, = glob_wildcards(os.path.join(checkpoint_output, "{id}.clean.fasta"))
     a = expand(os.path.join(WORK_DIR, "clean", "{i}.clean.fasta"), i=CLUSTER_IDS)
     return a
-#Q09FY5
+
 rule all:
     input:
         expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "phmmer", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS),
-        # expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS),
+        expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS),
 
 rule safe:
     input:

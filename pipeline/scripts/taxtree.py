@@ -57,7 +57,7 @@ def print_stats(tree):
         print(f"Rank: {key} : {rank_counts[key]}")
     
 
-def read_cluster_ids(filename):
+def read_cluster_taxids(filename):
     f = open(filename, "r")
     tax_dict = {}
     try:
@@ -81,5 +81,5 @@ if __name__ == '__main__':
         if(path[:2] == "./"):
             path = path[2:]
         cluster_name = path.split("/")[1].split(".")[0]
-        ids_to_taxid = read_cluster_ids(path)
+        ids_to_taxid = read_cluster_taxids(path)
         subtree()
