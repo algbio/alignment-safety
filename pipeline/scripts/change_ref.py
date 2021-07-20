@@ -11,7 +11,8 @@ import taxtree
 # remove all files inside a folder
 def rmf(paths):
     for path in paths:
-        for file in glob.glob(os.path.join(path, "/*")):
+        files = glob.glob(path + "/*")
+        for file in files:
             os.remove(file)
 
 def clean_column_ids(df, col):
@@ -33,18 +34,18 @@ def set_ref(path, ref):
                 continue
             f.write(">" + data[id] + "\n")
 
-    if path.contains("clean"):
+    if "clean" in path:
         ext = ".clean.fasta"
     else:
         ext = ".fasta"
-    os.rename(path, os.path.join("".join(path.split("/")[:-1]), ref, ext))
+    os.rename(path, os.path.join("/".join(path.split("/")[:-1]), ref + ext))
     return data[ref]
 
 def set_refs(path, ref, file_zip):
     set_ref(file_zip[0], ref)
     ref_fasta = set_ref(file_zip[1], ref)
     id, seq = clusteread.parse_fasta(ref_fasta)
-    with open(os.path.join(path, "/refs/", ref, ".ref.fasta"), "w") as f:
+    with open(os.path.join(path, "refs", ref + ".ref.fasta"), "w") as f:
         f.write(">" + id + "\n" + seq + "\n")
 
 def read_hmmsearch_score(path):
@@ -70,17 +71,21 @@ def read_pairwise_identities(path):
     ids = {}
 
     with open(path, "r") as f:
-        lines = f.read().split("\n")[1:]
-    for line in lines:
-        seq1 = line.split(r"\s+")[0].split("|")[1]
-        seq2 = line.split(r"\s+")[1].split("|")[1]
-        id_percentage = float(line.split(r"\s+")[2])
-        if not seq1 in ids.keys():
-            ids[seq1] = []
-        if not seq2 in ids.keys():
-            ids[seq2] = []
-        ids[seq1].append(id_percentage)
-        ids[seq2].append(id_percentage)
+        while True:
+            line = f.readline()
+            if not line:
+                break
+            if line[0] == "#":
+                continue
+            seq1 = line.split(r"\s+")[0].split("|")[1]
+            seq2 = line.split(r"\s+")[1].split("|")[1]
+            id_percentage = float(line.split(r"\s+")[2])
+            if not seq1 in ids.keys():
+                ids[seq1] = []
+            if not seq2 in ids.keys():
+                ids[seq2] = []
+            ids[seq1].append(id_percentage)
+            ids[seq2].append(id_percentage)
     return ids
 
 def find_highlow(ids):
@@ -105,11 +110,11 @@ def find_max(ids):
 
 def clustering(db, path):
     rmf([path + "/phmmer", path + "/refs"])
-    clusters_path = glob.glob(os.path.join(path, "/*.clusters"))[0]
+    clusters_path = glob.glob(os.path.join(path, "*.clusters"))[0]
     clusters, key_map = clusteread.read_clusters(db, clusters_path, 0, 100000, use_taxids=False)
     assert len(clusters) > 0, "No clusters found"
-    fasta_files = sorted(glob.glob(os.path.join(path, "/fasta/*")))
-    clean_files = sorted(glob.glob(os.path.join(path, "/clean/*")))
+    fasta_files = sorted(glob.glob(os.path.join(path, "fasta/*")))
+    clean_files = sorted(glob.glob(os.path.join(path, "clean/*")))
     files = zip(fasta_files, clean_files)
     for file_zip in files:
         with open(file_zip[0], "r") as f:
@@ -125,7 +130,7 @@ def highlow(path):
     clean_files = sorted(glob.glob(os.path.join(path, "/clean/*")))
     files = zip(fasta_files, clean_files, id_files)
     for file_zip in files:
-        ids, seq1, seq2 = read_pairwise_identities(file_zip[2])
+        ids = read_pairwise_identities(file_zip[2])
         reference = find_highlow(ids)
         set_refs(path, reference, file_zip)
 
@@ -137,7 +142,7 @@ def identity(path):
     clean_files = sorted(glob.glob(os.path.join(path, "/clean/*")))
     files = zip(fasta_files, clean_files, id_files)
     for file_zip in files:
-        ids, _, _ = read_pairwise_identities(file_zip[2])
+        ids = read_pairwise_identities(file_zip[2])
         reference = find_max(ids)
         set_refs(path, reference, file_zip)
 
@@ -156,13 +161,13 @@ def similarity(path):
 
 def taxonomy(path):
     rmf([path + "/phmmer", path + "/refs"])
-    fasta_files = sorted(glob.glob(os.path.join(path, "/fasta/*")))
-    clean_files = sorted(glob.glob(os.path.join(path, "/clean/*")))
+    fasta_files = sorted(glob.glob(path + "/fasta/*"))
+    clean_files = sorted(glob.glob(path + "/clean/*"))
     files = zip(fasta_files, clean_files)
     ncbi = NCBITaxa()
     for file_zip in files:
         reference = find_highest_taxid(ncbi, file_zip[0])
-        set_refs(path, reference, file_zip)
+        set_refs(path, reference.split("|")[1], file_zip)
 
 
 
@@ -170,7 +175,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("db", type=str, help="Database in fasta-format")
     parser.add_argument("path", type=str, help="Path to the cluster group directory")
-    # parser.add_argument("criterion", type=str, help="reference selection criterion: d(efault: first node in multi-step/mcl)/i(dentity)/h(mmsearch score)")
     parser.add_argument("--clustering", action="store_true", help="First node in multi-step/mcl")
     parser.add_argument("--identity", action="store_true", help="Highest mean pair-wise identity score")
     parser.add_argument("--highlow", action="store_true", help="Highest lowest pair-wise identity score")
@@ -185,3 +189,7 @@ if __name__ == '__main__':
         similarity(args.path)
     elif args.taxonomy:
         taxonomy(args.path)
+    elif args.highlow:
+        taxonomy(args.path)
+    else:
+        print("Reference criterion not specified. Use '-h' to list available criteria.")

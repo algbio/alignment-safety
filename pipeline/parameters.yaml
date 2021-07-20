@@ -1,0 +1,26 @@
+# download e.g. swiss protein db from: 
+# https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
+db_file: 'data/uniprot_sprot.fasta'
+# PFAM protein domain database from PFAM
+family_db: 'data/pfam/Pfam-A.seed' 
+diamond: './../../diamond-2.0.8'
+raxml: './../../raxml-ng'
+muscle: './../../muscle'
+hmmer: './../../hmmer-3.3.2'
+safety: './../safety-windows'
+# Minimum identity-% to report an alignment
+min_identity: '20'  # '10' - '100'
+# https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#sensitivity-modes
+#       id <= 25%    : --ultra-sensitive
+# 25% < id <= 40%    : --very-sensitive
+# 40% < id <= 90%    : --sensitive
+# 90% < id           : --fast
+# 'auto' : automatically chooses the treshhold based on the sensitivity table above
+sensitivity: 'auto'
+# multi-step or mcl
+clustering_algorithm: 'mcl'
+# Clusters smaller/bigger than these limits will not be considered
+cluster_min_size: '50'
+cluster_max_size: '10000'
+# Maximum number of clusters, will be chosen randomly if less than available clusters
+cluster_number: '100'

@@ -1,4 +1,4 @@
-configfile: 'snakemake.yaml'
+configfile: 'parameters.yaml'
 
 DB_FILE = config["db_file"]
 CLUSTER = ""
