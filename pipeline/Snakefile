@@ -13,6 +13,19 @@ FAMILY_DB = config["family_db"]
 FAMILY_PROFILE = FAMILY_DB.replace("seed", "hmm")
 SAFETY_PATH = config["safety"]
 
+if CLUSTER_SENSITIVITY == "auto":
+    min_id = int(MIN_IDENTITY)
+    if min_id <= 25:
+        CLUSTER_SENSITIVITY = "--ultra-sensitive"
+    elif min_id <= 40:
+        CLUSTER_SENSITIVITY = "--very-sensitive"
+    elif min_id <= 90:
+        CLUSTER_SENSITIVITY = "--sensitive"
+    elif 90 < min_id:
+        CLUSTER_SENSITIVITY = "--fast"
+    else:
+        assert False, "Error choosing the sensitivity"
+
 
 # removes path and file extension from filename
 def clean_filename(filename):
