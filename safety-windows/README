@@ -18,5 +18,14 @@ DAG, called alpha safe path, if alpha is chosen >= 50%.
 
 == How to run ==
 
-Compile with cmake or g++ (at least c++17). Run "./main -f <clusterfile>",
-clusterfile documentation: https://www.uniprot.org/help/fasta-headers
+Compile with cmake or g++ (at least c++17), and import the GMP library.
+Run "./main -h" for help, clusterfile documentation: https://www.uniprot.org/help/fasta-headers
+GMP library: https://gmplib.org
+
+== Output ==
+0 S // S is the reference sequence, which is the first sequence in the cluster file
+K   // K is the number of sequences in the cluster
+// For each K - 1 sequences in the cluster file other than 0:
+i T M // i is the current sequence index, T is the current sequence string, M is the number of safety windows
+// M lines
+Li Ri L'i R'i // Li and Ri is the safety window corresponding to the reference sequence, L'i and R'i is the safety window corresponding to T

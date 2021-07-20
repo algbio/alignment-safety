@@ -29,12 +29,12 @@ dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 
 // Construct alignment paths
 std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const std::string &a,
-		const std::string &b, const int GAP_COST, const int START_GAP, const int cost_matrix[20][20]);
+		const std::string &b, const int GAP_COST, const int START_GAP, const int cost_matrix[21][21]);
 
 // Construct optimal alignment score matrix
 std::vector<std::vector<std::vector<int>>>
 opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj, int sn, int sm);
 
 // Find the sub-graph of the alignment paths with (sub-)optimal paths
-Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[20][20], 
+Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[21][21], 
 		const mpq_class TH = 1.0, const int GAP_COST = 1, const int START_GAP = 11); // BLOSUM62 costs

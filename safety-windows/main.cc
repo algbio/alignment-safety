@@ -17,7 +17,7 @@ int print_usage(char **argv, int help) {
 	std::cout << "\t-c, --costmat\tReads the aligning cost of two symbols from a text file. The text file is a lower triangular matrix with 20 lines. (Default: BLOSUM62)\n";
 	std::cout << "\t-d, --gapcost\tInteger, set the cost of aligning a character to a gap. (Default: 1)\n";
 	std::cout << "\t-e, --startgap\tInteger, set the cost of starting a gap alignment. (Default: 11)\n";
-	std::cout << "\t-g, --threshold\tFloating value, set the treshold for suboptimality. (Default: 1.0, Range: [1.0,infinity))\n";
+	//std::cout << "\t-g, --threshold\tFloating value, set the treshold for suboptimality. (Default: 0.0, Range: [0.0, 1.0])\n";
 	std::cout << "\t-h, --help\tShows this help message.\n";
 	return help;
 }
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 	std::cerr << std::fixed << std::setprecision(10); // debug output
 	std::cout << std::fixed << std::setprecision(10); // debug output
 
-	mpq_class alpha = 0.75, TH = 1;
+	mpq_class alpha = 0.75, TH = 0;
 
 	/*
 	std::string a = "EBCDE";
@@ -60,14 +60,14 @@ int main(int argc, char **argv) {
 			{ "costmat", required_argument, 0, 'c' },
 			{ "gapcost", required_argument, 0, 'd' },
 			{ "startgap", required_argument, 0, 'e' },
-			{ "threshold", required_argument, 0, 'g' },
+			//{ "threshold", required_argument, 0, 'g' },
 			{ "file", required_argument, 0, 'f' },
 			{ "help", no_argument, 0, 'h' },
 			{ 0, 0, 0, 0 }
 		};
 	
 		int option_index = 0;
-		c = getopt_long(argc, argv, "a:c:d:e:g:f:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "a:c:d:e:f:h", long_options, &option_index);
 		if (c == -1) break;
 
 		switch (c) {
@@ -111,33 +111,30 @@ int main(int argc, char **argv) {
 		std::cerr << "Warning: for alpha values < 0.5, the program will not behave well defined and might crash.\n";
 	}
 
-	if (abs(TH - 1.0) > 0.00001) {
-		std::cerr << "Warning: Threshold behavior not deifned in case OPT is negative.\n";
-	}
-
 	// BLOSUM62 matrix
-	int cost_matrix[20][20] = {
-		// Ala  Arg  Asn  Asp  Cys  Gln  Glu  Gly  His  Ile  Leu  Lys  Met  Phe  Pro  Ser  Thr  Trp  Tyr  Val
-		{  -4,   1,   2,   2,   0,   1,   1,   0,   2,   1,   1,   1,   1,   2,   1,  -1,   0,   3,   2,   0 }, // Ala
-		{   1,  -5,   0,   2,   3,  -1,   0,   2,   0,   3,   2,  -2,   1,   3,   2,   1,   1,   3,   2,   3 }, // Arg
-		{   2,   0,  -6,  -1,   3,   0,   0,   0,  -1,   3,   3,   0,   2,   3,   2,  -1,   0,   4,   2,   3 }, // Asn
-		{   2,   2,  -1,  -6,   3,   0,  -2,   1,   1,   3,   4,   1,   3,   3,   1,   0,   1,   4,   3,   3 }, // Asp
-		{   0,   3,   3,   3,  -9,   3,   4,   3,   3,   1,   1,   3,   1,   2,   3,   1,   1,   2,   2,   1 }, // Cys
-		{   1,  -1,   0,   0,   3,  -5,  -2,   2,   0,   3,   2,  -1,   0,   3,   1,   0,   1,   2,   1,   2 }, // Gln
-		{   1,   0,   0,  -2,   4,  -2,  -5,   2,   0,   3,   3,  -1,   2,   3,   1,   0,   1,   3,   2,   2 }, // Glu
-		{   0,   2,   0,   1,   3,   2,   2,  -6,   2,   4,   4,   2,   3,   3,   2,   0,   2,   2,   3,   3 }, // Gly
-		{   2,   0,  -1,   1,   3,   0,   0,   2,  -8,   3,   3,   1,   2,   1,   2,   1,   2,   2,  -2,   3 }, // His
-		{   1,   3,   3,   3,   1,   3,   3,   4,   3,  -4,  -2,   3,  -1,   0,   3,   2,   1,   3,   1,  -3 }, // Ile
-		{   1,   2,   3,   4,   1,   2,   3,   4,   3,  -2,  -4,   2,  -2,   0,   3,   2,   1,   2,   1,  -1 }, // Leu
-		{   1,  -2,   0,   1,   3,  -1,  -1,   2,   1,   3,   2,  -5,   1,   3,   1,   0,   1,   3,   2,   2 }, // Lys
-		{   1,   1,   2,   3,   1,   0,   2,   3,   2,  -1,  -2,   1,  -5,   0,   2,   1,   1,   1,   1,  -1 }, // Met
-		{   2,   3,   3,   3,   2,   3,   3,   3,   1,   0,   0,   3,   0,  -6,   4,   2,   2,  -1,  -3,   1 }, // Phe
-		{   1,   2,   2,   1,   3,   1,   1,   2,   2,   3,   3,   1,   2,   4,  -7,   1,   1,   4,   3,   2 }, // Pro
-		{  -1,   1,  -1,   0,   1,   0,   0,   0,   1,   2,   2,   0,   1,   2,   1,  -4,  -1,   3,   2,   2 }, // Ser
-		{   0,   1,   0,   1,   1,   1,   1,   2,   2,   1,   1,   1,   1,   2,   1,  -1,  -5,   2,   2,   0 }, // Thr
-		{   3,   3,   4,   4,   2,   2,   3,   2,   2,   3,   2,   3,   1,  -1,   4,   3,   2,  -11, -2,   3 }, // Trp
-		{   2,   2,   2,   3,   2,   1,   2,   3,  -2,   1,   1,   2,   1,  -3,   3,   2,   2,  -2,  -7,   1 }, // Tyr
-		{   0,   3,   3,   3,   1,   2,   2,   3,   3,  -3,  -1,   2,  -1,   1,   2,   2,   0,   3,   1,  -4 }, // Val
+	int cost_matrix[21][21] = {
+		// Ala  Arg  Asn  Asp  Cys  Gln  Glu  Gly  His  Ile  Leu  Lys  Met  Phe  Pro  Ser  Thr  Trp  Tyr  Val  Def
+		{  -4,   1,   2,   2,   0,   1,   1,   0,   2,   1,   1,   1,   1,   2,   1,  -1,   0,   3,   2,   0,   1 }, // Ala
+		{   1,  -5,   0,   2,   3,  -1,   0,   2,   0,   3,   2,  -2,   1,   3,   2,   1,   1,   3,   2,   3,   1 }, // Arg
+		{   2,   0,  -6,  -1,   3,   0,   0,   0,  -1,   3,   3,   0,   2,   3,   2,  -1,   0,   4,   2,   3,   1 }, // Asn
+		{   2,   2,  -1,  -6,   3,   0,  -2,   1,   1,   3,   4,   1,   3,   3,   1,   0,   1,   4,   3,   3,   1 }, // Asp
+		{   0,   3,   3,   3,  -9,   3,   4,   3,   3,   1,   1,   3,   1,   2,   3,   1,   1,   2,   2,   1,   1 }, // Cys
+		{   1,  -1,   0,   0,   3,  -5,  -2,   2,   0,   3,   2,  -1,   0,   3,   1,   0,   1,   2,   1,   2,   1 }, // Gln
+		{   1,   0,   0,  -2,   4,  -2,  -5,   2,   0,   3,   3,  -1,   2,   3,   1,   0,   1,   3,   2,   2,   1 }, // Glu
+		{   0,   2,   0,   1,   3,   2,   2,  -6,   2,   4,   4,   2,   3,   3,   2,   0,   2,   2,   3,   3,   1 }, // Gly
+		{   2,   0,  -1,   1,   3,   0,   0,   2,  -8,   3,   3,   1,   2,   1,   2,   1,   2,   2,  -2,   3,   1 }, // His
+		{   1,   3,   3,   3,   1,   3,   3,   4,   3,  -4,  -2,   3,  -1,   0,   3,   2,   1,   3,   1,  -3,   1 }, // Ile
+		{   1,   2,   3,   4,   1,   2,   3,   4,   3,  -2,  -4,   2,  -2,   0,   3,   2,   1,   2,   1,  -1,   1 }, // Leu
+		{   1,  -2,   0,   1,   3,  -1,  -1,   2,   1,   3,   2,  -5,   1,   3,   1,   0,   1,   3,   2,   2,   1 }, // Lys
+		{   1,   1,   2,   3,   1,   0,   2,   3,   2,  -1,  -2,   1,  -5,   0,   2,   1,   1,   1,   1,  -1,   1 }, // Met
+		{   2,   3,   3,   3,   2,   3,   3,   3,   1,   0,   0,   3,   0,  -6,   4,   2,   2,  -1,  -3,   1,   1 }, // Phe
+		{   1,   2,   2,   1,   3,   1,   1,   2,   2,   3,   3,   1,   2,   4,  -7,   1,   1,   4,   3,   2,   1 }, // Pro
+		{  -1,   1,  -1,   0,   1,   0,   0,   0,   1,   2,   2,   0,   1,   2,   1,  -4,  -1,   3,   2,   2,   1 }, // Ser
+		{   0,   1,   0,   1,   1,   1,   1,   2,   2,   1,   1,   1,   1,   2,   1,  -1,  -5,   2,   2,   0,   1 }, // Thr
+		{   3,   3,   4,   4,   2,   2,   3,   2,   2,   3,   2,   3,   1,  -1,   4,   3,   2,  -11, -2,   3,   1 }, // Trp
+		{   2,   2,   2,   3,   2,   1,   2,   3,  -2,   1,   1,   2,   1,  -3,   3,   2,   2,  -2,  -7,   1,   1 }, // Tyr
+		{   0,   3,   3,   3,   1,   2,   2,   3,   3,  -3,  -1,   2,  -1,   1,   2,   2,   0,   3,   1,  -4,   1 }, // Val
+		{   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1 },
 	};
 
 	if (read_cost_matrix) {
@@ -171,7 +168,6 @@ int main(int argc, char **argv) {
 
 		Dag d = gen_dag(a, b, cost_matrix, TH, GAP_COST, START_GAP);
 		std::vector<std::vector<int>> adj = d.adj;
-		int k = (int) adj.size();
 
 		std::vector<std::vector<mpq_class>> ratios = path_ratios(d);
 
@@ -185,7 +181,7 @@ int main(int argc, char **argv) {
 		std::vector<mpq_class> r = find_ratios(path, adj, ratios);
 		std::vector<std::pair<int, int>> windows_tmp = safety_windows(r, path, alpha);
 
-		std::vector<std::pair<int, int>> windows;
+		std::vector<std::pair<int, int>> windows, windowsp;
 		auto outside = [&](const int &L, const int &R) {
 			if (windows.empty()) return false;
 			auto [bL, bR] = windows.back();
@@ -201,55 +197,19 @@ int main(int argc, char **argv) {
 		for (int i = 0; i < (int) windows_tmp.size(); i++) {
 			auto [LT, RT] = windows_tmp[i];
 			int L = transr[LT].first, R = transr[RT].first;
-			while (outside(L, R)) windows.pop_back();
-			if (!inside(L, R)) windows.emplace_back(L, R);
+			int Lp = transr[LT].second, Rp = transr[RT].second;
+			/*while (outside(L, R)) windows.pop_back();
+			if (!inside(L, R)) windows.emplace_back(L, R);*/
+			windows.emplace_back(L, R);
+			windowsp.emplace_back(Lp, Rp);
 		}
 
 
-		std::cout << windows.size();
-		for (auto [x, y]: windows) {
-			std::cout << ' ' << x << ' ' << y;
+		std::cout << windows.size() << '\n';;
+		for (int i = 0; i < (int) windows.size(); i++) {
+			auto [x, y] = windows[i];
+			auto [xp, yp] = windowsp[i];
+			std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';;
 		}
-		std::cout << '\n';
 	}
-
-
-	
-	/*
-	// test implementations
-	int n = 6;
-	std::vector<std::vector<int>> dag(n);
-	dag[0] = { 4 };
-	dag[1] = { 5 };
-	dag[2] = { 1 };
-	dag[3] = { 2 };
-	dag[4] = { 3 };
-
-	std::vector<int> sorted = topsort(dag);
-	for (int v: sorted) std::cerr << v << ' ';
-	std::cerr << std::endl;
-
-	std::vector<int> paths = amount_paths(dag, 5);
-
-	std::vector<std::vector<double>> ratios = path_ratios(dag);
-
-	// test find_path function
-	std::vector<int> path;
-	std::vector<int> order(n);
-	for (int i = 0; i < n; i++) order[sorted[i]] = i;
-	find_path(2, 5, path, dag, order);
-
-	// test find_alpha_path function
-	std::cout << "\nFinal alpha safe path:\n";
-	path = find_alpha_path(dag, ratios, alpha);
-	for (int v: path) std::cout << v << ' ';
-	std::cout << '\n';
-
-	// Calculate the safety windows
-	std::cout << "Safety intervals:\n";
-	std::vector<double> rat_path = find_ratios(path, dag, ratios);
-	std::vector<std::pair<int, int>> windows = safety_windows(dag, path, rat_path, alpha);
-	for (auto [x,y]: windows) {
-		std::cout << x << ' ' << y << '\n';
-	}*/
 }
