@@ -92,3 +92,7 @@ conda activate pipeline
     Runs `hmmscan` on all clusters. Outputs to `WORK_DIR/hmmscan/`.
 - `phmmer`<br/>
     Runs `phmmer` on all clusters. Outputs to `WORK_DIR/phmmer/`.
+    
+---
+
+Hmmer documentation: <http://eddylab.org/software/hmmer/Userguide.pdf>
