@@ -78,6 +78,12 @@ conda activate pipeline
 - `snakemake -j n separate_clusters`
     `n`: number of parallel processes.
     Clusters the database and separates clusters satisfying the treshholds to `WORK_DIR/`
+- `WORK_DIR/fasta/`
+    Each fasta-file corresponds to one cluster. Name of the file as well as the first sequence in the file is the reference sequence of that cluster.
+- `WORK_DIR/clean/`
+    Same as `fasta/`, but fasta sequences are cleaned with no additional information, such as taxonomic id. Needed for some programs, such as Muscle.
+- `WORK_DIR/refs/`
+    One file containing each cluster's reference sequence in fasta-format. Needed for `phmmer`.
 #### 3. Run all rules or some specific rule:
     snakemake -j n rule
 - `all`<br/>
