@@ -74,6 +74,12 @@ conda activate pipeline
 - `cluster_number`<br/>
     If less than available clusters, `cluster_number` amount of clusters will be chosen randomly to include.<br/>
     Speeds up debugging/testing.
+- `ref_criterion`<br/>
+    * `--clustering` - default, depends on clustering: mcl or multi-step
+    * `--identity` - Highest mean pair-wise identity score
+    * `--highlow` - Highest lowest pair-wise identity score
+    * `--similarity` - Highest hmmsearch score (i.e. most similar sequence to the MSA of the cluster)
+    * `--taxonomy` - Highest node in taxonomic tree
 #### 2. Run `separate_clusters` snakemake rule:
     snakemake -j n separate_clusters
 - `n`<br/>
