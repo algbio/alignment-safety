@@ -3,6 +3,7 @@
 - Raxml-ng  https://github.com/amkozlov/raxml-ng
 - Muscle    http://www.drive5.com/muscle/
 - ete3      https://github.com/etetoolkit/ete
+- Hmmer     https://github.com/EddyRivasLab/hmmer
 
 Compile Diamond from source:
 ```
@@ -21,6 +22,16 @@ cd raxml-ng
 mkdir build
 cd build
 cmake ..
+make
+```
+
+Compile Hmmer and easel from source:
+```
+git clone https://github.com/EddyRivasLab/hmmer
+cd hmmer-3.3.2
+./configure --prefix=./
+make
+cd easel
 make
 ```
 
