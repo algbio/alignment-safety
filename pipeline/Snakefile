@@ -12,6 +12,7 @@ CLUSTER_SENSITIVITY = config["sensitivity"]
 FAMILY_DB = config["family_db"]
 FAMILY_PROFILE = FAMILY_DB.replace("seed", "hmm")
 SAFETY_PATH = config["safety"]
+REF_CRITERION = config["ref_criterion"]
 
 if CLUSTER_SENSITIVITY == "auto":
     min_id = int(MIN_IDENTITY)
@@ -52,6 +53,32 @@ rule all:
 rule safe:
     input:
         expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS)
+
+# def get_ref_reqs(a):
+#     if REF_CRITERION == "--identity" or REF_CRITERION == "--highlow":
+#         return expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS),
+#     elif REF_CRITERION == "--similarity":
+#         return expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS),
+#     return ""
+
+def get_ref_reqs():
+    if REF_CRITERION == "--identity" or REF_CRITERION == "--highlow":
+        return "id"
+    elif REF_CRITERION == "--similarity":
+        return "hmmsearch"
+    return ""
+
+rule change_ref:
+    input:
+        db = DB_FILE,
+        path = WORK_DIR,
+        r = WORK_DIR + "/id",
+        r2 = WORK_DIR + "/hmmsearch",
+    output:
+        temp(os.path.join(WORK_DIR, "validate_ref.txt"))
+    shell:
+        "python3 scripts/change_ref.py {input.db} {input.path} {REF_CRITERION} > {output}"
+
 
 rule:
     input:

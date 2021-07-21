@@ -9,7 +9,7 @@ muscle: './../../muscle'
 hmmer: './../../hmmer-3.3.2'
 safety: './../safety-windows'
 # Minimum identity-% to report an alignment
-min_identity: '20'  # '10' - '100'
+min_identity: '90'  # '10' - '100'
 # https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#sensitivity-modes
 #       id <= 25%    : --ultra-sensitive
 # 25% < id <= 40%    : --very-sensitive
@@ -18,9 +18,16 @@ min_identity: '20'  # '10' - '100'
 # 'auto' : automatically chooses the treshhold based on the sensitivity table above
 sensitivity: 'auto'
 # multi-step or mcl
-clustering_algorithm: 'mcl'
+clustering_algorithm: 'multi-step'
 # Clusters smaller/bigger than these limits will not be considered
 cluster_min_size: '50'
 cluster_max_size: '10000'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
 cluster_number: '100'
+# Reference criterion
+# "--clustering" - default, depends on clustering: mcl or multi-step
+# "--identity" - Highest mean pair-wise identity score
+# "--highlow" - Highest lowest pair-wise identity score
+# "--similarity" - Highest hmmsearch score (i.e. most similar sequence to the MSA of the cluster)
+# "--taxonomy" - Highest node in taxonomic tree, DB should contain taxonomic id as "OX=id"
+ref_criterion: '--highlow'

@@ -7,6 +7,7 @@ import pandas as pd
 
 import clusteread
 import taxtree
+from validate import validate_group
 
 # remove all files inside a folder
 def rmf(paths):
@@ -197,3 +198,4 @@ if __name__ == '__main__':
         highlow(args.path)
     else:
         print("Reference criterion not specified. Use '-h' to list available criteria.")
+    validate_group(args.path)
