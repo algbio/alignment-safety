@@ -63,3 +63,21 @@ conda activate pipeline
 - `cluster_number`<br/>
     If less than available clusters, `cluster_number` amount of clusters will be chosen randomly to include.<br/>
     Speeds up debugging/testing.
+#### 2. Run `separate_clusters` snakemake rule:
+- `snakemake -j n separate_clusters`
+    `n`: number of parallel processes.
+    Clusters the database and separates clusters satisfying the treshholds to `WORK_DIR/`
+#### 3. Run all rules or some specific rule:
+    snakemake -j n rule
+- `all`<br/>
+    Runs rules: `safe`, `identity`, `hmmsearch`, `hmmscan`, `phmmer` and their prerequisites.
+- `safe`<br/>
+    Runs Safety-Window-program on all clusters. Outputs to `WORK_DIR/safety/`.
+- `identity`<br/>
+    Runs `esl-alipid`-program on all clusters to calculate pairwise identities. Outputs to `WORK_DIR/id/`.
+- `hmmsearch`<br/>
+    Runs `hmmsearch` on all clusters. Outputs to `WORK_DIR/hmmsearch/`.
+- `hmmscan`<br/>
+    Runs `hmmscan` on all clusters. Outputs to `WORK_DIR/hmmscan/`.
+- `phmmer`<br/>
+    Runs `phmmer` on all clusters. Outputs to `WORK_DIR/phmmer/`.
