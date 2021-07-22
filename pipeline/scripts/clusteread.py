@@ -127,7 +127,7 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
 
             
 def parse_fasta(protein_fasta):
-    id = protein_fasta.split(" ")[0]
+    id = protein_fasta.split()[0]
     sequence = ''.join(protein_fasta.split("\n")[1:])
     return (id, sequence)
 
