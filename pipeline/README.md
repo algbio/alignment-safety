@@ -35,6 +35,9 @@ cd easel
 make
 ```
 
+Follow instruction for MMseqs2 installation (compilation from source recommended for better performance):
+<https://github.com/soedinglab/MMseqs2#installation>
+
 ete3 and snakemake via Conda environment
 ```
 conda env create -f environment.yaml
