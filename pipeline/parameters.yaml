@@ -8,6 +8,7 @@ raxml: './../../raxml-ng'
 muscle: './../../muscle'
 hmmer: './../../hmmer-3.3.2'
 safety: './../safety-windows'
+mmseqs: "./../../MMseqs2/bin/mmseqs"
 # Minimum identity-% to report an alignment
 min_identity: '90'  # '10' - '100'
 # https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#sensitivity-modes
@@ -17,8 +18,8 @@ min_identity: '90'  # '10' - '100'
 # 90% < id           : --fast
 # 'auto' : automatically chooses the treshhold based on the sensitivity table above
 sensitivity: 'auto'
-# multi-step or mcl
-clustering_algorithm: 'multi-step'
+# multi-step or mcl or mmseqs. multi-step and mcl uses DIAMOND. mmseqs uses MMseqs2.
+clustering_algorithm: 'mmseqs'
 # Clusters smaller/bigger than these limits will not be considered
 cluster_min_size: '50'
 cluster_max_size: '10000'

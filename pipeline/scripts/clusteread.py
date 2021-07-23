@@ -8,6 +8,9 @@ from taxtree import get_highest_taxonomic_id, read_cluster_taxids
 
 def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
     mcl = ".mcl" in filename
+    mmseqs = ".mmseqs" in filename
+    key_index = 0 if mmseqs else 1
+    val_index = 1 if mmseqs else 0
     clusters = {}
     key_map = {}
     with open(filename, "r") as f:
@@ -17,20 +20,19 @@ def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
                 break
 
             names = line.split()
-            if names[1] == "-1":
+            if names[key_index] == "-1":
                 continue
             # if cluster does not exist yet
-            if not names[1] in clusters:
-                clusters[names[1]] = []
+            if not names[key_index] in clusters:
+                clusters[names[key_index]] = []
             
-            clusters[names[1]].append(names[0])
+            clusters[names[key_index]].append(names[val_index])
     print(f"Total number of clusters in DB: {len(clusters.keys())}")
 
     # Delete clusters that dont fit min-max criteria
     for key in list(clusters.keys()):
         if min_size > len(clusters[key]) or len(clusters[key]) > max_size:
             del clusters[key]
-    
     if mcl:
         for key in list(clusters.keys()):
                 new_key = clusters[key][0]
@@ -246,7 +248,7 @@ if __name__ == '__main__':
     parser.add_argument("db", type=str, help="database in fasta-format")
     parser.add_argument("clusters", type=str, help="cluster file")
     parser.add_argument("--min", type=int, default=10, help="minimum size of the cluster {10}")
-    parser.add_argument("--max", type=int, default=1000, help="maximum size of the cluster {1000}")
+    parser.add_argument("--max", type=int, default=10000, help="maximum size of the cluster {1000}")
     parser.add_argument("--n", type=int, default=-1, help="If specified, n-number of random clusters will be selected")
     parser.add_argument("--id", type=str, help="cluster id to separate")
     parser.add_argument("--taxid", action="store_true", help="Reference will be chosen as the highest node in taxonomy tree")

@@ -12,6 +12,7 @@ CLUSTER_SENSITIVITY = config["sensitivity"]
 FAMILY_DB = config["family_db"]
 FAMILY_PROFILE = FAMILY_DB.replace("seed", "hmm")
 SAFETY_PATH = config["safety"]
+MMSEQS_PATH = config["mmseqs"]
 REF_CRITERION = config["ref_criterion"]
 
 if CLUSTER_SENSITIVITY == "auto":
@@ -218,7 +219,7 @@ rule:
 checkpoint separate_clusters:
     input:
         f"{DB_FILE}",
-        os.path.join(WORK_DIR, f"{DB_FILENAME}.clusters")
+        os.path.join(WORK_DIR, f"{DB_FILENAME}.{CLUSTER_ALGO}")
     output:
         os.path.join(WORK_DIR, "info.txt"),
         directory(os.path.join(WORK_DIR, "clean")),
@@ -231,33 +232,48 @@ checkpoint separate_clusters:
     shell:
         "python3 scripts/clusteread.py a {input} --n {params.n} --min {params.min_size} --max {params.max_size}"
 
+CLUSTER_REQS = ""
+if CLUSTER_ALGO == "mcl" or CLUSTER_ALGO == "multi-step":
+    CLUSTER_REQS = os.path.join("data", f"{DB_FILENAME}.dmnd")
+elif CLUSTER_ALGO == "mmseqs":
+    CLUSTER_REQS = os.path.join("data", "mmseqs", f"{DB_FILENAME}")
+
 # Generates diamond binary database for clustering
-rule diamond_bin_db:
+rule cluster_reqs:
     input:
         f"{DB_FILE}"
     output:
-        os.path.join("data", f"{DB_FILENAME}.dmnd")
-    shell:
-        "{DIAMOND_PATH}/bin/diamond makedb --in {input} -d {output}"
+        CLUSTER_REQS
+    run:
+        if CLUSTER_ALGO == "mcl" or CLUSTER_ALGO == "multi-step":
+            shell("{DIAMOND_PATH}/bin/diamond makedb --in {input} -d {output}")
+        elif CLUSTER_ALGO == "mmseqs":
+            shell("{MMSEQS_PATH} createdb {input} {output}")
 
 # Clustering
-rule diamond_cluster:
+rule cluster:
     input:
-        os.path.join("data", f"{DB_FILENAME}.dmnd")
+        CLUSTER_REQS
     output:
-        os.path.join(WORK_DIR, f"{DB_FILENAME}.clusters")
+        clu = os.path.join(WORK_DIR, f"{DB_FILENAME}.{CLUSTER_ALGO}"),
     params:
         identity=MIN_IDENTITY,
         algo=CLUSTER_ALGO,
         sens=CLUSTER_SENSITIVITY
-    shell:
-        "{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.identity} {params.sens} -d {input} -o {output}"
+    run:
+        if params.algo == "mcl" or params.algo == "multi-step":
+            shell("{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.identity} {params.sens} -d {input} -o {output}")
+        elif params.algo == "mmseqs":
+            params.identity = str(float(params.identity) / 100.0)
+            shell("{MMSEQS_PATH} cluster {input} {output} tmp --min-seq-id {params.identity}")  
+            shell("{MMSEQS_PATH} createtsv {input} {input} {output} {output}")      
+            
 
 # Prints some info about one cluster
 rule cluster_info:
     input:
         f"{DB_FILE}",
-        os.path.join(WORK_DIR, f"{DB_FILENAME}.clusters")
+        os.path.join(WORK_DIR, f"{DB_FILENAME}.{CLUSTER_ALGO}")
     params:
         cluster_name=CLUSTER
     shell:
@@ -267,7 +283,7 @@ rule cluster_info:
 rule separate_cluster:
     input:
         f"{DB_FILE}",
-        os.path.join(WORK_DIR, f"{DB_FILENAME}.clusters")
+        os.path.join(WORK_DIR, f"{DB_FILENAME}.{CLUSTER_ALGO}")
     output:
         os.path.join("out", f"{CLUSTER}.fasta"),
         os.path.join("out", f"{CLUSTER}.clean.fasta")

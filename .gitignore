@@ -12,3 +12,4 @@ CMakeFiles/
 cmake_install.cmake
 main
 __pycache__/
+tmp/
