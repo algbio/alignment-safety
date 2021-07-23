@@ -65,10 +65,10 @@ conda activate pipeline
 - `sensitivity`<br/>
     `auto`, or any of the DIAMOND sensitivity options: <https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#sensitivity-modes>
 - `clustering_algorithm`<br/>
-    `mcl` or `multi-step`
+    `mcl` (DIAMOND), `multi-step` (DIAMOND) or `mmseqs` (MMSeqs2).
 - `clustering_min_size`<br/>
     Treshhold of the minimum cluster size to include.<br/>
-    Warning: `< 20`, will produce large amount of files
+    Warning: `< 20`, will produce large amount of files.
 - `clustering_max_size`<br/>
     Treshhold of the maximum cluster size to include.
 - `cluster_number`<br/>
