@@ -12,7 +12,7 @@
 
 // translate fasta file letters to amino acid symbols (see http://www.math.utep.edu/Faculty/mleung/bioinformatics/aacodon.html)
 //                    A   B  C  D  E   F  G  H  I   J   K   L   M  N   O   P  Q  R   S   T   U   V   W   X   Y   Z
-const int LTA[26] = { 0, 20, 4, 3, 6, 13, 7, 8, 9, -1, 11, 10, 12, 2, -1, 14, 5, 1, 15, 16, -1, 19, 17, -1, 18, 20 };
+const int LTA[26] = { 0, 20, 4, 3, 6, 13, 7, 8, 9, -1, 11, 10, 12, 2, -1, 14, 5, 1, 15, 16, -1, 19, 17, 20, 18, 20 };
 
 std::vector<std::vector<std::vector<int>>>
 dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
