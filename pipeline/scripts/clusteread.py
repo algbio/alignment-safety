@@ -112,8 +112,8 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             continue
         id, sequence = parse_fasta(protein_fasta)
         if id in key_map.keys() and key_map[id] in included and id != key_map[id]:
-            if(sequence.count("X") > 0):
-                continue
+            # if(sequence.count("X") > 0):
+            #     continue
             cluster_id = key_map[id]
             cleaned = cluster_id.split("|")[1]
             c += 1

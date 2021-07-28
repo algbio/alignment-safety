@@ -122,7 +122,7 @@ def find_max(ids):
     return m_seqid
 
 def clustering(db, path):
-    rmf([path + "/phmmer", path + "/refs"])
+    rmf([path + "/phmmer", path + "/refs", path + "/safety"])
     clusters_path = glob.glob(os.path.join(path, "*.clusters"))[0]
     clusters, key_map = clusteread.read_clusters(db, clusters_path, 0, 100000, use_taxids=False)
     assert len(clusters) > 0, "No clusters found"
@@ -137,7 +137,7 @@ def clustering(db, path):
 
 # reqs: id/
 def highlow(path):
-    rmf([path + "/phmmer", path + "/refs"])
+    rmf([path + "/phmmer", path + "/refs", path + "/safety"])
     id_files = sorted(glob.glob(os.path.join(path, "id", "*")))
     fasta_files = sorted(glob.glob(os.path.join(path, "fasta", "*")))
     clean_files = sorted(glob.glob(os.path.join(path, "clean", "*")))
@@ -149,7 +149,7 @@ def highlow(path):
 
 # reqs: id/
 def identity(path):
-    rmf([path + "/phmmer", path + "/refs"])
+    rmf([path + "/phmmer", path + "/refs", path + "/safety"])
     id_files = sorted(glob.glob(os.path.join(path, "id", "*")))
     fasta_files = sorted(glob.glob(os.path.join(path, "fasta", "*")))
     clean_files = sorted(glob.glob(os.path.join(path, "clean", "*")))
@@ -161,7 +161,7 @@ def identity(path):
 
 # reqs: hmmsearch/
 def similarity(path):
-    rmf([path + "/phmmer", path + "/refs"])
+    rmf([path + "/phmmer", path + "/refs", path + "/safety"])
     hmms_files = sorted(glob.glob(os.path.join(path, "hmmsearch", "*")))
     fasta_files = sorted(glob.glob(os.path.join(path, "fasta", "*")))
     clean_files = sorted(glob.glob(os.path.join(path, "clean", "*")))
@@ -173,7 +173,7 @@ def similarity(path):
 
 
 def taxonomy(path):
-    rmf([path + "/phmmer", path + "/refs"])
+    rmf([path + "/phmmer", path + "/refs", path + "/safety"])
     fasta_files = sorted(glob.glob(path + "fasta", "*"))
     clean_files = sorted(glob.glob(path + "clean", "*"))
     files = zip(fasta_files, clean_files)
@@ -196,14 +196,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.clustering:
         clustering(args.db, args.path)
+        print("--clustering")
     elif args.identity:
         identity(args.path)
+        print("--identity")
     elif args.similarity:
         similarity(args.path)
+        print("--similarity")
     elif args.taxonomy:
         taxonomy(args.path)
+        print("--taxonomy")
     elif args.highlow:
         highlow(args.path)
+        print("--highlow")
     else:
         print("Reference criterion not specified. Use '-h' to list available criteria.")
     validate_group(args.path)

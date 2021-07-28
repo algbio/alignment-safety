@@ -83,7 +83,7 @@ rule change_ref:
 
 rule:
     input:
-        fasta = os.path.join(WORK_DIR, "fasta", "{id}.fasta")
+        fasta = ancient(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
     output:
         os.path.join(WORK_DIR, "safety", "{id}.out")
 
@@ -92,11 +92,11 @@ rule:
 
 rule identity:
     input:
-        expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS)
+        ancient(expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS))
 
 rule:
     input:
-        msa = os.path.join(WORK_DIR, "msa", "{id}.fasta")
+        msa = ancient(os.path.join(WORK_DIR, "msa", "{id}.fasta"))
     output:
         os.path.join(WORK_DIR, "id", "{id}.out")
     shell:
@@ -105,7 +105,7 @@ rule:
 # search sequences agaianst a pfam domain database
 rule hmmscan:
     input:
-        expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS)
+        ancient(expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS))
 
 rule:
     input:
@@ -114,7 +114,7 @@ rule:
         FAMILY_PROFILE + ".h3m",
         FAMILY_PROFILE + ".h3p",
         profile = FAMILY_PROFILE,
-        fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")
+        fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
     output:
         os.path.join(WORK_DIR, "hmmscan", "{id}.out")
     shell:
@@ -123,7 +123,7 @@ rule:
 # search sequences agaianst a pfam domain database
 rule hmmscan_align:
     input:
-        expand(os.path.join(WORK_DIR, "hmmscan_align", "{id}.out"), id=CLUSTER_IDS)
+        ancient(expand(os.path.join(WORK_DIR, "hmmscan_align", "{id}.out"), id=CLUSTER_IDS))
 
 rule:
     input:
@@ -132,7 +132,7 @@ rule:
         FAMILY_PROFILE + ".h3m",
         FAMILY_PROFILE + ".h3p",
         profile = FAMILY_PROFILE,
-        fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")
+        fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
     output:
         os.path.join(WORK_DIR, "hmmscan_align", "{id}.out")
     shell:
@@ -164,8 +164,8 @@ rule phmmer:
 
 rule:
     input:
-        ref = os.path.join(WORK_DIR, "refs", "{id}.ref.fasta"),
-        fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"),
+        ref = ancient(os.path.join(WORK_DIR, "refs", "{id}.ref.fasta")),
+        fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")),
     output:
         os.path.join(WORK_DIR, "phmmer", "{id}.out")
     shell:
@@ -174,12 +174,12 @@ rule:
 # hmmsearch for all clusters
 rule hmmsearch:
     input:
-        expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS)
+        ancient(expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS))
 
 rule:
     input:
-        fasta = os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"),
-        hmm = os.path.join(WORK_DIR, "profiles", "{id}.hmm")
+        fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")),
+        hmm = ancient(os.path.join(WORK_DIR, "profiles", "{id}.hmm"))
     output:
         os.path.join(WORK_DIR, "hmmsearch", "{id}.out")
     shell:
@@ -192,7 +192,7 @@ rule hmmbuild:
 
 rule:
     input:
-        os.path.join(WORK_DIR, "msa", "{id}.fasta")
+        ancient(os.path.join(WORK_DIR, "msa", "{id}.fasta"))
     output:
         temp(os.path.join(WORK_DIR, "profiles", "{id}.hmm"))
     shell:
@@ -202,14 +202,14 @@ rule:
 rule msa:
     input:
         os.path.join(WORK_DIR, "info.txt"),
-        expand(os.path.join(WORK_DIR, "msa", "{id}.fasta"), id=CLUSTER_IDS)
+        ancient(expand(os.path.join(WORK_DIR, "msa", "{id}.fasta"), id=CLUSTER_IDS))
     run:
         # For some reason it runs general rule below only if we have some dummy code here???
         print("Done!")
 
 rule:
     input:
-        os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")
+        ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
     output:
         os.path.join(WORK_DIR, "msa", "{id}.fasta")
     shell:

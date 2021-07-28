@@ -15,15 +15,33 @@ def validate_fasta(path):
             data[clean_id] = protein
     return len(data.keys())
 
+def path2id(path):
+    return path.split("/")[-1].split(".")[0]
+
 def validate_group(path):
     fasta_files = sorted(glob.glob(os.path.join(path, "fasta", "*.fasta")))
     clean_files = sorted(glob.glob(os.path.join(path, "clean", "*.clean.fasta")))
     ref_files = sorted(glob.glob(os.path.join(path, "refs", "*.ref.fasta")))
-    assert (len(fasta_files) == len(clean_files) and len(fasta_files) == len(ref_files)), "Wrong amount of files"
-    files = zip(fasta_files, clean_files, ref_files)
+    msa_files = sorted(glob.glob(os.path.join(path, "msa", "*.fasta")))
+    hmms_files = sorted(glob.glob(os.path.join(path, "hmmsearch", "*.out")))
+    hmmsc_files = sorted(glob.glob(os.path.join(path, "hmmscan", "*.out")))
+    id_files = sorted(glob.glob(os.path.join(path, "id", "*.out")))
+    assert (len(fasta_files) == len(ref_files) and
+            len(clean_files) == len(ref_files) and
+            len(msa_files) == len(ref_files) and
+            len(hmms_files) == len(ref_files) and
+            len(hmmsc_files) == len(ref_files) and
+            len(id_files) == len(ref_files)), "Wrong amount of files"
+    files = list(zip(fasta_files, clean_files, ref_files, msa_files, hmms_files, hmmsc_files, id_files))
     fasta_count = 0
     clean_count = 0
     for filezip in files:
+        assert( path2id(filezip[0]) == path2id(filezip[1]) and
+                path2id(filezip[2]) == path2id(filezip[1]) and
+                path2id(filezip[3]) == path2id(filezip[1]) and
+                path2id(filezip[4]) == path2id(filezip[1]) and
+                path2id(filezip[5]) == path2id(filezip[1]) and
+                path2id(filezip[6]) == path2id(filezip[1])), "Filenames do not match."
         fasta_count += validate_fasta(filezip[0])
         clean_count += validate_fasta(filezip[1])
     assert fasta_count == clean_count, "Wrong amount of sequences"
