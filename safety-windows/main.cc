@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 	for (int i = 1; i < PS; i++) {
 		const std::string &a = proteins[0].sequence;
 		const std::string &b = proteins[i].sequence;
-		std::cout << i << ' ' << b << ' ';
+		std::cout << i << ' ' << b << ' ' << std::flush;
 
 		Dag d = gen_dag(a, b, cost_matrix, TH, GAP_COST, START_GAP);
 		std::vector<std::vector<int>> adj = d.adj;
@@ -205,11 +205,12 @@ int main(int argc, char **argv) {
 		}
 
 
-		std::cout << windows.size() << '\n';;
+		std::cout << windows.size() << std::endl;
 		for (int i = 0; i < (int) windows.size(); i++) {
 			auto [x, y] = windows[i];
 			auto [xp, yp] = windowsp[i];
 			std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';;
 		}
+		std::cout << std::flush;
 	}
 }
