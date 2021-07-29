@@ -3,10 +3,10 @@
 db_file: 'data/uniprot_sprot.fasta'
 # PFAM protein domain database from PFAM
 family_db: 'data/pfam/Pfam-A.seed' 
-diamond: './../../diamond-2.0.8/bin/diamond'
+diamond: './../../diamond/bin/diamond'
 raxml: './../../raxml-ng/bin/raxml-ng'
 muscle: './../../muscle/muscle3.8.31_i86darwin64'
-hmmer: './../../hmmer-3.3.2'
+hmmer: './../../hmmer'
 safety: './../safety-windows/main'
 mmseqs: "./../../MMseqs2/bin/mmseqs"
 # Minimum identity-% to report an alignment
