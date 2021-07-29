@@ -262,7 +262,7 @@ rule cluster:
         sens=CLUSTER_SENSITIVITY
     run:
         if params.algo == "mcl" or params.algo == "multi-step":
-            shell("{DIAMOND_PATH}/bin/diamond cluster --cluster-algo {params.algo} --id {params.identity} {params.sens} -d {input} -o {output}")
+            shell("{DIAMOND_PATH} cluster --cluster-algo {params.algo} --id {params.identity} {params.sens} -d {input} -o {output}")
         elif params.algo == "mmseqs":
             params.identity = str(float(params.identity) / 100.0)
             shell("{MMSEQS_PATH} cluster {input} {output} tmp --min-seq-id {params.identity}")  
