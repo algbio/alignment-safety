@@ -14,7 +14,7 @@ cd bin
 cmake -DEXTRA=ON ..
 make
 ```
-
+(optional)
 Compile Raxml-ng from source:
 ```
 git clone https://github.com/amkozlov/raxml-ng
@@ -30,14 +30,14 @@ Compile Hmmer and easel from source:
 git clone https://github.com/EddyRivasLab/hmmer
 cd hmmer
 git clone https://github.com/EddyRivasLab/easel
-autoconf.
+autoconf
 ./configure
 make
 make check                 # optional: run automated tests
 cd easel
 make
 ```
-
+(optional)
 Follow instruction for MMseqs2 installation (compilation from source recommended for better performance):
 <https://github.com/soedinglab/MMseqs2#installation>
 
