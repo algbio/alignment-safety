@@ -11,11 +11,10 @@ safety: './../safety-windows/main'
 mmseqs: "./../../MMseqs2/bin/mmseqs"
 # Minimum identity-% to report an alignment
 min_identity: '20'  # '10' - '100'
-# https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#sensitivity-modes
-#       id <= 25%    : --ultra-sensitive
-# 25% < id <= 40%    : --very-sensitive
-# 40% < id <= 90%    : --sensitive
-# 90% < id           : --fast
+#       id <= 25%    : --cluster-steps usens : Ultra sensitive
+# 25% < id <= 40%    : --cluster-steps vsens : Very sensitive
+# 40% < id <= 90%    : --cluster-steps sens : Sensitive
+# 90% < id           : --cluster-steps fast : Fast
 # 'auto' : automatically chooses the treshhold based on the sensitivity table above
 sensitivity: 'auto'
 # multi-step or mcl or mmseqs. multi-step and mcl uses DIAMOND. mmseqs uses MMseqs2.

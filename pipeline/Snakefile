@@ -18,13 +18,13 @@ REF_CRITERION = config["ref_criterion"]
 if CLUSTER_SENSITIVITY == "auto":
     min_id = int(MIN_IDENTITY)
     if min_id <= 25:
-        CLUSTER_SENSITIVITY = "--ultra-sensitive"
+        CLUSTER_SENSITIVITY = "usens"
     elif min_id <= 40:
-        CLUSTER_SENSITIVITY = "--very-sensitive"
+        CLUSTER_SENSITIVITY = "vsens"
     elif min_id <= 90:
-        CLUSTER_SENSITIVITY = "--sensitive"
+        CLUSTER_SENSITIVITY = "sens"
     elif 90 < min_id:
-        CLUSTER_SENSITIVITY = "--fast"
+        CLUSTER_SENSITIVITY = "fast"
     else:
         assert False, "Error choosing the sensitivity"
 
@@ -262,7 +262,7 @@ rule cluster:
         sens=CLUSTER_SENSITIVITY
     run:
         if params.algo == "mcl" or params.algo == "multi-step":
-            shell("{DIAMOND_PATH} cluster --cluster-algo {params.algo} --id {params.identity} {params.sens} -d {input} -o {output}")
+            shell("{DIAMOND_PATH} cluster --cluster-algo {params.algo} --id {params.identity} --cluster-steps {params.sens} -d {input} -o {output}")
         elif params.algo == "mmseqs":
             params.identity = str(float(params.identity) / 100.0)
             shell("{MMSEQS_PATH} cluster {input} {output} tmp --min-seq-id {params.identity}")  
