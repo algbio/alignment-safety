@@ -88,7 +88,7 @@ rule:
         os.path.join(WORK_DIR, "safety", "{id}.out")
 
     shell:
-        "{SAFETY_PATH}/main -f {input.fasta} > {output}"
+        "{SAFETY_PATH} -f {input.fasta} > {output}"
 
 rule identity:
     input:

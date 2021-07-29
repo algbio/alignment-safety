@@ -10,7 +10,7 @@ hmmer: './../../hmmer'
 safety: './../safety-windows/main'
 mmseqs: "./../../MMseqs2/bin/mmseqs"
 # Minimum identity-% to report an alignment
-min_identity: '20'  # '10' - '100'
+min_identity: '90'  # '10' - '100'
 #       id <= 25%    : 'usens' : Ultra sensitive
 # 25% < id <= 40%    : 'vsens' : Very sensitive
 # 40% < id <= 90%    : 'sens' : Sensitive
@@ -23,11 +23,11 @@ clustering_algorithm: 'multi-step'
 cluster_min_size: '50'
 cluster_max_size: '10000'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
-cluster_number: '100'
+cluster_number: '10'
 # Reference criterion
 # "--clustering" - default, depends on clustering: mcl or multi-step
 # "--identity" - Highest mean pair-wise identity score
 # "--highlow" - Highest lowest pair-wise identity score
 # "--similarity" - Highest hmmsearch score (i.e. most similar sequence to the MSA of the cluster)
 # "--taxonomy" - Highest node in taxonomic tree, DB should contain taxonomic id as "OX=id"
-ref_criterion: '--identity'
+ref_criterion: '--clustering'
