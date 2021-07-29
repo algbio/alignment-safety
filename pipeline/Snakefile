@@ -248,7 +248,7 @@ rule cluster_reqs:
         if CLUSTER_ALGO == "mcl" or CLUSTER_ALGO == "multi-step":
             shell("{DIAMOND_PATH}/bin/diamond makedb --in {input} -d {output}")
         elif CLUSTER_ALGO == "mmseqs":
-            shell("{MMSEQS_PATH} createdb {input} {output}")
+            shell("{MMSEQS_PATH}/bin/mmseqs createdb {input} {output}")
 
 # Clustering
 rule cluster:
