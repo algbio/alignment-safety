@@ -100,7 +100,7 @@ rule:
     output:
         os.path.join(WORK_DIR, "id", "{id}.out")
     shell:
-        "{HMMER_PATH}/bin/esl-alipid {input.msa} > {output}"
+        "{HMMER_PATH}/easel/miniapps/esl-alipid {input.msa} > {output}"
 
 # search sequences agaianst a pfam domain database
 rule hmmscan:
@@ -118,7 +118,7 @@ rule:
     output:
         os.path.join(WORK_DIR, "hmmscan", "{id}.out")
     shell:
-        "{HMMER_PATH}/bin/hmmscan --tblout {output} --noali {input.profile} {input.fasta} > /dev/null"
+        "{HMMER_PATH}/src/hmmscan --tblout {output} --noali {input.profile} {input.fasta} > /dev/null"
 
 # search sequences agaianst a pfam domain database
 rule hmmscan_align:
@@ -136,7 +136,7 @@ rule:
     output:
         os.path.join(WORK_DIR, "hmmscan_align", "{id}.out")
     shell:
-        "{HMMER_PATH}/bin/hmmscan -o {output} {input.profile} {input.fasta}"
+        "{HMMER_PATH}/src/hmmscan -o {output} {input.profile} {input.fasta}"
 
 rule:
     input:
@@ -144,7 +144,7 @@ rule:
     output:
         profile = FAMILY_PROFILE
     shell:
-        "{HMMER_PATH}/bin/hmmbuild {output.profile} {input.db}"
+        "{HMMER_PATH}/src/hmmbuild {output.profile} {input.db}"
 
 rule:
     input:
@@ -155,7 +155,7 @@ rule:
         FAMILY_PROFILE + ".h3m",
         FAMILY_PROFILE + ".h3p"
     shell:
-        "{HMMER_PATH}/bin/hmmpress {input.profile}"
+        "{HMMER_PATH}/src/hmmpress {input.profile}"
 
 # phmmer for all clusters
 rule phmmer:
@@ -169,7 +169,7 @@ rule:
     output:
         os.path.join(WORK_DIR, "phmmer", "{id}.out")
     shell:
-        "{HMMER_PATH}/bin/phmmer --tblout {output} --noali {input.ref} {input.fasta} > /dev/null"
+        "{HMMER_PATH}/src/phmmer --tblout {output} --noali {input.ref} {input.fasta} > /dev/null"
 
 # hmmsearch for all clusters
 rule hmmsearch:
@@ -183,7 +183,7 @@ rule:
     output:
         os.path.join(WORK_DIR, "hmmsearch", "{id}.out")
     shell:
-        "{HMMER_PATH}/bin/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta} > /dev/null"
+        "{HMMER_PATH}/src/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta} > /dev/null"
 
 # creates needed hmm-profiles for hmmsearch
 rule hmmbuild:
@@ -196,7 +196,7 @@ rule:
     output:
         temp(os.path.join(WORK_DIR, "profiles", "{id}.hmm"))
     shell:
-        "{HMMER_PATH}/bin/hmmbuild {output} {input}"
+        "{HMMER_PATH}/src/hmmbuild {output} {input}"
 
 # MSA for all clusters with Muscle
 rule msa:
@@ -213,7 +213,7 @@ rule:
     output:
         os.path.join(WORK_DIR, "msa", "{id}.fasta")
     shell:
-        "{MUSCLE_PATH}/muscle3.8.31_i86darwin64 -in {input} -out {output}"
+        "{MUSCLE_PATH} -in {input} -out {output}"
 
 # Separates all clusters (that fit the threshold) into separate fasta-files
 checkpoint separate_clusters:
@@ -246,9 +246,9 @@ rule cluster_reqs:
         CLUSTER_REQS
     run:
         if CLUSTER_ALGO == "mcl" or CLUSTER_ALGO == "multi-step":
-            shell("{DIAMOND_PATH}/bin/diamond makedb --in {input} -d {output}")
+            shell("{DIAMOND_PATH} makedb --in {input} -d {output}")
         elif CLUSTER_ALGO == "mmseqs":
-            shell("{MMSEQS_PATH}/bin/mmseqs createdb {input} {output}")
+            shell("{MMSEQS_PATH} createdb {input} {output}")
 
 # Clustering
 rule cluster:
@@ -299,7 +299,7 @@ rule muscle:
     output:
         os.path.join("out", f"{CLUSTER}.msa.fasta")
     shell:
-        "{MUSCLE_PATH}/muscle3.8.31_i86darwin64 -in \"{input}\" -out \"{output}\""
+        "{MUSCLE_PATH} -in \"{input}\" -out \"{output}\""
 
 # Preprocessing for ML phylogenetic tree
 rule raxml_check:
@@ -310,7 +310,7 @@ rule raxml_check:
     params:
         cluster_name=CLUSTER
     shell:
-        "{RAXML_PATH}/bin/raxml-ng --parse --msa \"{input}\" --model LG+G --prefix \"./out/{params.cluster_name}\""
+        "{RAXML_PATH} --parse --msa \"{input}\" --model LG+G --prefix \"./out/{params.cluster_name}\""
 
 # Builds ML phylogenetic tree
 rule raxml:
@@ -321,7 +321,7 @@ rule raxml:
     params:
         cluster_name=CLUSTER
     shell:
-        "{RAXML_PATH}/bin/raxml-ng --msa \"{input}\" LG+G --prefix \"./out/{params.cluster_name}\""    
+        "{RAXML_PATH} --msa \"{input}\" LG+G --prefix \"./out/{params.cluster_name}\""    
 
 # Prints stats of the best phylogenetic tree
 rule raxml_stats:

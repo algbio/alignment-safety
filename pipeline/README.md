@@ -8,7 +8,7 @@
 Compile Diamond from source:
 ```
 git clone https://github.com/bbuchfink/diamond
-cd diamond-2.0.9
+cd diamond
 mkdir bin
 cd bin
 cmake -DEXTRA=ON ..
@@ -28,9 +28,12 @@ make
 Compile Hmmer and easel from source:
 ```
 git clone https://github.com/EddyRivasLab/hmmer
-cd hmmer-3.3.2
-./configure --prefix=./
+cd hmmer
+git clone https://github.com/EddyRivasLab/easel
+autoconf.
+./configure
 make
+make check                 # optional: run automated tests
 cd easel
 make
 ```
@@ -38,8 +41,12 @@ make
 Follow instruction for MMseqs2 installation (compilation from source recommended for better performance):
 <https://github.com/soedinglab/MMseqs2#installation>
 
+Download muscle:
+<http://www.drive5.com/muscle/downloads.htm>
+
 ete3 and snakemake via Conda environment
 ```
+cd alignment-safety/pipeline
 conda env create -f environment.yaml
 conda activate pipeline
 ```

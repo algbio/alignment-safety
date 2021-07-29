@@ -3,12 +3,12 @@
 db_file: 'data/uniprot_sprot.fasta'
 # PFAM protein domain database from PFAM
 family_db: 'data/pfam/Pfam-A.seed' 
-diamond: './../../diamond-2.0.8'
-raxml: './../../raxml-ng'
-muscle: './../../muscle'
+diamond: './../../diamond-2.0.8/bin/diamond'
+raxml: './../../raxml-ng/bin/raxml-ng'
+muscle: './../../muscle/muscle3.8.31_i86darwin64'
 hmmer: './../../hmmer-3.3.2'
-safety: './../safety-windows'
-mmseqs: "./../../MMseqs2"
+safety: './../safety-windows/main'
+mmseqs: "./../../MMseqs2/bin/mmseqs"
 # Minimum identity-% to report an alignment
 min_identity: '20'  # '10' - '100'
 # https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#sensitivity-modes
