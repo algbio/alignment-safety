@@ -51,9 +51,6 @@ rule all:
         expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS),
 
-rule safe:
-    input:
-        expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS)
 
 # def get_ref_reqs(a):
 #     if REF_CRITERION == "--identity" or REF_CRITERION == "--highlow":
@@ -80,13 +77,15 @@ rule change_ref:
     shell:
         "python3 scripts/change_ref.py {input.db} {input.path} {REF_CRITERION} > {output}"
 
+rule safe:
+    input:
+        expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS)
 
 rule:
     input:
         fasta = ancient(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
     output:
         os.path.join(WORK_DIR, "safety", "{id}.out")
-
     shell:
         "{SAFETY_PATH} -f {input.fasta} > {output}"
 

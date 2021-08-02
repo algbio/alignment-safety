@@ -14,7 +14,13 @@ def rmf(paths):
     for path in paths:
         files = glob.glob(os.path.join(path, "*"))
         for file in files:
+            print(file)
             os.remove(file)
+        try:
+            os.rmdir(path)
+        except:
+            pass
+
 
 def clean_column_ids(df, col):
     return df[col].map(lambda x: x.split("|")[1])
@@ -50,7 +56,6 @@ def set_refs(path, ref, file_zip):
     msa = file_zip[0].replace("/fasta", "/msa")
     os.rename(msa, "/".join(msa.split("/")[:-1]) + "/" + ref + ".fasta")
     hmmsc = file_zip[0].replace("/fasta", "/hmmscan").replace(".fasta", ".out")
-    os.rename(hmmsc, "/".join(hmmsc.split("/")[:-1]) + "/" + ref + ".out")
     set_ref(file_zip[0], ref)
     ref_fasta = set_ref(file_zip[1], ref)
     id, seq = clusteread.parse_fasta(ref_fasta)
@@ -122,7 +127,6 @@ def find_max(ids):
     return m_seqid
 
 def clustering(db, path):
-    rmf([path + "/phmmer", path + "/refs", path + "/safety"])
     clusters_path = glob.glob(os.path.join(path, "*.clusters"))[0]
     clusters, key_map = clusteread.read_clusters(db, clusters_path, 0, 100000, use_taxids=False)
     assert len(clusters) > 0, "No clusters found"
@@ -137,7 +141,6 @@ def clustering(db, path):
 
 # reqs: id/
 def highlow(path):
-    rmf([path + "/phmmer", path + "/refs", path + "/safety"])
     id_files = sorted(glob.glob(os.path.join(path, "id", "*")))
     fasta_files = sorted(glob.glob(os.path.join(path, "fasta", "*")))
     clean_files = sorted(glob.glob(os.path.join(path, "clean", "*")))
@@ -149,7 +152,6 @@ def highlow(path):
 
 # reqs: id/
 def identity(path):
-    rmf([path + "/phmmer", path + "/refs", path + "/safety"])
     id_files = sorted(glob.glob(os.path.join(path, "id", "*")))
     fasta_files = sorted(glob.glob(os.path.join(path, "fasta", "*")))
     clean_files = sorted(glob.glob(os.path.join(path, "clean", "*")))
@@ -161,7 +163,6 @@ def identity(path):
 
 # reqs: hmmsearch/
 def similarity(path):
-    rmf([path + "/phmmer", path + "/refs", path + "/safety"])
     hmms_files = sorted(glob.glob(os.path.join(path, "hmmsearch", "*")))
     fasta_files = sorted(glob.glob(os.path.join(path, "fasta", "*")))
     clean_files = sorted(glob.glob(os.path.join(path, "clean", "*")))
@@ -173,7 +174,6 @@ def similarity(path):
 
 
 def taxonomy(path):
-    rmf([path + "/phmmer", path + "/refs", path + "/safety"])
     fasta_files = sorted(glob.glob(path + "fasta", "*"))
     clean_files = sorted(glob.glob(path + "clean", "*"))
     files = zip(fasta_files, clean_files)
@@ -195,18 +195,23 @@ if __name__ == '__main__':
     parser.add_argument("--taxonomy", action="store_true", help="Highest node in taxonomic tree")
     args = parser.parse_args()
     if args.clustering:
+        rmf([args.path + "/phmmer", args.path + "/refs", args.path + "/safety", args.path + "/hmmscan"])
         clustering(args.db, args.path)
         print("--clustering")
     elif args.identity:
+        rmf([args.path + "/phmmer", args.path + "/refs", args.path + "/safety", args.path + "/hmmscan"])
         identity(args.path)
         print("--identity")
     elif args.similarity:
+        rmf([args.path + "/phmmer", args.path + "/refs", args.path + "/safety", args.path + "/hmmscan"])
         similarity(args.path)
         print("--similarity")
     elif args.taxonomy:
+        rmf([args.path + "/phmmer", args.path + "/refs", args.path + "/safety", args.path + "/hmmscan"])
         taxonomy(args.path)
         print("--taxonomy")
     elif args.highlow:
+        rmf([args.path + "/phmmer", args.path + "/refs", args.path + "/safety", args.path + "/hmmscan"])
         highlow(args.path)
         print("--highlow")
     else:
