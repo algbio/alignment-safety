@@ -1,0 +1,33 @@
+# From: https://github.com/sebschmi/snakemake-turso
+
+
+use-conda: true
+# You need to change all <...> entries
+# You can change all occurences of snakemake-turso to a name more fitting to your project, if you want to.
+cluster: >-
+  sbatch
+  --job-name=pipeline:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100)
+  # TODO: path
+  --workdir=<absolute path to the root of the git repository, e.g. /proj/gyntartu/pipeline>
+  -o "$(cat .logdir)/pipeline:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100):%j.log"
+  -p {resources.queue}
+  -c {resources.cpus}
+  -t {resources.time_min}
+  -M all
+  --mem={resources.mem_mb}
+  --mail-type={resources.mail_type}
+  --mail-user=artur.gynter@helsinki.fi
+  --signal=SIGINT@300
+#  $(./scripts/parse_sbatch_job_id.sh {dependencies})
+cluster-status: "util/get_slurm_job_status.py"
+max-status-checks-per-second: 1
+default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL]
+rerun-incomplete: true
+printshellcmds: true
+cores: 10000
+local-cores: 8
+latency-wait: 60
+# TODO: path
+config: "datadir=<absolute path to your data dir, e.g. /proj/gyntartu/pipeline/data>"
+keep-going: true
+scheduler: "greedy" # ILP creates files in bad locations, possibly leading to a lockup of the Lustre file system
