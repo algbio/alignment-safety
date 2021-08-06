@@ -11,6 +11,7 @@
 #include "alpha_safe_paths.h"
 #include "safety_windows.h"
 #include "optimal_paths.h"
+#include "draw_subgraph.h"
 
 int print_usage(char **argv, int help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile> [OPTION...]\n\n";
@@ -223,8 +224,15 @@ int main(int argc, char **argv) {
 			auto [LT, RT] = windows_tmp[i];
 			int L = transr[LT].first, R = transr[RT].first;
 			int Lp = transr[LT].second, Rp = transr[RT].second;
+			
+			// This removes safety windows, that are a subset of another safety window.
+			// Here, this is only the case, if gaps are being used.
+			// As we print the safety windows wrt. both strings, we don't want to remove these kind
+			// of subsets, though, as we'd lose to one-to-one correspondence between the safety-windows
+			// of both strings.
 			/*while (outside(L, R)) windows.pop_back();
 			if (!inside(L, R)) windows.emplace_back(L, R);*/
+
 			windows.emplace_back(L, R);
 			windowsp.emplace_back(Lp, Rp);
 		}
@@ -234,7 +242,7 @@ int main(int argc, char **argv) {
 		for (int i = 0; i < (int) windows.size(); i++) {
 			auto [x, y] = windows[i];
 			auto [xp, yp] = windowsp[i];
-			std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';;
+			std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
 		}
 		std::cout << std::flush;
 	}
