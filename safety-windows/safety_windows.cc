@@ -24,9 +24,10 @@ std::vector<std::pair<int, int>> safety_windows(std::vector<mpq_class> &ratios,
 		std::vector<int> &path, mpq_class alpha) {
 	int k = (int) ratios.size();
 	if (k == 0) return {};
+	ratios.push_back(1);
 
 	std::unordered_map<int, int> order;
-	for (int i = 0; i < k; i++) order[path[i]] = i;
+	for (int i = 0; i <= k; i++) order[path[i]] = i;
 
 	std::vector<std::pair<int, int>> windows;
 	mpq_class a = 1;
@@ -40,7 +41,7 @@ std::vector<std::pair<int, int>> safety_windows(std::vector<mpq_class> &ratios,
 		auto [bL, bR] = windows.back();
 		return order[L] >= order[bL] && order[R] <= order[bR];
 	};
-	for (int L = 0, R = 0; R < k; a *= ratios[R], R++) {
+	for (int L = 0, R = 0; R <= k; a *= ratios[R], R++) {
 		while (L < R && a <= alpha) {
 			a /= ratios[L];
 			L++;
