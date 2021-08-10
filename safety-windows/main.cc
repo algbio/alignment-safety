@@ -62,23 +62,26 @@ int main(int argc, char **argv) {
 		static struct option long_options[] = {
 			{ "verbose", no_argument, &verbose_flag, 1 }, // this does nothing for now
 			{ "alpha", required_argument, 0, 'a' },
+			{ "threshold", required_argument, 0, 'b' },
 			{ "costmat", required_argument, 0, 'c' },
 			{ "gapcost", required_argument, 0, 'd' },
 			{ "startgap", required_argument, 0, 'e' },
 			{ "special", required_argument, 0, 'g' },
-			//{ "threshold", required_argument, 0, 'g' },
 			{ "file", required_argument, 0, 'f' },
 			{ "help", no_argument, 0, 'h' },
 			{ 0, 0, 0, 0 }
 		};
 	
 		int option_index = 0;
-		c = getopt_long(argc, argv, "a:c:d:e:g:f:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "a:b:c:d:e:g:f:h", long_options, &option_index);
 		if (c == -1) break;
 
 		switch (c) {
 			case 'a':
 				alpha = std::stof(optarg);
+				break;
+			case 'b':
+				TH = std::stof(optarg);
 				break;
 			case 'c':
 				read_cost_matrix = true;
@@ -90,7 +93,6 @@ int main(int argc, char **argv) {
 				START_GAP = atoi(optarg);
 				break;
 			case 'g':
-				//TH = std::stof(optarg);
 				if (strcmp(optarg, "INF") == 0) ignore_special = true;
 				else SP = atoi(optarg);
 				break;

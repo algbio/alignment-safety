@@ -38,6 +38,10 @@ dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 		Node cur = q.top();
 		q.pop();
 
+		if (cur.cost > (1 << 30) || cur.cost < - (1 << 29)) {
+			std::cerr << "ERROR. COST TOO HIGH" << std::endl;
+		}
+
 		if (cur.cost > dist[cur.N_index][cur.M_index][cur.type])
 			continue;
 
@@ -125,13 +129,18 @@ Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[21
 	std::vector<std::vector<std::vector<int>>> dpr = opt_alignment(er, n, m);
 	assert(dp[n][m][0] == dpr[0][0][0]);
 
-	// find the largest distance
-	//std::vector<std::vector<std::vector<std::vector<Node>>>> el = build_dp_matrix(a, b, GAP_COST, START_GAP, cost_matrix, -1);
-	//const int WORST = (-1) * opt_alignment(el, 0, 0)[n][m][0];
-	const int WORST = 42;
-
 	const int OPT = dp[n][m][0];
-	//assert(OPT <= WORST);
+	int WORST;
+	if (TH != 0) {
+		// find the largest distance
+		std::vector<std::vector<std::vector<std::vector<Node>>>> el = build_dp_matrix(a, b, GAP_COST, START_GAP, cost_matrix, -1);
+		std::vector<std::vector<std::vector<int>>> dpl = opt_alignment(el, 0, 0);
+		WORST = (-1) * dpl[n][m][0];
+	} else {
+		WORST = OPT;
+	}
+
+	assert(OPT <= WORST);
 	int current = 0;
 	std::vector<std::vector<int>> adj(1);
 	std::map<std::pair<int, int>, std::array<int, 3>> trans; // translate to index
@@ -150,16 +159,19 @@ Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[21
 		}
 	};
 
-	auto check_th = [&](const int k, const int OPT, mpq_class TH) {
-		return k == OPT;
+	// TH: v 0%      v 50%     v 100%
+	//    [OPT, .........., WORST]
+	auto check_th = [&](const int k, const int OPT, const int WORST, mpq_class TH) {
+		//return k == OPT;
+		return k <= OPT + TH * (WORST - OPT);
 	};
 
 	for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) for (int k = 0; k <= 2; k++) {
-		if (!check_th(dp[i][j][k] + dpr[i][j][k], OPT, TH)) continue;
+		if (!check_th(dp[i][j][k] + dpr[i][j][k], OPT, WORST, TH)) continue;
 		add_node(Node(i, j, k, 0));
 		for (const Node &nxt: e[i][j][k]) {
-			if (!check_th(dp[nxt.N_index][nxt.M_index][nxt.type] + dpr[nxt.N_index][nxt.M_index][nxt.type], OPT, TH)) continue;
-			if (check_th(dpr[nxt.N_index][nxt.M_index][nxt.type] + dp[i][j][k] + nxt.cost, OPT, TH)) {
+			if (!check_th(dp[nxt.N_index][nxt.M_index][nxt.type] + dpr[nxt.N_index][nxt.M_index][nxt.type], OPT, WORST, TH)) continue;
+			if (check_th(dpr[nxt.N_index][nxt.M_index][nxt.type] + dp[i][j][k] + nxt.cost, OPT, WORST, TH)) {
 				add_node(nxt);
 				adj[trans[std::make_pair(i, j)][k]].push_back(trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]);
 			}
