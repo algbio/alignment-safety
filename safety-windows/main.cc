@@ -1,12 +1,13 @@
 #include <assert.h>
+#include <algorithm>
 #include <getopt.h>
 #include <iostream>
 #include <iomanip>
+#include <random>
 #include <vector>
 #include <fstream>
 #include <unordered_map>
 #include <string>
-
 
 #include "alpha_safe_paths.h"
 #include "safety_windows.h"
@@ -86,6 +87,7 @@ int main(int argc, char **argv) {
 			case 'c':
 				read_cost_matrix = true;
 				cost_matrix_file = optarg;
+				break;
 			case 'd':
 				GAP_COST = atoi(optarg);
 				break;
@@ -189,10 +191,21 @@ int main(int argc, char **argv) {
 
 	// reference protein and amount of proteins in the cluster
 	std::cout << 0 << ' ' << proteins[0].sequence << '\n' << PS << '\n';
-	for (int i = 1; i < PS; i++) {
+	std::vector<std::string> output(PS);
+	std::vector<int> random_order(PS - 1);
+	for (int i = 0; i < PS - 1; i++) random_order[i] = i + 1;
+	std::random_device rd;
+	std::mt19937 g(rd());
+	std::shuffle(random_order.begin(), random_order.end(), g);
+
+	#pragma omp parallel for
+	for (int j = 0; j < PS - 1; j++) {
+		int i = random_order[j];
+		//std::cerr << "handling id " << i << std::endl;
 		const std::string &a = proteins[0].sequence;
 		const std::string &b = proteins[i].sequence;
-		std::cout << i << ' ' << b << ' ' << std::flush;
+		output[i] += std::to_string(i) + ' ' + b + ' ';
+		//std::cout << i << ' ' << b << ' ' << std::flush;
 
 		Dag d = gen_dag(a, b, cost_matrix, TH, GAP_COST, START_GAP);
 		std::vector<std::vector<int>> adj = d.adj;
@@ -240,12 +253,15 @@ int main(int argc, char **argv) {
 		}
 
 
-		std::cout << windows.size() << std::endl;
-		for (int i = 0; i < (int) windows.size(); i++) {
-			auto [x, y] = windows[i];
-			auto [xp, yp] = windowsp[i];
-			std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
+		output[i] += std::to_string(windows.size()) + '\n';
+		//std::cout << windows.size() << std::endl;
+		for (int k = 0; k < (int) windows.size(); k++) {
+			auto [x, y] = windows[k];
+			auto [xp, yp] = windowsp[k];
+			//std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
+			output[i] += std::to_string(x) + ' ' + std::to_string(y) + ' ' + std::to_string(xp) + ' ' + std::to_string(yp) + '\n';
 		}
-		std::cout << std::flush;
+		//std::cout << std::flush;
 	}
+	for (int i = 1; i < PS; i++) std::cout << output[i];
 }
