@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <string>
 
+#include <omp.h>
+
 #include "alpha_safe_paths.h"
 #include "safety_windows.h"
 #include "optimal_paths.h"
@@ -22,6 +24,7 @@ int print_usage(char **argv, int help) {
 	std::cout << "\t-e, --startgap\tInteger, set the cost of starting a gap alignment. (Default: 11)\n";
 	//std::cout << "\t-g, --threshold\tFloating value, set the treshold for suboptimality. (Default: 0.0, Range: [0.0, 1.0])\n";
 	std::cout << "\t-g, --special\tInteger, sets the cost of aligning symbols with special characters.\n\t            \tINF value ignores these charachters. (Default: 1)\n";
+	std::cout << "\t-i, --threads\tInteger, specifies the number of threads (Default: 1).\n";
 	std::cout << "\t-h, --help\tShows this help message.\n";
 	return help;
 }
@@ -57,6 +60,8 @@ int main(int argc, char **argv) {
 	bool read_file = false;
 	bool read_cost_matrix = false;
 
+	int threads = 1;
+
 	int c;
 	while (1) {
 		// TODO: Read cost_matrix file
@@ -70,11 +75,12 @@ int main(int argc, char **argv) {
 			{ "special", required_argument, 0, 'g' },
 			{ "file", required_argument, 0, 'f' },
 			{ "help", no_argument, 0, 'h' },
+			{ "threads", required_argument, 0, 'i' },
 			{ 0, 0, 0, 0 }
 		};
 	
 		int option_index = 0;
-		c = getopt_long(argc, argv, "a:b:c:d:e:g:f:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "a:b:c:d:e:g:f:hi:", long_options, &option_index);
 		if (c == -1) break;
 
 		switch (c) {
@@ -104,6 +110,9 @@ int main(int argc, char **argv) {
 				break;
 			case 'h':
 				help_flag = true;
+				break;
+			case 'i':
+				threads = atoi(optarg);
 				break;
 			case '?': break;
 			default: abort();
@@ -198,10 +207,11 @@ int main(int argc, char **argv) {
 	std::mt19937 g(rd());
 	std::shuffle(random_order.begin(), random_order.end(), g);
 
-	#pragma omp parallel for
+	#pragma omp parallel for num_threads(threads)
 	for (int j = 0; j < PS - 1; j++) {
 		int i = random_order[j];
-		//std::cerr << "handling id " << i << std::endl;
+//		std::cerr << "handling id " << i << std::endl;
+//		std::cerr << omp_get_thread_num() << std::endl;
 		const std::string &a = proteins[0].sequence;
 		const std::string &b = proteins[i].sequence;
 		output[i] += std::to_string(i) + ' ' + b + ' ';

@@ -19,6 +19,7 @@ DAG, called alpha safe path, if alpha is chosen >= 50%.
 == How to run ==
 
 Compile with cmake or g++ (at least c++17), and import the GMP library.
+To make use of multiple threads, compile with '-fopenmp' flag.
 Run "./main -h" for help, clusterfile documentation: https://www.uniprot.org/help/fasta-headers
 GMP library: https://gmplib.org
 
