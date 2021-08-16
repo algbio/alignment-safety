@@ -1,18 +1,22 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.9)
 # Get project name from folder name
 get_filename_component(ProjectId ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 string(REPLACE " " "_" ProjectId ${ProjectId})
 project(${ProjectId})
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
-find_package(GMP REQUIRED)
 # all .cc/.cpp files
 set(SOURCES main.cc safety_windows.cc alpha_safe_paths.cc optimal_paths.cc)
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${ProjectId} ${SOURCES})
 # compiler flags for debugging
-set(CMAKE_CXX_FLAGS "-g -W -O0")
+set(CMAKE_CXX_FLAGS "-O3")
+# GMP
+find_package(GMP REQUIRED)
 # if .h files are in other folder?
 include_directories(./ ${GMP_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} gmp libgmp.so)
+target_link_libraries(${ProjectId} ${GMP_LIBRARY})
+# OpenMP
+find_package(OpenMP REQUIRED)
+target_link_libraries(${ProjectId} OpenMP::OpenMP_CXX)
 # runnable output file
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "main")
+set_target_properties(${ProjectId} PROPERTIES OUTPUT_NAME "main")
