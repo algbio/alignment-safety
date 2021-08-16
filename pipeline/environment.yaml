@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - snakemake==6.3.0
+  - snakemake-minimal==6.5.2
   - pandas
   - ete3
   - snakemake-minimal
