@@ -1,0 +1,36 @@
+# download e.g. swiss protein db from: 
+# https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
+db_file: '/wrk/users/gyntartu/pipeline/data/uniprot_sprot.fasta'
+# PFAM protein domain database from PFAM
+family_db: '/wrk/users/gyntartu/pipeline/data/pfam/Pfam-A.seed' 
+diamond: './../../diamond/bin/diamond'
+raxml: './../../raxml-ng/bin/raxml-ng'
+muscle: './../../muscle/muscle3.8.31_i86darwin64'
+hmmer: './../../hmmer'
+safety: './../safety-windows/main'
+mmseqs: "./../../MMseqs2/bin/mmseqs"
+# output directory
+wrkdir: "/wrk/users/gyntartu/pipeline/out"
+datadir: "/wrk/users/gyntartu/pipeline/data"
+# Minimum identity-% to report an alignment
+min_identity: '40'  # '10' - '100'
+#       id <= 25%    : 'usens' : Ultra sensitive
+# 25% < id <= 40%    : 'vsens' : Very sensitive
+# 40% < id <= 90%    : 'sens' : Sensitive
+# 90% < id           : 'fast' : Fast
+# 'auto' : automatically chooses the treshhold based on the sensitivity table above
+sensitivity: 'auto'
+# multi-step or mcl or mmseqs. multi-step and mcl uses DIAMOND. mmseqs uses MMseqs2.
+clustering_algorithm: 'multi-step'
+# Clusters smaller/bigger than these limits will not be considered
+cluster_min_size: '50'
+cluster_max_size: '10000'
+# Maximum number of clusters, will be chosen randomly if less than available clusters
+cluster_number: '100'
+# Reference criterion
+# "--clustering" - default, depends on clustering: mcl or multi-step
+# "--identity" - Highest mean pair-wise identity score
+# "--highlow" - Highest lowest pair-wise identity score
+# "--similarity" - Highest hmmsearch score (i.e. most similar sequence to the MSA of the cluster)
+# "--taxonomy" - Highest node in taxonomic tree, DB should contain taxonomic id as "OX=id"
+ref_criterion: '--highlow'

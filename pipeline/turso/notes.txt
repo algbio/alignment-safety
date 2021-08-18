@@ -1,0 +1,10 @@
+check efficiency:
+    seff -M ukko2 <id>
+check processes:
+    ps ux
+    squeue -o '%A %.28R %j' -u gyntartu
+
+check progress:
+    less logs/latest/run_on_turso.log
+    slurm w q
+    
