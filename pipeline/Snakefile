@@ -1,4 +1,4 @@
-configfile: 'parameters.yaml'
+configfile: 'turso/config.yaml'
 
 DB_FILE = config["db_file"]
 CLUSTER = ""
@@ -244,6 +244,11 @@ rule cluster_reqs:
         f"{DB_FILE}"
     output:
         CLUSTER_REQS
+    resources:
+        mem_mb = 8000,
+        time_min = 30,
+        cpus = 32,
+        queue = "short"
     run:
         if CLUSTER_ALGO == "mcl" or CLUSTER_ALGO == "multi-step":
             shell("{DIAMOND_PATH} makedb --in {input} -d {output}")

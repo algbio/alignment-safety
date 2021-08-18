@@ -1,7 +1,6 @@
-#!/bin/bash
-
 # From: https://github.com/sebschmi/snakemake-turso
 
+#!/bin/bash
 
 set +e
 
@@ -31,13 +30,13 @@ if [ $# -eq 0 ]; then
 fi
 
 source $HOME/.bashrc
-cd proj/gyntartu/alignment-safet/pipeline
+cd /proj/gyntartu/alignment-safety/pipeline
 
 source activate pipeline
 
 # Remove erroneous outputs from previous run
 echo "Removing erroneous outputs from previous run"
-util/delete_erroneous_outputs.py
+turso/delete_erroneous_outputs.py
 
 # Create log directory
 LOGDIR="logs/$(date +"%FT%X")/"

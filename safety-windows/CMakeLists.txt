@@ -16,7 +16,7 @@ find_package(GMP REQUIRED)
 include_directories(./ ${GMP_INCLUDE_DIR})
 target_link_libraries(${ProjectId} ${GMP_LIBRARY})
 # OpenMP
-find_package(OpenMP REQUIRED)
-target_link_libraries(${ProjectId} OpenMP::OpenMP_CXX)
+#find_package(OpenMP REQUIRED)
+#target_link_libraries(${ProjectId} OpenMP::OpenMP_CXX)
 # runnable output file
 set_target_properties(${ProjectId} PROPERTIES OUTPUT_NAME "main")

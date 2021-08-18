@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# From: https://github.com/sebschmi/snakemake-turso
-
 from os import listdir
 from os.path import isfile, join
 import os

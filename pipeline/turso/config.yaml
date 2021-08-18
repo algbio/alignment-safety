@@ -1,5 +1,4 @@
-# From: https://github.com/sebschmi/snakemake-turso
-
+# Template from: https://github.com/sebschmi/snakemake-turso
 
 use-conda: true
 # You need to change all <...> entries
@@ -7,8 +6,7 @@ use-conda: true
 cluster: >-
   sbatch
   --job-name=pipeline:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100)
-  # TODO: path
-  --workdir=<absolute path to the root of the git repository, e.g. /proj/gyntartu/pipeline>
+  --workdir=/proj/gyntartu/alignment-safety/pipeline
   -o "$(cat .logdir)/pipeline:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100):%j.log"
   -p {resources.queue}
   -c {resources.cpus}
@@ -18,8 +16,8 @@ cluster: >-
   --mail-type={resources.mail_type}
   --mail-user=artur.gynter@helsinki.fi
   --signal=SIGINT@300
-#  $(./scripts/parse_sbatch_job_id.sh {dependencies})
-cluster-status: "util/get_slurm_job_status.py"
+#  $(./turso/parse_sbatch_job_id.sh {dependencies})
+cluster-status: "turso/get_slurm_job_status.py"
 max-status-checks-per-second: 1
 default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL]
 rerun-incomplete: true
@@ -27,7 +25,42 @@ printshellcmds: true
 cores: 10000
 local-cores: 8
 latency-wait: 60
-# TODO: path
-config: "datadir=<absolute path to your data dir, e.g. /proj/gyntartu/pipeline/data>"
 keep-going: true
 scheduler: "greedy" # ILP creates files in bad locations, possibly leading to a lockup of the Lustre file system
+
+
+# download e.g. swiss protein db from: 
+# https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
+db_file: '/wrk/users/gyntartu/pipeline/data/uniprot_sprot.fasta'
+# PFAM protein domain database from PFAM
+family_db: '/wrk/users/gyntartu/pipeline/data/pfam/Pfam-A.seed' 
+diamond: './../../diamond/bin/diamond'
+raxml: './../../raxml-ng/bin/raxml-ng'
+muscle: './../../muscle/muscle3.8.31_i86darwin64'
+hmmer: './../../hmmer'
+safety: './../safety-windows/main'
+mmseqs: "./../../MMseqs2/bin/mmseqs"
+# output directory
+wrkdir: "/wrk/users/gyntartu/pipeline/out"
+# Minimum identity-% to report an alignment
+min_identity: '40'  # '10' - '100'
+#       id <= 25%    : 'usens' : Ultra sensitive
+# 25% < id <= 40%    : 'vsens' : Very sensitive
+# 40% < id <= 90%    : 'sens' : Sensitive
+# 90% < id           : 'fast' : Fast
+# 'auto' : automatically chooses the treshhold based on the sensitivity table above
+sensitivity: 'auto'
+# multi-step or mcl or mmseqs. multi-step and mcl uses DIAMOND. mmseqs uses MMseqs2.
+clustering_algorithm: 'multi-step'
+# Clusters smaller/bigger than these limits will not be considered
+cluster_min_size: '50'
+cluster_max_size: '10000'
+# Maximum number of clusters, will be chosen randomly if less than available clusters
+cluster_number: '100'
+# Reference criterion
+# "--clustering" - default, depends on clustering: mcl or multi-step
+# "--identity" - Highest mean pair-wise identity score
+# "--highlow" - Highest lowest pair-wise identity score
+# "--similarity" - Highest hmmsearch score (i.e. most similar sequence to the MSA of the cluster)
+# "--taxonomy" - Highest node in taxonomic tree, DB should contain taxonomic id as "OX=id"
+ref_criterion: '--highlow'

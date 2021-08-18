@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-
-# From: https://github.com/sebschmi/snakemake-turso
-
-
 import subprocess
 import sys
 

@@ -13,3 +13,6 @@ cmake_install.cmake
 main
 __pycache__/
 tmp/
+.logdir
+logs/
+.log
