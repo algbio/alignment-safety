@@ -18,6 +18,7 @@ MMSEQS_PATH = config["mmseqs"]
 REF_CRITERION = config["ref_criterion"]
 WORK_DIR = config["wrkdir"]
 DATA_DIR = config["datadir"]
+TEMP_DIR = config["tempdir"]
 
 if CLUSTER_SENSITIVITY == "auto":
     min_id = int(MIN_IDENTITY)
@@ -48,6 +49,9 @@ def agg_input(wildcards):
     return a
 
 print("Finished config preprocessing", flush = True)
+print(f"WORK DIR: {WORK_DIR}")
+print(f"DATA DIR: {DATA_DIR}")
+print(f"TEMP DIR: {TEMP_DIR}")
 
 rule all:
     input:
@@ -85,15 +89,41 @@ rule change_ref:
 
 rule safe:
     input:
-        expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS)
-
-rule:
-    input:
-        fasta = ancient(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
-    output:
-        os.path.join(WORK_DIR, "safety", "{id}.out")
+        expand(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"), id=CLUSTER_IDS)
+    params:
+        indir = os.path.join(WORK_DIR, "clean"),
+        outdir = os.path.join(WORK_DIR, "safety"),
+        file_count = len(CLUSTER_IDS)
     shell:
-        "{SAFETY_PATH} -f {input.fasta} > {output}"
+        """
+        mkdir -p {WORK_DIR}/safety
+        sbatch --array=1-{params.file_count} turso/safe.sbatch
+        """
+
+# rule safe:
+#     input:
+#         expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS)
+#     threads: 1
+#     resources:
+#         mem_mb = 100,
+#         time_min = 5,
+#         cpus = 1,
+#         queue = "short"
+
+
+# rule _safe:
+#     input:
+#         fasta = ancient(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
+#     output:
+#         os.path.join(WORK_DIR, "safety", "{id}.out")
+#     threads: 1
+#     resources:
+#         mem_mb = 2048,
+#         time_min = 60,
+#         cpus = 1,
+#         queue = "short"
+#     shell:
+#         "{SAFETY_PATH} -f {input.fasta} > {output}"
 
 rule identity:
     input:
@@ -224,7 +254,7 @@ rule:
 checkpoint separate_clusters:
     input:
         f"{DB_FILE}",
-        os.path.join(WORK_DIR, f"{DB_FILENAME}.{CLUSTER_ALGO}")
+        ancient(os.path.join(WORK_DIR, f"{DB_FILENAME}.{CLUSTER_ALGO}"))
     output:
         os.path.join(WORK_DIR, "info.txt"),
         directory(os.path.join(WORK_DIR, "clean")),
@@ -234,6 +264,11 @@ checkpoint separate_clusters:
         n = config["cluster_number"],
         min_size = config["cluster_min_size"],
         max_size = config["cluster_max_size"]
+    resources:
+        mem_mb = 1024,
+        time_min = 5,
+        cpus = 1,
+        queue = "short"
     shell:
         "python3 scripts/clusteread.py a {input} --n {params.n} --min {params.min_size} --max {params.max_size}"
 
@@ -263,25 +298,27 @@ rule cluster_reqs:
 # Clustering
 rule cluster:
     input:
-        CLUSTER_REQS
+        ancient(CLUSTER_REQS)
     output:
         clu = os.path.join(WORK_DIR, f"{DB_FILENAME}.{CLUSTER_ALGO}"),
     params:
         identity=MIN_IDENTITY,
         algo=CLUSTER_ALGO,
-        sens=CLUSTER_SENSITIVITY
+        sens=CLUSTER_SENSITIVITY,
     resources:
         mem_mb = 18500,
-        time_min = 180,
-        cpus = 10,
+        time_min = 60,
+        cpus = 56,
         queue = "short"
-    run:
-        if params.algo == "mcl" or params.algo == "multi-step":
-            shell("{DIAMOND_PATH} cluster --cluster-algo {params.algo} --id {params.identity} --cluster-steps {params.sens} -d {input} -o {output} --threads {resources.cpus}")
-        elif params.algo == "mmseqs":
-            params.identity = str(float(params.identity) / 100.0)
-            shell("{MMSEQS_PATH} cluster {input} {output} tmp --min-seq-id {params.identity}")  
-            shell("{MMSEQS_PATH} createtsv {input} {input} {output} {output}")      
+    shell:
+        "{DIAMOND_PATH} cluster --cluster-algo {params.algo} --id {params.identity} --cluster-steps {params.sens} -d {input} -o {output} --threads {resources.cpus} --tmpdir {TEMP_DIR} -v"
+    # run:
+    #     if params.algo == "mcl" or params.algo == "multi-step":
+    #         shell("{DIAMOND_PATH} cluster --cluster-algo {params.algo} --id {params.identity} --cluster-steps {params.sens} -d {input} -o {output} --threads {resources.cpus} --tmpdir {TEMP_DIR} --log")
+    #     elif params.algo == "mmseqs":
+    #         params.identity = str(float(params.identity) / 100.0)
+    #         shell("{MMSEQS_PATH} cluster {input} {output} tmp --min-seq-id {params.identity}")  
+    #         shell("{MMSEQS_PATH} createtsv {input} {input} {output} {output}")      
             
 
 # Prints some info about one cluster
