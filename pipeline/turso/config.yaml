@@ -1,27 +1,8 @@
-use-conda: true
-# You need to change all <...> entries
-# You can change all occurences of snakemake-turso to a name more fitting to your project, if you want to.
-cluster: >-
-  sbatch
-  --job-name=pipeline:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100)
-  --workdir=/proj/gyntartu/alignment-safety/pipeline
-  -o "$(cat .logdir)/pipeline:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100):%j.log"
-  -p {resources.queue}
-  -c {resources.cpus}
-  -t {resources.time_min}
-  -M all
-  --mem={resources.mem_mb}
-  --signal=SIGINT@300
-#  $(./turso/parse_sbatch_job_id.sh {dependencies})
-cluster-status: "turso/get_slurm_job_status.py"
-max-status-checks-per-second: 1
-default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL]
-rerun-incomplete: true
-printshellcmds: true
-cores: 10000
-local-cores: 8
+restart-times: 3
+jobscript: "slurm-jobscript.sh"
+cluster: "slurm-submit.py"
+cluster-status: "slurm-status.py"
+max-jobs-per-second: 1
+max-status-checks-per-second: 10
+local-cores: 1
 latency-wait: 60
-keep-going: true
-scheduler: "greedy" # ILP creates files in bad locations, possibly leading to a lockup of the Lustre file system
-#   --mail-type={resources.mail_type}
-#  --mail-user=artur.gynter@helsinki.fi
