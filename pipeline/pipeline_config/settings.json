@@ -1,0 +1,6 @@
+{
+    "SBATCH_DEFAULTS": "cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL",
+    "CLUSTER_NAME": "ukko2",
+    "CLUSTER_CONFIG": "",
+    "ADVANCED_ARGUMENT_CONVERSION": "no"
+}
