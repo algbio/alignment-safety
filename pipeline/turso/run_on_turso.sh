@@ -1,5 +1,3 @@
-# From: https://github.com/sebschmi/snakemake-turso
-
 #!/bin/bash
 
 set +e
@@ -32,6 +30,10 @@ fi
 source $HOME/.bashrc
 cd /proj/gyntartu/alignment-safety/pipeline
 
+module purge
+module load GCC
+echo "Loaded modules:"
+echo $(module list)
 source activate pipeline
 
 # Remove erroneous outputs from previous run

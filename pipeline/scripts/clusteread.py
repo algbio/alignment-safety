@@ -1,7 +1,7 @@
 import sys
 import os
 import argparse
-from ete3 import NCBITaxa
+# from ete3 import NCBITaxa
 import random
 from taxtree import get_highest_taxonomic_id, read_cluster_taxids
 
@@ -91,6 +91,13 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
     db_fasta = ""
     with open(db_filename, "r") as f:
         db_fasta = ("\n" + f.read()).split("\n>")[1:]
+    
+    cluster_num = {}
+    ii = 1
+    for key in clusters.keys():
+        if key in included:
+            cluster_num[key.split("|")[1]] = str(ii)
+            ii += 1
 
     print("Writing reference sequences to fasta-files...")
     for protein_fasta in db_fasta:
@@ -99,11 +106,11 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             cleaned = id.split("|")[1]
             c += 1
             sys.stdout.write("\r%d%%" % int(c * 100.0 / len(included)))
-            with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "w") as out:
+            with open(os.path.join(clustering_path, "fasta", "cluster_" + cluster_num[cleaned] + ".fasta"), "w") as out:
                 out.write(">" + protein_fasta + "\n")
-            with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "w") as out:
+            with open(os.path.join(clustering_path, "clean", "cluster_" + cluster_num[cleaned] + ".clean.fasta"), "w") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
-            with open(os.path.join(clustering_path, "refs", cleaned + ".ref.fasta"), "w") as out:
+            with open(os.path.join(clustering_path, "refs", "cluster_" + cluster_num[cleaned] + ".ref.fasta"), "w") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
 
     print("\nSeparating clusters to fasta-files...")
@@ -118,9 +125,9 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             cleaned = cluster_id.split("|")[1]
             c += 1
             # sys.stdout.write("\r%d%%" % int(c * 100.0 / len(key_map.keys())))
-            with open(os.path.join(clustering_path, "fasta", cleaned + ".fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "fasta", "cluster_" + cluster_num[cleaned] + ".fasta"), "a") as out:
                 out.write(">" + protein_fasta + "\n")
-            with open(os.path.join(clustering_path, "clean", cleaned + ".clean.fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "clean", "cluster_" + cluster_num[cleaned] + ".clean.fasta"), "a") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
     print("")
     with open(os.path.join(clustering_path, "info.txt"), "a") as f:
@@ -202,7 +209,7 @@ def main(args):
         return
 
     if args.action == "a":
-        separate_clusters(clusters, key_map, args.db, "/".join(args.clusters.split("/")[:2]), args.min, args.max, args.n)
+        separate_clusters(clusters, key_map, args.db, "/".join(args.clusters.split("/")[:-1]), args.min, args.max, args.n)
 
     elif args.action == "i":
         print(get_info(clusters))

@@ -11,8 +11,6 @@ cluster: >-
   -t {resources.time_min}
   -M all
   --mem={resources.mem_mb}
-  --mail-type={resources.mail_type}
-  --mail-user=artur.gynter@helsinki.fi
   --signal=SIGINT@300
 #  $(./turso/parse_sbatch_job_id.sh {dependencies})
 cluster-status: "turso/get_slurm_job_status.py"
@@ -25,3 +23,5 @@ local-cores: 8
 latency-wait: 60
 keep-going: true
 scheduler: "greedy" # ILP creates files in bad locations, possibly leading to a lockup of the Lustre file system
+#   --mail-type={resources.mail_type}
+#  --mail-user=artur.gynter@helsinki.fi

@@ -1,5 +1,3 @@
-# From: https://github.com/sebschmi/snakemake-turso
-
 #!/bin/bash
 # helper script that parses slurm output for the job ID,
 # and feeds it to back to snakemake/slurm for dependencies.

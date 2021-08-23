@@ -2,20 +2,20 @@ import sys
 from os.path import expanduser
 import subprocess as sp
 from ete3 import Tree, NCBITaxa
-ncbi = NCBITaxa()
+# ncbi = NCBITaxa()
 from temp import get_time_ms
 
 # Downloads/Updates taxonomy database
-force_update = False
-if(force_update):
-    ncbi.update_taxonomy_database()
-else:
-    try:
-        file = str(expanduser("~")) + "/.etetoolkit/taxa.sqlite"
-        f = open(file)
-        f.close()
-    except IOError:
-        ncbi.update_taxonomy_database()
+# force_update = False
+# if(force_update):
+#     ncbi.update_taxonomy_database()
+# else:
+#     try:
+#         file = str(expanduser("~")) + "/.etetoolkit/taxa.sqlite"
+#         f = open(file)
+#         f.close()
+#     except IOError:
+#         ncbi.update_taxonomy_database()
     
 
 ids_to_taxid = {}
