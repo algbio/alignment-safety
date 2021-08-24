@@ -1,0 +1,35 @@
+Preprocessing config
+Finished config preprocessing
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 2
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	_safe
+	1
+Select jobs to execute...
+
+[Tue Aug 24 12:30:23 2021]
+rule _safe:
+    input: /wrk/users/gyntartu/pipeline/out/uniprot_sprot.40.multi-step/fasta/cluster_8.fasta
+    output: /wrk/users/gyntartu/pipeline/out/uniprot_sprot.40.multi-step/safety/cluster_8.out
+    jobid: 0
+    wildcards: id=cluster_8
+    threads: 2
+    resources: log=logs/2021-08-24-12:30:23/%j.out, mem_mb=1024, time=02:00:00, queue=short
+
+logs/2021-08-24-12:30:23/%j.out
+Waiting at most 60 seconds for missing files.
+MissingOutputException in line 104 of /proj/gyntartu/alignment-safety/pipeline/Snakefile:
+Job Missing files after 60 seconds:
+/wrk/users/gyntartu/pipeline/out/uniprot_sprot.40.multi-step/safety/cluster_8.out
+This might be due to filesystem latency. If that is the case, consider to increase the wait time with --latency-wait.
+Job id: 0 completed successfully, but some output files are missing. 0
+  File "/proj/gyntartu/mamba/envs/pipeline/lib/python3.9/site-packages/snakemake/executors/__init__.py", line 584, in handle_job_success
+  File "/proj/gyntartu/mamba/envs/pipeline/lib/python3.9/site-packages/snakemake/executors/__init__.py", line 252, in handle_job_success
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+WORK DIR: /wrk/users/gyntartu/pipeline/out/uniprot_sprot.40.multi-step
+DATA DIR: /wrk/users/gyntartu/pipeline/data
+TEMP DIR: /wrk/users/gyntartu/pipeline/temp

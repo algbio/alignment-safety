@@ -5,7 +5,7 @@ db_file: '/wrk/users/gyntartu/pipeline/data/uniprot_sprot.fasta'
 family_db: '/wrk/users/gyntartu/pipeline/data/pfam/Pfam-A.seed' 
 diamond: '/proj/gyntartu/diamond/bin/diamond'
 raxml: '/proj/gyntartu/raxml-ng/bin/raxml-ng'
-muscle: '/proj/gyntartu/muscle/muscle3.8.31_i86darwin64'
+muscle: '/proj/gyntartu/muscle/muscle3.8.31_i86linux64'
 hmmer: '/proj/gyntartu/hmmer'
 safety: '/proj/gyntartu/alignment-safety/safety-windows/main'
 mmseqs: "/proj/gyntartu/MMseqs2/bin/mmseqs"
@@ -27,7 +27,7 @@ clustering_algorithm: 'multi-step'
 cluster_min_size: '50'
 cluster_max_size: '10000'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
-cluster_number: '6'
+cluster_number: '50'
 # Reference criterion
 # "--clustering" - default, depends on clustering: mcl or multi-step
 # "--identity" - Highest mean pair-wise identity score

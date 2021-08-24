@@ -1,5 +1,4 @@
-configfile: 'turso/parameters.yaml'
-
+from datetime import datetime
 print("Preprocessing config", flush = True)
 
 DB_FILE = config["db_file"]
@@ -48,10 +47,16 @@ def agg_input(wildcards):
     a = expand(os.path.join(WORK_DIR, "clean", "{i}.clean.fasta"), i=CLUSTER_IDS)
     return a
 
+def get_timestamp():
+    return datetime.today().strftime('%Y-%m-%dT%H:%M')
+
+LOG_DIR = os.path.join("logs", get_timestamp(), "%j.out")
 print("Finished config preprocessing", flush = True)
 print(f"WORK DIR: {WORK_DIR}")
 print(f"DATA DIR: {DATA_DIR}")
 print(f"TEMP DIR: {TEMP_DIR}")
+print(f"LOG DIR: {LOG_DIR}")
+
 
 rule all:
     input:
@@ -82,23 +87,16 @@ rule change_ref:
         path = WORK_DIR,
         r = WORK_DIR + "/id",
         r2 = WORK_DIR + "/hmmsearch",
+    threads: workflow.cores
+    resources:
+        logdir = LOG_DIR,
+        mem_mb = 2048,
+        time = "02:00:00",
+        queue = "short"
     output:
         temp(os.path.join(WORK_DIR, "validate_ref.txt"))
     shell:
         "python3 scripts/change_ref.py {input.db} {input.path} {REF_CRITERION} > {output}"
-
-# rule safe:
-#     input:
-#         expand(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"), id=CLUSTER_IDS)
-#     params:
-#         indir = os.path.join(WORK_DIR, "clean"),
-#         outdir = os.path.join(WORK_DIR, "safety"),
-#         file_count = len(CLUSTER_IDS)
-#     shell:
-#         """
-#         mkdir -p {WORK_DIR}/safety
-#         sbatch --array=1-{params.file_count} turso/safe.sbatch
-#         """
 
 rule safe:
     input:
@@ -110,24 +108,29 @@ rule _safe:
         fasta = ancient(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
     output:
         os.path.join(WORK_DIR, "safety", "{id}.out")
-    threads: 1
+    threads: workflow.cores
     resources:
-        mem_mb = 2048,
-        time_min = 60,
-        cpus = 1,
+        logdir = LOG_DIR,
+        mem_mb = 1300,
+        time = "02:00:00",
         queue = "short"
-    shell:
-        "{SAFETY_PATH} -f {input.fasta} > {output}"
+    shell: 
+        "{SAFETY_PATH} --threads {threads} -f {input.fasta} > {output}"
 
 rule identity:
     input:
         ancient(expand(os.path.join(WORK_DIR, "id", "{id}.out"), id=CLUSTER_IDS))
 
-rule:
+rule _identity:
     input:
         msa = ancient(os.path.join(WORK_DIR, "msa", "{id}.fasta"))
     output:
         os.path.join(WORK_DIR, "id", "{id}.out")
+    resources:
+        logdir = LOG_DIR,
+        mem_mb = 512,
+        time = "00:05:00",
+        queue = "short"
     shell:
         "{HMMER_PATH}/easel/miniapps/esl-alipid {input.msa} > {output}"
 
@@ -136,7 +139,7 @@ rule hmmscan:
     input:
         ancient(expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS))
 
-rule:
+rule _hmmscan:
     input:
         FAMILY_PROFILE + ".h3f",
         FAMILY_PROFILE + ".h3i",
@@ -146,6 +149,12 @@ rule:
         fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
     output:
         os.path.join(WORK_DIR, "hmmscan", "{id}.out")
+    resources:
+        logdir = LOG_DIR,
+        mem_mb = 512,
+        time = "00:05:00",
+        cpus = 1,
+        queue = "short"
     shell:
         "{HMMER_PATH}/src/hmmscan --tblout {output} --noali {input.profile} {input.fasta} > /dev/null"
 
@@ -154,7 +163,7 @@ rule hmmscan_align:
     input:
         ancient(expand(os.path.join(WORK_DIR, "hmmscan_align", "{id}.out"), id=CLUSTER_IDS))
 
-rule:
+rule _hmmscan_align:
     input:
         FAMILY_PROFILE + ".h3f",
         FAMILY_PROFILE + ".h3i",
@@ -164,18 +173,32 @@ rule:
         fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
     output:
         os.path.join(WORK_DIR, "hmmscan_align", "{id}.out")
+    resources:
+        logdir = LOG_DIR,
+        mem_mb = 512,
+        time = "00:05:00",
+        cpus = 1,
+        queue = "short"
     shell:
         "{HMMER_PATH}/src/hmmscan -o {output} {input.profile} {input.fasta}"
 
-rule:
+rule build_pfam:
     input:
         db = FAMILY_DB,
     output:
         profile = FAMILY_PROFILE
+    threads: 8
+    resources:
+        logdir = LOG_DIR,
+        cpus = 8,
+        mem_mb = 1024 * 8,
+        time = "01:00:00",
+        queue = "short",
     shell:
-        "{HMMER_PATH}/src/hmmbuild {output.profile} {input.db}"
+        "{HMMER_PATH}/src/hmmbuild --cpu {threads} {output.profile} {input.db}"
 
-rule:
+
+rule profile_pfam:
     input:
         profile = FAMILY_PROFILE
     output:
@@ -183,6 +206,10 @@ rule:
         FAMILY_PROFILE + ".h3i",
         FAMILY_PROFILE + ".h3m",
         FAMILY_PROFILE + ".h3p"
+    resources:
+        mem_mb = 1024 * 8,
+        time = "01:00:00",
+        queue = "short",
     shell:
         "{HMMER_PATH}/src/hmmpress {input.profile}"
 
@@ -191,12 +218,18 @@ rule phmmer:
     input:
         expand(os.path.join(WORK_DIR, "phmmer", "{id}.out"), id=CLUSTER_IDS)
 
-rule:
+rule _phmmer:
     input:
         ref = ancient(os.path.join(WORK_DIR, "refs", "{id}.ref.fasta")),
         fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")),
     output:
         os.path.join(WORK_DIR, "phmmer", "{id}.out")
+    resources:
+        logdir = LOG_DIR,
+        mem_mb = 256,
+        time = "00:05:00",
+        cpus = 1,
+        queue = "short"
     shell:
         "{HMMER_PATH}/src/phmmer --tblout {output} --noali {input.ref} {input.fasta} > /dev/null"
 
@@ -205,12 +238,18 @@ rule hmmsearch:
     input:
         ancient(expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS))
 
-rule:
+rule _hmmsearch:
     input:
         fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")),
         hmm = ancient(os.path.join(WORK_DIR, "profiles", "{id}.hmm"))
     output:
         os.path.join(WORK_DIR, "hmmsearch", "{id}.out")
+    resources:
+        logdir = LOG_DIR,
+        mem_mb = 512,
+        time = "00:10:00",
+        cpus = 1,
+        queue = "short"
     shell:
         "{HMMER_PATH}/src/hmmsearch --tblout {output} --noali {input.hmm} {input.fasta} > /dev/null"
 
@@ -224,23 +263,31 @@ rule:
         ancient(os.path.join(WORK_DIR, "msa", "{id}.fasta"))
     output:
         temp(os.path.join(WORK_DIR, "profiles", "{id}.hmm"))
+    resources:
+        logdir = LOG_DIR,
+        mem_mb = 512,
+        time = "00:10:00",
+        cpus = 1,
+        queue = "short"
     shell:
         "{HMMER_PATH}/src/hmmbuild {output} {input}"
 
 # MSA for all clusters with Muscle
 rule msa:
     input:
-        os.path.join(WORK_DIR, "info.txt"),
         ancient(expand(os.path.join(WORK_DIR, "msa", "{id}.fasta"), id=CLUSTER_IDS))
-    run:
-        # For some reason it runs general rule below only if we have some dummy code here???
-        print("Done!")
 
-rule:
+rule _msa:
     input:
         ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
     output:
         os.path.join(WORK_DIR, "msa", "{id}.fasta")
+    resources:
+        logdir = LOG_DIR,
+        mem_mb = 512,
+        time = "00:10:00",
+        cpus = 1,
+        queue = "short"
     shell:
         "{MUSCLE_PATH} -in {input} -out {output}"
 
@@ -259,8 +306,9 @@ checkpoint separate_clusters:
         min_size = config["cluster_min_size"],
         max_size = config["cluster_max_size"]
     resources:
+        logdir = LOG_DIR,
         mem_mb = 1024,
-        time_min = 5,
+        time = "00:10:00",
         cpus = 1,
         queue = "short"
     shell:
@@ -279,8 +327,9 @@ rule cluster_reqs:
     output:
         CLUSTER_REQS
     resources:
+        logdir = LOG_DIR,
         mem_mb = 1024,
-        time_min = 5,
+        time = "00:5:00",
         cpus = 1,
         queue = "short"
     run:
@@ -300,8 +349,9 @@ rule cluster:
         algo=CLUSTER_ALGO,
         sens=CLUSTER_SENSITIVITY,
     resources:
+        logdir = LOG_DIR,
         mem_mb = 18500,
-        time_min = 60,
+        time = "01:00:00",
         cpus = 56,
         queue = "short"
     shell:
