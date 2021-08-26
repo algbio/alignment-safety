@@ -1,3 +1,5 @@
+configfile: 'parameters.yaml'
+
 from datetime import datetime
 print("Preprocessing config", flush = True)
 
@@ -39,7 +41,7 @@ def clean_filename(filename):
 
 DB_FILENAME = clean_filename(DB_FILE)
 WORK_DIR = os.path.join(WORK_DIR, f"{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}")
-CLUSTER_IDS, = glob_wildcards(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
+CLUSTER_IDS, = glob_wildcards(os.path.join(WORK_DIR, "test", "{id}.clean.fasta"))
 
 def agg_input(wildcards):
     checkpoint_output = checkpoints.separate_clusters.get(**wildcards).output[1]
@@ -102,19 +104,31 @@ rule safe:
     input:
         expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS)
 
+def estimate_mem(filename):
+    with open(filename, "r") as f:
+        f.readline()
+        t = len(f.readline())
+        return int(min(t * t * 0.0015 + 128, 10000))
+
+def estimate_cpu_time(filename):
+    with open(filename, "r") as f:
+        f.readline()
+        k = len(f.readline())
+        t = min(k * k / 1000 * 0.03 + 5, 500)
+        return f"{int(t/60):02}:{int(t%60):02}:00"
 
 rule _safe:
     input:
-        fasta = ancient(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
+        fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
     output:
         os.path.join(WORK_DIR, "safety", "{id}.out")
     threads: workflow.cores
     resources:
+        mem_mb = lambda wildcards, input: estimate_mem(str(input)),
+        time = lambda wildcards, input: estimate_cpu_time(str(input)),
         logdir = LOG_DIR,
-        mem_mb = 1300,
-        time = "02:00:00",
         queue = "short"
-    shell: 
+    shell:
         "{SAFETY_PATH} --threads {threads} -f {input.fasta} > {output}"
 
 rule identity:
@@ -126,6 +140,7 @@ rule _identity:
         msa = ancient(os.path.join(WORK_DIR, "msa", "{id}.fasta"))
     output:
         os.path.join(WORK_DIR, "id", "{id}.out")
+    threads: workflow.cores
     resources:
         logdir = LOG_DIR,
         mem_mb = 512,
@@ -149,11 +164,11 @@ rule _hmmscan:
         fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
     output:
         os.path.join(WORK_DIR, "hmmscan", "{id}.out")
+    threads: workflow.cores
     resources:
         logdir = LOG_DIR,
         mem_mb = 512,
         time = "00:05:00",
-        cpus = 1,
         queue = "short"
     shell:
         "{HMMER_PATH}/src/hmmscan --tblout {output} --noali {input.profile} {input.fasta} > /dev/null"
@@ -173,11 +188,11 @@ rule _hmmscan_align:
         fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
     output:
         os.path.join(WORK_DIR, "hmmscan_align", "{id}.out")
+    threads: workflow.cores
     resources:
         logdir = LOG_DIR,
         mem_mb = 512,
         time = "00:05:00",
-        cpus = 1,
         queue = "short"
     shell:
         "{HMMER_PATH}/src/hmmscan -o {output} {input.profile} {input.fasta}"
@@ -206,6 +221,7 @@ rule profile_pfam:
         FAMILY_PROFILE + ".h3i",
         FAMILY_PROFILE + ".h3m",
         FAMILY_PROFILE + ".h3p"
+    threads: workflow.cores
     resources:
         mem_mb = 1024 * 8,
         time = "01:00:00",
@@ -224,6 +240,7 @@ rule _phmmer:
         fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")),
     output:
         os.path.join(WORK_DIR, "phmmer", "{id}.out")
+    threads: workflow.cores
     resources:
         logdir = LOG_DIR,
         mem_mb = 256,
@@ -244,6 +261,7 @@ rule _hmmsearch:
         hmm = ancient(os.path.join(WORK_DIR, "profiles", "{id}.hmm"))
     output:
         os.path.join(WORK_DIR, "hmmsearch", "{id}.out")
+    threads: workflow.cores
     resources:
         logdir = LOG_DIR,
         mem_mb = 512,
@@ -263,6 +281,7 @@ rule:
         ancient(os.path.join(WORK_DIR, "msa", "{id}.fasta"))
     output:
         temp(os.path.join(WORK_DIR, "profiles", "{id}.hmm"))
+    threads: workflow.cores
     resources:
         logdir = LOG_DIR,
         mem_mb = 512,
@@ -282,6 +301,7 @@ rule _msa:
         ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
     output:
         os.path.join(WORK_DIR, "msa", "{id}.fasta")
+    threads: workflow.cores
     resources:
         logdir = LOG_DIR,
         mem_mb = 512,
@@ -305,11 +325,11 @@ checkpoint separate_clusters:
         n = config["cluster_number"],
         min_size = config["cluster_min_size"],
         max_size = config["cluster_max_size"]
+    threads: workflow.cores
     resources:
         logdir = LOG_DIR,
         mem_mb = 1024,
-        time = "00:10:00",
-        cpus = 1,
+        time = "00:30:00",
         queue = "short"
     shell:
         "python3 scripts/clusteread.py a {input} --n {params.n} --min {params.min_size} --max {params.max_size}"
