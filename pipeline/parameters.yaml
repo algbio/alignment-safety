@@ -10,8 +10,9 @@ hmmer: './../../hmmer'
 safety: './../safety-windows/main'
 mmseqs: "./../../MMseqs2/bin/mmseqs"
 # output directory
-wrkdir: "out"
+wrkdir: "out/clustering"
 datadir: "data"
+tempdir: "temp"
 # Minimum identity-% to report an alignment
 min_identity: '90'  # '10' - '100'
 #       id <= 25%    : 'usens' : Ultra sensitive
@@ -33,4 +34,4 @@ cluster_number: '100'
 # "--highlow" - Highest lowest pair-wise identity score
 # "--similarity" - Highest hmmsearch score (i.e. most similar sequence to the MSA of the cluster)
 # "--taxonomy" - Highest node in taxonomic tree, DB should contain taxonomic id as "OX=id"
-ref_criterion: '--highlow'
+ref_criterion: '--clustering'
