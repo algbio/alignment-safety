@@ -53,16 +53,6 @@ echo "Storing logs in directory $LOGDIR"
 # echo "$LOGDIR" > .logdir
 
 echo "Creating jobs"
-
 # echo "Arguments: $@" >> "$LOGDIR/run_on_turso.log"
-if tmux ls; then
-    echo "Old session is OK"
-else
-    echo "Creating new session"
-    tmux new -d -s snakemake
-fi
-sleep 1
-CMD="snakemake $@ --profile turso --configfile turso/parameters.yaml --scheduler greedy"
-tmux send-keys -t snakemake "$CMD" ENTER
-echo "Running pipeline in background."
-echo "Use 'tmux a' to attach and 'ctrl + B + D to detach"
+nohup snakemake "$@" --profile turso --configfile turso/parameters.yaml --scheduler greedy > $LOGDIR/progress.log &
+echo "Follow progress: 'less $(LOGDIR)/progress.log'"

@@ -28,6 +28,8 @@ cluster_min_size: '50'
 cluster_max_size: '10000'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
 cluster_number: '100'
+# Parameter to calculate safety windows. Default: 0.75
+alpha_safe: 0.75
 # Reference criterion
 # "--clustering" - default, depends on clustering: mcl or multi-step
 # "--identity" - Highest mean pair-wise identity score

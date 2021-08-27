@@ -128,8 +128,10 @@ rule _safe:
         time = lambda wildcards, input: estimate_cpu_time(str(input)),
         logdir = LOG_DIR,
         queue = "short"
+    params:
+        alpha = config["alpha_safe"]
     shell:
-        "{SAFETY_PATH} --threads {threads} -f {input.fasta} > {output}"
+        "{SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {params.alpha} > {output}"
 
 rule identity:
     input:
