@@ -108,13 +108,13 @@ def estimate_mem(filename):
     with open(filename, "r") as f:
         f.readline()
         t = len(f.readline())
-        return int(min(t * t * 0.0015 + 128, 10000))
+        return int(min(t * t * 0.0015 + 128, 14000))
 
 def estimate_cpu_time(filename):
     with open(filename, "r") as f:
         f.readline()
         k = len(f.readline())
-        t = min(k * k / 1000 * 0.03 + 5, 500)
+        t = min(k * k / 1000 * 0.3 + 5, 500)
         return f"{int(t/60):02}:{int(t%60):02}:00"
 
 rule _safe:
