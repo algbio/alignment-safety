@@ -12,6 +12,7 @@ mmseqs: "./../../MMseqs2/bin/mmseqs"
 # output directory
 wrkdir: "out"
 datadir: "data"
+tempdir: "temp"
 # Minimum identity-% to report an alignment
 min_identity: '90'  # '10' - '100'
 #       id <= 25%    : 'usens' : Ultra sensitive
