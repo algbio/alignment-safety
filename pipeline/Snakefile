@@ -231,6 +231,26 @@ rule profile_pfam:
     shell:
         "{HMMER_PATH}/src/hmmpress {input.profile}"
 
+rule jackhmmer:
+    input:
+        expand(os.path.join(WORK_DIR, "jackhmmer", "{id}.out"), id=CLUSTER_IDS)
+    
+rule _jackhmmer:
+    input:
+        fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta")),
+        db = DB_FILE
+    output:
+        os.path.join(WORK_DIR, "jackhmmer", "{id}.out")
+    threads: 1
+    resources:
+        logdir = LOG_DIR,
+        mem_mb = 256,
+        time = "00:15:00",
+        cpus = 1,
+        queue = "short"
+    shell:
+        "{HMMER_PATH}/src/jackhmmer --tblout {output} --noali {input.fasta} {input.db} > /dev/null"
+
 # phmmer for all clusters
 rule phmmer:
     input:
