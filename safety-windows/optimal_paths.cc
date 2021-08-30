@@ -12,7 +12,7 @@
 
 // translate fasta file letters to amino acid symbols (see http://www.math.utep.edu/Faculty/mleung/bioinformatics/aacodon.html)
 //                    A   B  C  D  E   F  G  H  I   J   K   L   M  N   O   P  Q  R   S   T   U   V   W   X   Y   Z
-const int LTA[26] = { 0, 20, 4, 3, 6, 13, 7, 8, 9, -1, 11, 10, 12, 2, -1, 14, 5, 1, 15, 16, -1, 19, 17, 20, 18, 20 };
+const int LTA[26] = { 0, 20, 4, 3, 6, 13, 7, 8, 9, 20, 11, 10, 12, 2, 20, 14, 5, 1, 15, 16, 20, 19, 17, 20, 18, 20 };
 
 std::vector<std::vector<std::vector<int>>>
 dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
@@ -67,6 +67,7 @@ std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const s
 			std::vector<std::vector<std::vector<Node>>>(m + 1,
 			std::vector<std::vector<Node>>(3)));
 	for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) {
+		// Those errors shouldn't appear anymore
 		if (i < n) {
 			if (a[i] < 'A' || a[i] > 'Z') {
 				std::cerr << "ERROR: INVALID CHARACTER in the reference string: " << a[i] << std::endl;
@@ -83,6 +84,7 @@ std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const s
 				std::cerr << "ERROR: WRONG CHARACTER in the comparing string: " << b[j] << std::endl;
 			}
 		}
+
 		if (i + 1 <= n && j + 1 <= m)
 			adj[i][j][0].push_back(Node(i + 1, j + 1, 0,
 					sign * cost_matrix[LTA[a[i] - 'A']][LTA[b[j] - 'A']]));
