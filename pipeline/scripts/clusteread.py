@@ -56,8 +56,8 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
     mkdir(os.path.join(clustering_path, "refs"))
 
     included = clusters.keys()
-    # if n > 0:
-    #     included = random.sample(clusters.keys(), min(len(clusters.keys()), n))
+    if n > 0:
+        included = random.sample(clusters.keys(), min(len(clusters.keys()), n))
             
     with open(os.path.join(clustering_path, "info.txt"), "w") as f:
         f.write(f"Database: {db_filename}\n")
@@ -107,9 +107,9 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             if not key_map[id] in agh:
                 print(f"cluster: {id} not found")
             # sys.stdout.write("\r%d%%" % int(c * 100.0 / len(key_map.keys())))
-            with open(os.path.join(clustering_path, "fasta", "cluster_" + cluster_num[cleaned] + ".fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "fasta", cluster_num[cleaned] + f"_{cleaned}" + ".fasta"), "a") as out:
                 out.write(">" + protein_fasta + "\n")
-            with open(os.path.join(clustering_path, "clean", "cluster_" + cluster_num[cleaned] + ".clean.fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "clean", cluster_num[cleaned] + f"_{cleaned}" + ".clean.fasta"), "a") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
     print("")
     with open(os.path.join(clustering_path, "info.txt"), "a") as f:
