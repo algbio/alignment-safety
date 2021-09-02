@@ -19,11 +19,11 @@
 int print_usage(char **argv, int help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile> [OPTION...]\n\n";
 	std::cout << "\t-a, --alpha\tFloating value, choose edges that appear in (alpha*100)% of all\n\t            \t(sub-)optimal paths in the alpha-safe path. (Default: 0.75)\n";
+	std::cout << "\t-t, --threshold\tFloating value, set the treshold for suboptimality. (Default: 0.0, Range: [0.0, 1.0])\n";
 	std::cout << "\t-c, --costmat\tReads the aligning cost of two symbols from a text file.\n\t            \tThe text file is a lower triangular matrix with 20 lines. (Default: BLOSUM62)\n";
-	std::cout << "\t-d, --gapcost\tInteger, set the cost of aligning a character to a gap. (Default: 1)\n";
+	std::cout << "\t-g, --gapcost\tInteger, set the cost of aligning a character to a gap. (Default: 1)\n";
 	std::cout << "\t-e, --startgap\tInteger, set the cost of starting a gap alignment. (Default: 11)\n";
-	//std::cout << "\t-g, --threshold\tFloating value, set the treshold for suboptimality. (Default: 0.0, Range: [0.0, 1.0])\n";
-	std::cout << "\t-g, --special\tInteger, sets the cost of aligning symbols with special characters.\n\t            \tINF value ignores these charachters. (Default: 1)\n";
+	std::cout << "\t-s, --special\tInteger, sets the cost of aligning symbols with special characters.\n\t            \tINF value ignores these charachters. (Default: 1)\n";
 	std::cout << "\t-i, --threads\tInteger, specifies the number of threads (Default: 1).\n";
 	std::cout << "\t-h, --help\tShows this help message.\n";
 	return help;
@@ -68,11 +68,11 @@ int main(int argc, char **argv) {
 		static struct option long_options[] = {
 			{ "verbose", no_argument, &verbose_flag, 1 }, // this does nothing for now
 			{ "alpha", required_argument, 0, 'a' },
-			{ "threshold", required_argument, 0, 'b' },
+			{ "threshold", required_argument, 0, 't' },
 			{ "costmat", required_argument, 0, 'c' },
-			{ "gapcost", required_argument, 0, 'd' },
+			{ "gapcost", required_argument, 0, 'g' },
 			{ "startgap", required_argument, 0, 'e' },
-			{ "special", required_argument, 0, 'g' },
+			{ "special", required_argument, 0, 's' },
 			{ "file", required_argument, 0, 'f' },
 			{ "help", no_argument, 0, 'h' },
 			{ "threads", required_argument, 0, 'i' },
@@ -80,27 +80,27 @@ int main(int argc, char **argv) {
 		};
 	
 		int option_index = 0;
-		c = getopt_long(argc, argv, "a:b:c:d:e:g:f:hi:", long_options, &option_index);
+		c = getopt_long(argc, argv, "a:t:c:g:e:s:f:hi:", long_options, &option_index);
 		if (c == -1) break;
 
 		switch (c) {
 			case 'a':
 				alpha = std::stof(optarg);
 				break;
-			case 'b':
+			case 't':
 				TH = std::stof(optarg);
 				break;
 			case 'c':
 				read_cost_matrix = true;
 				cost_matrix_file = optarg;
 				break;
-			case 'd':
+			case 'g':
 				GAP_COST = atoi(optarg);
 				break;
 			case 'e':
 				START_GAP = atoi(optarg);
 				break;
-			case 'g':
+			case 's':
 				if (strcmp(optarg, "INF") == 0) ignore_special = true;
 				else SP = atoi(optarg);
 				break;
