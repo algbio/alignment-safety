@@ -7,8 +7,8 @@
 
 Compile Diamond from source:
 ```
-git clone https://github.com/bbuchfink/diamond
-cd diamond
+wget https://github.com/bbuchfink/diamond/archive/refs/tags/v2.0.8.tar.gz
+cd diamond-2.0.8
 mkdir bin
 cd bin
 cmake -DEXTRA=ON ..

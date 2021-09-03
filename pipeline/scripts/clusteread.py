@@ -86,11 +86,11 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             c += 1
             agh.append(id)
             # sys.stdout.write("\r%d%%" % int(c * 100.0 / len(included)))
-            with open(os.path.join(clustering_path, "fasta", cluster_num[cleaned] + f"_{cleaned}" + ".fasta"), "w") as out:
+            with open(os.path.join(clustering_path, "fasta", f"cluster_{cluster_num[cleaned]}.fasta"), "w") as out:
                 out.write(">" + protein_fasta + "\n")
-            with open(os.path.join(clustering_path, "clean", cluster_num[cleaned] + f"_{cleaned}" + ".clean.fasta"), "w") as out:
+            with open(os.path.join(clustering_path, "clean", f"cluster_{cluster_num[cleaned]}.clean.fasta"), "w") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
-            with open(os.path.join(clustering_path, "refs", cluster_num[cleaned] + f"_{cleaned}" + ".ref.fasta"), "w") as out:
+            with open(os.path.join(clustering_path, "refs", f"cluster_{cluster_num[cleaned]}.ref.fasta"), "w") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
 
     print("\nSeparating clusters to fasta-files...")
@@ -107,9 +107,9 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             if not key_map[id] in agh:
                 print(f"cluster: {id} not found")
             # sys.stdout.write("\r%d%%" % int(c * 100.0 / len(key_map.keys())))
-            with open(os.path.join(clustering_path, "fasta", cluster_num[cleaned] + f"_{cleaned}" + ".fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "fasta", f"cluster_{cluster_num[cleaned]}.fasta"), "a") as out:
                 out.write(">" + protein_fasta + "\n")
-            with open(os.path.join(clustering_path, "clean", cluster_num[cleaned] + f"_{cleaned}" + ".clean.fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "clean", f"cluster_{cluster_num[cleaned]}.clean.fasta"), "a") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
     print("")
     with open(os.path.join(clustering_path, "info.txt"), "a") as f:

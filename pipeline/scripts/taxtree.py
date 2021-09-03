@@ -2,13 +2,13 @@ import sys
 from os.path import expanduser
 import subprocess as sp
 from ete3 import Tree, NCBITaxa
-# ncbi = NCBITaxa()
+ncbi = NCBITaxa()
 from temp import get_time_ms
 
 # Downloads/Updates taxonomy database
-# force_update = False
+# force_update = True
 # if(force_update):
-#     ncbi.update_taxonomy_database()
+#     ncbi.update_taxonomy_database("/wrk/users/gyntartu/pipeline/data/ncbi")
 # else:
 #     try:
 #         file = str(expanduser("~")) + "/.etetoolkit/taxa.sqlite"

@@ -49,16 +49,16 @@ def set_ref(path, ref):
     return data[ref]
 
 def set_refs(path, ref, file_zip):
-    hmms = file_zip[0].replace("/fasta", "/hmmsearch").replace(".fasta", ".out")
-    os.rename(hmms, "/".join(hmms.split("/")[:-1]) + "/" + ref + ".out")
-    ide = file_zip[0].replace("/fasta", "/id").replace(".fasta", ".out")
-    os.rename(ide, "/".join(ide.split("/")[:-1]) + "/" + ref + ".out")
-    msa = file_zip[0].replace("/fasta", "/msa")
-    os.rename(msa, "/".join(msa.split("/")[:-1]) + "/" + ref + ".fasta")
-    hmmsc = file_zip[0].replace("/fasta", "/hmmscan").replace(".fasta", ".out")
-    set_ref(file_zip[0], ref)
-    ref_fasta = set_ref(file_zip[1], ref)
-    id, seq = clusteread.parse_fasta(ref_fasta)
+    # hmms = file_zip[0].replace("/fasta", "/hmmsearch").replace(".fasta", ".out")
+    # os.rename(hmms, "/".join(hmms.split("/")[:-1]) + "/" + ref + ".out")
+    # ide = file_zip[0].replace("/fasta", "/id").replace(".fasta", ".out")
+    # os.rename(ide, "/".join(ide.split("/")[:-1]) + "/" + ref + ".out")
+    # msa = file_zip[0].replace("/fasta", "/msa")
+    # os.rename(msa, "/".join(msa.split("/")[:-1]) + "/" + ref + ".fasta")
+    # hmmsc = file_zip[0].replace("/fasta", "/hmmscan").replace(".fasta", ".out")
+    # set_ref(file_zip[0], ref)
+    # ref_fasta = set_ref(file_zip[1], ref)
+    # id, seq = clusteread.parse_fasta(ref_fasta)
     with open(os.path.join(path, "refs", ref + ".ref.fasta"), "w") as f:
         f.write(">" + id + "\n" + seq + "\n")
 
@@ -174,8 +174,8 @@ def similarity(path):
 
 
 def taxonomy(path):
-    fasta_files = sorted(glob.glob(path + "fasta", "*"))
-    clean_files = sorted(glob.glob(path + "clean", "*"))
+    fasta_files = sorted(glob.glob(os.path.join(path, "fasta", "*")))
+    clean_files = sorted(glob.glob(os.path.join(path, "clean", "*")))
     files = zip(fasta_files, clean_files)
     ncbi = NCBITaxa()
     for file_zip in files:
