@@ -24,13 +24,13 @@ TEMP_DIR = config["tempdir"]
 if CLUSTER_SENSITIVITY == "auto":
     min_id = int(MIN_IDENTITY)
     if min_id <= 25:
-        CLUSTER_SENSITIVITY = "usens"
+        CLUSTER_SENSITIVITY = "--ultra-sensitive"
     elif min_id <= 40:
-        CLUSTER_SENSITIVITY = "vsens"
+        CLUSTER_SENSITIVITY = "--very-sensitive"
     elif min_id <= 90:
-        CLUSTER_SENSITIVITY = "sens"
+        CLUSTER_SENSITIVITY = "--sensitive"
     elif 90 < min_id:
-        CLUSTER_SENSITIVITY = "fast"
+        CLUSTER_SENSITIVITY = "--fast"
     else:
         assert False, "Error choosing the sensitivity"
 
@@ -88,8 +88,7 @@ rule change_ref:
     input:
         db = DB_FILE,
         path = WORK_DIR,
-        r = WORK_DIR + "/id",
-        r2 = WORK_DIR + "/hmmsearch",
+        req = WORK_DIR + "/" + get_ref_reqs()
     threads: workflow.cores
     resources:
         logdir = LOG_DIR,
@@ -391,14 +390,15 @@ rule cluster:
         identity=MIN_IDENTITY,
         algo=CLUSTER_ALGO,
         sens=CLUSTER_SENSITIVITY,
+    threads: 56
     resources:
         logdir = LOG_DIR,
         mem_mb = 18500,
-        time = "01:00:00",
+        time = "02:00:00",
         cpus = 56,
         queue = "short"
     shell:
-        "{DIAMOND_PATH} cluster --cluster-algo {params.algo} --id {params.identity} --cluster-steps {params.sens} -d {input} -o {output} --threads {resources.cpus} --tmpdir {TEMP_DIR} -v"
+        "{DIAMOND_PATH} cluster --cluster-algo {params.algo} --id {params.identity} {params.sens} -d {input} -o {output} --threads {resources.cpus} --tmpdir {TEMP_DIR} -v"
     # run:
     #     if params.algo == "mcl" or params.algo == "multi-step":
     #         shell("{DIAMOND_PATH} cluster --cluster-algo {params.algo} --id {params.identity} --cluster-steps {params.sens} -d {input} -o {output} --threads {resources.cpus} --tmpdir {TEMP_DIR} --log")
