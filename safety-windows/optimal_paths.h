@@ -33,7 +33,7 @@ std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const s
 
 // Construct optimal alignment score matrix
 std::vector<std::vector<std::vector<int>>>
-opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj, int sn, int sm);
+opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj, bool dir);
 
 // Find the sub-graph of the alignment paths with (sub-)optimal paths
 Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[21][21], 

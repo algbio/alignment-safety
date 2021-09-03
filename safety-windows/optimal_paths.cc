@@ -108,8 +108,28 @@ std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const s
 }
 
 std::vector<std::vector<std::vector<int>>>
-opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj, int sn, int sm) {
-	return dijkstra(adj, sn, sm);
+opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj, bool dir) {
+	int n = (int) adj.size() - 1;
+	assert(n > 0);
+	int m = (int) adj[0].size() - 1;
+	assert(m > 0);
+//	return dijkstra(adj, (dir ? n : 0), (dir ? m : 0));
+
+	std::vector<std::vector<std::vector<int>>> d(n + 1, std::vector<std::vector<int>>(m + 1, std::vector<int>(3, (1 << 30))));
+	(dir ? d[n][m][0] : d[0][0][0]) = 0;
+	auto update_dist = [&](int i, int j, int k) {
+		for (const Node &node: adj[i][j][k]) {
+			d[node.N_index][node.M_index][node.type] = std::min(d[node.N_index][node.M_index][node.type], d[i][j][k] + node.cost);
+		}
+	};
+	if (!dir) {
+		for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) for (int k = 2; k >= 0; k--)
+			update_dist(i, j, k);
+	} else {
+		for (int i = n; i >= 0; i--) for (int j = m; j >= 0; j--) for (int k = 0; k <= 2; k++)
+			update_dist(i, j, k);
+	}
+	return d;
 }
 
 Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[21][21],
@@ -127,8 +147,8 @@ Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[21
 			er[nxt.N_index][nxt.M_index][nxt.type].push_back(Node(i, j, k, nxt.cost));
 	}
 
-	std::vector<std::vector<std::vector<int>>> dp = opt_alignment(e, 0, 0);
-	std::vector<std::vector<std::vector<int>>> dpr = opt_alignment(er, n, m);
+	std::vector<std::vector<std::vector<int>>> dp = opt_alignment(e, 0);
+	std::vector<std::vector<std::vector<int>>> dpr = opt_alignment(er, 1);
 	assert(dp[n][m][0] == dpr[0][0][0]);
 
 	const int OPT = dp[n][m][0];
@@ -136,7 +156,7 @@ Dag gen_dag(const std::string &a, const std::string &b, const int cost_matrix[21
 	if (TH != 0) {
 		// find the largest distance
 		std::vector<std::vector<std::vector<std::vector<Node>>>> el = build_dp_matrix(a, b, GAP_COST, START_GAP, cost_matrix, -1);
-		std::vector<std::vector<std::vector<int>>> dpl = opt_alignment(el, 0, 0);
+		std::vector<std::vector<std::vector<int>>> dpl = opt_alignment(el, 0);
 		WORST = (-1) * dpl[n][m][0];
 	} else {
 		WORST = OPT;
