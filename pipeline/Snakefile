@@ -1,4 +1,4 @@
-configfile: 'parameters.yaml'
+configfile: 'turso/parameters.yaml'
 
 from datetime import datetime
 print("Preprocessing config", flush = True)
@@ -52,12 +52,13 @@ def agg_input(wildcards):
 def get_timestamp():
     return datetime.today().strftime('%Y-%m-%dT%H:%M')
 
-LOG_DIR = os.path.join("logs", get_timestamp(), "%j.out")
-print("Finished config preprocessing", flush = True)
 print(f"WORK DIR: {WORK_DIR}")
 print(f"DATA DIR: {DATA_DIR}")
 print(f"TEMP DIR: {TEMP_DIR}")
+LOG_DIR = os.path.join("logs", get_timestamp(), "%j.out")
 print(f"LOG DIR: {LOG_DIR}")
+print("Finished config preprocessing", flush = True)
+
 
 
 rule all:
@@ -326,8 +327,8 @@ rule _msa:
     threads: workflow.cores
     resources:
         logdir = LOG_DIR,
-        mem_mb = 512,
-        time = "00:10:00",
+        mem_mb = 1024,
+        time = "00:30:00",
         cpus = 1,
         queue = "short"
     shell:

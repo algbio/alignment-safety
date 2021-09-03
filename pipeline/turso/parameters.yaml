@@ -24,7 +24,7 @@ sensitivity: 'auto'
 # multi-step or mcl or mmseqs. multi-step and mcl uses DIAMOND. mmseqs uses MMseqs2.
 clustering_algorithm: 'multi-step'
 # Clusters smaller/bigger than these limits will not be considered
-cluster_min_size: '20'
+cluster_min_size: '50'
 cluster_max_size: '1000'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
 cluster_number: '-1'

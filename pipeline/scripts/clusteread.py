@@ -6,7 +6,7 @@ import random
 from taxtree import get_highest_taxonomic_id, read_cluster_taxids
 
 
-def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
+def read_clusters(db_file, filename, min_size, max_size):
     mcl = ".mcl" in filename
     mmseqs = ".mmseqs" in filename
     key_index = 0 if mmseqs else 1
@@ -38,34 +38,12 @@ def read_clusters(db_file, filename, min_size, max_size, use_taxids=False):
                 new_key = clusters[key][0]
                 clusters[new_key] = clusters.pop(key)
 
-    if not use_taxids:
-        for key in clusters.keys():
-            for prot in clusters[key]:
-                key_map[prot] = key
-        return (clusters, key_map)
-
-    
-    ids_to_taxids = {}
-    ids_to_taxids = read_cluster_taxids(db_file)
-    ncbi = NCBITaxa()
-    tax_tree = ncbi.get_topology(ids_to_taxids.values(), intermediate_nodes=False)
-    print(f"Reading taxonomic ids...")
-    for key in list(clusters.keys()):
-        taxids = [ids_to_taxids[_] for _ in clusters[key]]
-        highest_tax = get_highest_taxonomic_id(taxids, tax_tree)
-        highest_id = ""
-        for id in clusters[key]:
-            if ids_to_taxids[id] == highest_tax:
-                highest_id = id
-                break
-        clusters[highest_id] = clusters.pop(key)
-    
-    # Rename clusters to their highest taxonomic node
     for key in clusters.keys():
         for prot in clusters[key]:
             key_map[prot] = key
-
+    
     return (clusters, key_map)
+
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -100,17 +78,19 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             ii += 1
 
     print("Writing reference sequences to fasta-files...")
+    agh = []
     for protein_fasta in db_fasta:
         id, sequence = parse_fasta(protein_fasta)
         if id in included and id == key_map[id]:
             cleaned = id.split("|")[1]
             c += 1
-            sys.stdout.write("\r%d%%" % int(c * 100.0 / len(included)))
-            with open(os.path.join(clustering_path, "fasta", "cluster_" + cluster_num[cleaned] + ".fasta"), "w") as out:
+            agh.append(id)
+            # sys.stdout.write("\r%d%%" % int(c * 100.0 / len(included)))
+            with open(os.path.join(clustering_path, "fasta", cluster_num[cleaned] + f"_{cleaned}" + ".fasta"), "w") as out:
                 out.write(">" + protein_fasta + "\n")
-            with open(os.path.join(clustering_path, "clean", "cluster_" + cluster_num[cleaned] + ".clean.fasta"), "w") as out:
+            with open(os.path.join(clustering_path, "clean", cluster_num[cleaned] + f"_{cleaned}" + ".clean.fasta"), "w") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
-            with open(os.path.join(clustering_path, "refs", "cluster_" + cluster_num[cleaned] + ".ref.fasta"), "w") as out:
+            with open(os.path.join(clustering_path, "refs", cluster_num[cleaned] + f"_{cleaned}" + ".ref.fasta"), "w") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
 
     print("\nSeparating clusters to fasta-files...")
@@ -124,10 +104,12 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
             cluster_id = key_map[id]
             cleaned = cluster_id.split("|")[1]
             c += 1
+            if not key_map[id] in agh:
+                print(f"cluster: {id} not found")
             # sys.stdout.write("\r%d%%" % int(c * 100.0 / len(key_map.keys())))
-            with open(os.path.join(clustering_path, "fasta", "cluster_" + cluster_num[cleaned] + ".fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "fasta", cluster_num[cleaned] + f"_{cleaned}" + ".fasta"), "a") as out:
                 out.write(">" + protein_fasta + "\n")
-            with open(os.path.join(clustering_path, "clean", "cluster_" + cluster_num[cleaned] + ".clean.fasta"), "a") as out:
+            with open(os.path.join(clustering_path, "clean", cluster_num[cleaned] + f"_{cleaned}" + ".clean.fasta"), "a") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
     print("")
     with open(os.path.join(clustering_path, "info.txt"), "a") as f:
@@ -203,7 +185,7 @@ def get_info(clusters):
     return info
 
 def main(args):
-    clusters, key_map = read_clusters(args.db, args.clusters, args.min, args.max, args.taxid)
+    clusters, key_map = read_clusters(args.db, args.clusters, args.min, args.max)
     if len(clusters) < 1:
         print("No clusters read...")
         return
@@ -258,7 +240,6 @@ if __name__ == '__main__':
     parser.add_argument("--max", type=int, default=10000, help="maximum size of the cluster {1000}")
     parser.add_argument("--n", type=int, default=-1, help="If specified, n-number of random clusters will be selected")
     parser.add_argument("--id", type=str, help="cluster id to separate")
-    parser.add_argument("--taxid", action="store_true", help="Reference will be chosen as the highest node in taxonomy tree")
     args = parser.parse_args()
     if check_args(parser, args):
         main(args)

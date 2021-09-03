@@ -54,5 +54,6 @@ echo "Storing logs in directory $LOGDIR"
 
 echo "Creating jobs"
 # echo "Arguments: $@" >> "$LOGDIR/run_on_turso.log"
-nohup snakemake "$@" --profile turso --configfile turso/parameters.yaml --scheduler greedy > $LOGDIR/progress.log &
-echo "Follow progress: 'less $(LOGDIR)/progress.log'"
+nohup snakemake --profile turso --scheduler greedy "$@" >> $LOGDIR/progress.log 2>&1 &
+echo "Running pipeline in background."
+echo Stream progress: less +F logs/latest/progress.log
