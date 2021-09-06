@@ -14,7 +14,6 @@ def rmf(paths):
     for path in paths:
         files = glob.glob(os.path.join(path, "*"))
         for file in files:
-            print(file)
             os.remove(file)
         try:
             os.rmdir(path)
@@ -40,26 +39,15 @@ def set_ref(path, ref):
             if id == ref:
                 continue
             f.write(">" + data[id] + "\n")
-
-    if "clean" in path:
-        ext = ".clean.fasta"
-    else:
-        ext = ".fasta"
-    os.rename(path, os.path.join("/".join(path.split("/")[:-1]), ref + ext))
+ 
     return data[ref]
 
 def set_refs(path, ref, file_zip):
-    # hmms = file_zip[0].replace("/fasta", "/hmmsearch").replace(".fasta", ".out")
-    # os.rename(hmms, "/".join(hmms.split("/")[:-1]) + "/" + ref + ".out")
-    # ide = file_zip[0].replace("/fasta", "/id").replace(".fasta", ".out")
-    # os.rename(ide, "/".join(ide.split("/")[:-1]) + "/" + ref + ".out")
-    # msa = file_zip[0].replace("/fasta", "/msa")
-    # os.rename(msa, "/".join(msa.split("/")[:-1]) + "/" + ref + ".fasta")
-    # hmmsc = file_zip[0].replace("/fasta", "/hmmscan").replace(".fasta", ".out")
-    # set_ref(file_zip[0], ref)
-    # ref_fasta = set_ref(file_zip[1], ref)
-    # id, seq = clusteread.parse_fasta(ref_fasta)
-    with open(os.path.join(path, "refs", ref + ".ref.fasta"), "w") as f:
+    cluster_num = file_zip[0].split("/")[-1].split(".")[0]
+    set_ref(file_zip[0], ref)
+    ref_fasta = set_ref(file_zip[1], ref)
+    id, seq = clusteread.parse_fasta(ref_fasta)
+    with open(os.path.join(path, "refs", cluster_num + ".ref.fasta"), "w") as f:
         f.write(">" + id + "\n" + seq + "\n")
 
 def read_hmmsearch_score(path):

@@ -10,11 +10,11 @@ hmmer: './../../hmmer'
 safety: './../safety-windows/main'
 mmseqs: "./../../MMseqs2/bin/mmseqs"
 # output directory
-wrkdir: "out/temp"
+wrkdir: "out"
 datadir: "data"
 tempdir: "temp"
 # Minimum identity-% to report an alignment
-min_identity: '40'  # '10' - '100'
+min_identity: '90'  # '10' - '100'
 #       id <= 25%    : 'usens' : Ultra sensitive
 # 25% < id <= 40%    : 'vsens' : Very sensitive
 # 40% < id <= 90%    : 'sens' : Sensitive
@@ -27,7 +27,7 @@ clustering_algorithm: 'multi-step'
 cluster_min_size: '50'
 cluster_max_size: '10000'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
-cluster_number: '-1'
+cluster_number: '10'
 # Parameter to calculate safety windows. Default: 0.75
 alpha_safe: 0.75
 # Reference criterion

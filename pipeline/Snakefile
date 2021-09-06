@@ -1,4 +1,4 @@
-configfile: 'turso/parameters.yaml'
+configfile: 'parameters.yaml'
 
 from datetime import datetime
 print("Preprocessing config", flush = True)

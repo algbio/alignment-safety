@@ -26,10 +26,7 @@ def validate_group(path):
     hmms_files = sorted(glob.glob(os.path.join(path, "hmmsearch", "*.out")))
     id_files = sorted(glob.glob(os.path.join(path, "id", "*.out")))
     assert (len(fasta_files) == len(ref_files) and
-            len(clean_files) == len(ref_files) and
-            len(msa_files) == len(ref_files) and
-            len(hmms_files) == len(ref_files) and
-            len(id_files) == len(ref_files)), "Wrong amount of files"
+            len(clean_files) == len(ref_files)), "Wrong amount of files"
     files = list(zip(fasta_files, clean_files, ref_files, msa_files, hmms_files, id_files))
     fasta_count = 0
     clean_count = 0
