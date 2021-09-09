@@ -27,7 +27,6 @@ def read_clusters(db_file, filename, min_size, max_size):
                 clusters[names[key_index]] = []
             
             clusters[names[key_index]].append(names[val_index])
-    print(f"Total number of clusters in DB: {len(clusters.keys())}")
 
     # Delete clusters that dont fit min-max criteria
     for key in list(clusters.keys()):
@@ -58,12 +57,6 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
     included = clusters.keys()
     if n > 0:
         included = random.sample(clusters.keys(), min(len(clusters.keys()), n))
-            
-    with open(os.path.join(clustering_path, "info.txt"), "w") as f:
-        f.write(f"Database: {db_filename}\n")
-        f.write(f"Clustering parameters: {clustering_path}\n")
-        f.write(get_info(clusters, included))
-        f.write(f"Cluster size range treshold: {min_size}-{max_size}\n")
 
     c = 0
     db_fasta = ""
@@ -111,8 +104,13 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
                 out.write(">" + protein_fasta + "\n")
             with open(os.path.join(clustering_path, "clean", f"cluster_{cluster_num[cleaned]}.clean.fasta"), "a") as out:
                 out.write(">" + id + "\n" + sequence + "\n")
-    print("")
-    with open(os.path.join(clustering_path, "info.txt"), "a") as f:
+                
+    with open(os.path.join(clustering_path, "info.txt"), "w") as f:
+        f.write(f"Total number of clusters in DB: {len(clusters.keys())}\n")
+        f.write(f"Database: {db_filename}\n")
+        f.write(f"Clustering parameters: {clustering_path}\n")
+        f.write(get_info(clusters, included))
+        f.write(f"Cluster size range treshold: {min_size}-{max_size}\n")
         f.write(f"Total number of sequences: {c}\n")
         f.write(f"Total number of clusters: {len(included)}\n")
 
@@ -174,7 +172,6 @@ def get_info(clusters, included=None):
             elif ranges[4] < l:
                 bins[5] += 1
 
-    info += f"Total number of clusters:       {len(clusters.keys())}\n"
     info += f"Size of the smallest cluster:   {s_len}, {s_name}\n"
     info += f"Size of the biggest cluster:    {b_len},  {b_name}\n"
     info += "Distribution of cluster sizes:\n"
