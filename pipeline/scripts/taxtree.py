@@ -58,19 +58,22 @@ def print_stats(tree):
     
 
 def read_cluster_taxids(filename):
-    f = open(filename, "r")
     tax_dict = {}
-    try:
+    proteins = ""
+    with open(filename, "r") as f:
         proteins = ("\n" + f.read()).split("\n>")[1:]
-        for protein in proteins:
-            protein_data = protein.split("\n")[0]
-            protein_id = protein_data.split(" ")[0]
-            slc = protein_data.find("OX=")
-            tax_id = int(protein_data[slc+3:].split(" ")[0])
-            tax_dict[protein_id] = tax_id
 
-    finally:
-        f.close()
+    for protein in proteins:
+        protein_data = protein.split("\n")[0]
+        protein_id = protein_data.split(" ")[0]
+        slc = protein_data.find("OX=")
+        tax_id = int(protein_data[slc+3:].split(" ")[0])
+        try:
+            ncbi.get_lineage(tax_id)
+            tax_dict[protein_id] = tax_id
+        except:
+            print(f"Unknown taxid: {tax_id}")
+
     return tax_dict
     
 

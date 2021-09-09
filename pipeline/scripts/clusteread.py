@@ -62,7 +62,7 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
     with open(os.path.join(clustering_path, "info.txt"), "w") as f:
         f.write(f"Database: {db_filename}\n")
         f.write(f"Clustering parameters: {clustering_path}\n")
-        f.write(get_info(clusters))
+        f.write(get_info(clusters, included))
         f.write(f"Cluster size range treshold: {min_size}-{max_size}\n")
 
     c = 0
@@ -139,36 +139,40 @@ def separate_cluster(clusters, db_filename, cluster_key):
             if protein_id in clusters[cluster_key]:
                 out.write(">" + protein + "\n")
 
-def get_info(clusters):
+def get_info(clusters, included=None):
+    if included == None:
+        included = clusters.keys()
     info = ""
     s_len, s_name = 1000000,""
     b_len, b_name = 0, ""
     for key in clusters.keys():
-        if s_len > len(clusters[key]):
-            s_len = len(clusters[key])
-            s_name = key
-        if b_len < len(clusters[key]):
-            b_len = len(clusters[key])
-            b_name = key
+        if key in included:
+            if s_len > len(clusters[key]):
+                s_len = len(clusters[key])
+                s_name = key
+            if b_len < len(clusters[key]):
+                b_len = len(clusters[key])
+                b_name = key
 
     # bar diagram
     # 1-10, 11-100, 101-300, 301-500, 501-1000, 1000+
     ranges = [10, 100, 300, 500, 1000]
     bins = [0,0,0,0,0,0]
     for key in clusters.keys():
-        l = len(clusters[key])
-        if 0 < l <= ranges[0]:
-            bins[0] += 1
-        elif ranges[0] < l <= ranges[1]:
-            bins[1] += 1
-        elif ranges[1] < l <= ranges[2]:
-            bins[2] += 1
-        elif ranges[2] < l <= ranges[3]:
-            bins[3] += 1
-        elif ranges[3] < l <= ranges[4]:
-            bins[4] += 1
-        elif ranges[4] < l:
-            bins[5] += 1
+        if key in included:
+            l = len(clusters[key])
+            if 0 < l <= ranges[0]:
+                bins[0] += 1
+            elif ranges[0] < l <= ranges[1]:
+                bins[1] += 1
+            elif ranges[1] < l <= ranges[2]:
+                bins[2] += 1
+            elif ranges[2] < l <= ranges[3]:
+                bins[3] += 1
+            elif ranges[3] < l <= ranges[4]:
+                bins[4] += 1
+            elif ranges[4] < l:
+                bins[5] += 1
 
     info += f"Total number of clusters:       {len(clusters.keys())}\n"
     info += f"Size of the smallest cluster:   {s_len}, {s_name}\n"

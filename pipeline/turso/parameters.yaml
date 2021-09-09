@@ -14,7 +14,7 @@ wrkdir: "/wrk/users/gyntartu/pipeline/out"
 datadir: "/wrk/users/gyntartu/pipeline/data"
 tempdir: "/wrk/users/gyntartu/pipeline/temp"
 # Minimum identity-% to report an alignment
-min_identity: '40'  # '10' - '100'
+min_identity: '20'  # '10' - '100'
 # https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#sensitivity-modes
 #       id <= 25%    : --ultra-sensitive
 # 25% < id <= 40%    : --very-sensitive
@@ -25,11 +25,13 @@ sensitivity: 'auto'
 # multi-step or mcl or mmseqs. multi-step and mcl uses DIAMOND. mmseqs uses MMseqs2.
 clustering_algorithm: 'multi-step'
 # Clusters smaller/bigger than these limits will not be considered
-cluster_min_size: '50'
-cluster_max_size: '1000'
+cluster_min_size: '100'
+cluster_max_size: '10000'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
+# set to -1 if you want all clusters
 cluster_number: '-1'
 # Parameter to calculate safety windows. Default: 0.75
+# 0.5 <= a < 1.0
 alpha_safe: 0.75
 # Reference criterion
 # "--clustering" - default, depends on clustering: mcl or multi-step

@@ -98,23 +98,23 @@ rule change_ref:
     output:
         temp(os.path.join(WORK_DIR, "validate_ref.txt"))
     shell:
-        "python3 scripts/change_ref.py {input.db} {input.path} {REF_CRITERION} > {output}"
+        "python3 scripts/change_ref.py {input.db} {input.path} {REF_CRITERION} | tee {output}"
 
 rule safe:
     input:
         expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS)
 
-def estimate_mem(filename):
+def estimate_mem(filename,  wildcards, attempt):
     with open(filename, "r") as f:
         f.readline()
         t = len(f.readline())
-        return int(min(t * t * 0.0015 + 128, 14000))
+        return int(min(t * t * 0.0015 + 128, 14000)) * attempt
 
-def estimate_cpu_time(filename):
+def estimate_cpu_time(filename, wildcards, attempt):
     with open(filename, "r") as f:
         f.readline()
         k = len(f.readline())
-        t = min(k * k / 1000 * 0.3 + 5, 500)
+        t = min(k * k / 1000 * 0.3 + 5, 500) * attempt
         return f"{int(t/60):02}:{int(t%60):02}:00"
 
 rule _safe:
@@ -124,8 +124,8 @@ rule _safe:
         os.path.join(WORK_DIR, "safety", "{id}.out")
     threads: workflow.cores
     resources:
-        mem_mb = lambda wildcards, input: estimate_mem(str(input)),
-        time = lambda wildcards, input: estimate_cpu_time(str(input)),
+        mem_mb = lambda wildcards, attempt, input: estimate_mem(str(input), wildcards, attempt),
+        time = lambda wildcards, attempt, input: estimate_cpu_time(str(input), wildcards, attempt),
         logdir = LOG_DIR,
         queue = "short"
     params:
@@ -337,7 +337,7 @@ rule _msa:
 checkpoint separate_clusters:
     input:
         f"{DB_FILE}",
-        ancient(os.path.join(WORK_DIR, f"{DB_FILENAME}.{CLUSTER_ALGO}"))
+        os.path.join(WORK_DIR, f"{DB_FILENAME}.{CLUSTER_ALGO}")
     output:
         os.path.join(WORK_DIR, "info.txt"),
         directory(os.path.join(WORK_DIR, "clean")),
@@ -383,7 +383,7 @@ rule cluster_reqs:
 # Clustering
 rule cluster:
     input:
-        ancient(CLUSTER_REQS)
+        CLUSTER_REQS
     output:
         clu = os.path.join(WORK_DIR, f"{DB_FILENAME}.{CLUSTER_ALGO}"),
     params:
