@@ -6,7 +6,7 @@ import random
 from taxtree import get_highest_taxonomic_id, read_cluster_taxids
 
 
-def read_clusters(db_file, filename, min_size, max_size):
+def read_clusters(db_file, filename):
     mcl = ".mcl" in filename
     mmseqs = ".mmseqs" in filename
     key_index = 0 if mmseqs else 1
@@ -28,10 +28,6 @@ def read_clusters(db_file, filename, min_size, max_size):
             
             clusters[names[key_index]].append(names[val_index])
 
-    # Delete clusters that dont fit min-max criteria
-    for key in list(clusters.keys()):
-        if min_size > len(clusters[key]) or len(clusters[key]) > max_size:
-            del clusters[key]
     if mcl:
         for key in list(clusters.keys()):
                 new_key = clusters[key][0]
@@ -53,6 +49,11 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
     mkdir(os.path.join(clustering_path, "fasta"))
     mkdir(os.path.join(clustering_path, "clean"))
     mkdir(os.path.join(clustering_path, "refs"))
+    db_cluster_count = len(clusters.keys())
+    # Delete clusters that dont fit min-max criteria
+    for key in list(clusters.keys()):
+        if min_size > len(clusters[key]) or len(clusters[key]) > max_size:
+            del clusters[key]
 
     included = clusters.keys()
     if n > 0:
@@ -106,7 +107,7 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
                 out.write(">" + id + "\n" + sequence + "\n")
                 
     with open(os.path.join(clustering_path, "info.txt"), "w") as f:
-        f.write(f"Total number of clusters in DB: {len(clusters.keys())}\n")
+        f.write(f"Total number of clusters in DB: {db_cluster_count}\n")
         f.write(f"Database: {db_filename}\n")
         f.write(f"Clustering parameters: {clustering_path}\n")
         f.write(get_info(clusters, included))
@@ -186,7 +187,7 @@ def get_info(clusters, included=None):
     return info
 
 def main(args):
-    clusters, key_map = read_clusters(args.db, args.clusters, args.min, args.max)
+    clusters, key_map = read_clusters(args.db, args.clusters)
     if len(clusters) < 1:
         print("No clusters read...")
         return

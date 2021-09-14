@@ -14,7 +14,7 @@ wrkdir: "/wrk/users/gyntartu/pipeline/out"
 datadir: "/wrk/users/gyntartu/pipeline/data"
 tempdir: "/wrk/users/gyntartu/pipeline/temp"
 # Minimum identity-% to report an alignment
-min_identity: '20'  # '10' - '100'
+min_identity: '90'  # '10' - '100'
 # https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#sensitivity-modes
 #       id <= 25%    : --ultra-sensitive
 # 25% < id <= 40%    : --very-sensitive
