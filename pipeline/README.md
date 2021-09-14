@@ -115,11 +115,14 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 
 ## How to configure and run the pipeline on cluster?
 
-#### 1. Download repository and dependencies somewhere into $PROJ on Turso
+#### 1. Install Mamba (Conda):
+-   `wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh`
+-   `bash Mambaforge-$(uname)-$(uname -m).sh`
+#### 2. Download repository and dependencies somewhere into $PROJ on Turso
 
-#### 2. Download Database e.g. swissprot into $WRKDIR
+#### 3. Download Database e.g. swissprot into $WRKDIR
 
-#### 3. Edit `turso/parameters.yaml`:
+#### 4. Edit `turso/parameters.yaml`:
 -   Dependencies should be located in `/proj/<username>/` ($PROJ)
 -   Data such as Swissprotein and Pfam DB should be located somewhere in `/wrk/users/<username>` ($WRKDIR)
 -    Work (wrkdir) and temporary (tempdir) directory should be located in `/wrk/users/<username>` ($WRKDIR)
@@ -136,7 +139,7 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 
 #### 7. Useful slurm commands:
 -   `slurm w q` to see running jobs
--   `slurm w qq` to see running jobs with resourse usage
+-   `slurm w qq` to see running jobs with resource usage
 -   `scancel -M ukko2 <job_id>` to cancel job
 -   `seff -M ukko2 <job_id>` to see used resources and run time of job
 -   `squeue -o '%A %.28R %j' -u <username>` to see if you have any jobs running
