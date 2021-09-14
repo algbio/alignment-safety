@@ -5,7 +5,7 @@
 - ete3      https://github.com/etetoolkit/ete
 - Hmmer     https://github.com/EddyRivasLab/hmmer
 
-Compile Diamond from source:
+Compile Diamond from source (version 2.0.8 does not have issues with clustering):
 ```
 wget https://github.com/bbuchfink/diamond/archive/refs/tags/v2.0.8.tar.gz
 cd diamond-2.0.8
@@ -14,17 +14,6 @@ cd bin
 cmake -DEXTRA=ON ..
 make
 ```
-(optional)
-Compile Raxml-ng from source:
-```
-git clone https://github.com/amkozlov/raxml-ng
-cd raxml-ng
-mkdir build
-cd build
-cmake ..
-make
-```
-
 Compile Hmmer and easel from source:
 ```
 git clone https://github.com/EddyRivasLab/hmmer
@@ -37,10 +26,6 @@ make check                 # optional: run automated tests
 cd easel
 make
 ```
-(optional)
-Follow instruction for MMseqs2 installation (compilation from source recommended for better performance):
-<https://github.com/soedinglab/MMseqs2#installation>
-
 Download muscle:
 <http://www.drive5.com/muscle/downloads.htm>
 
@@ -50,6 +35,19 @@ cd alignment-safety/pipeline
 conda env create -f environment.yaml
 conda activate pipeline
 ```
+(optional)
+Compile Raxml-ng from source:
+```
+git clone https://github.com/amkozlov/raxml-ng
+cd raxml-ng
+mkdir build
+cd build
+cmake ..
+make
+```
+(optional)
+Follow instruction for MMseqs2 installation (compilation from source recommended for better performance):
+<https://github.com/soedinglab/MMseqs2#installation>
 
 ---
 
@@ -115,7 +113,36 @@ conda activate pipeline
     Runs `hmmscan` on all clusters. Outputs to `WORK_DIR/hmmscan/`.
 - `phmmer`<br/>
     Runs `phmmer` on all clusters. Outputs to `WORK_DIR/phmmer/`.
-    
+
+## How to configure and run the pipeline on cluster?
+
+#### 1. Download repository and dependencies somewhere into $PROJ on Turso
+
+#### 2. Download Database e.g. swissprot into $WRKDIR
+
+#### 3. Edit `turso/parameters.yaml`:
+-   Dependencies should be located in `/proj/<username>/`
+-   Data such as Swissprotein and Pfam DB should be located somewhere in `/wrk/users/<username>`
+-    Work (wrkdir) and temporary (tempdir) directory should be located in `/wrk/users/<username>`
+
+#### 5. Run the Snakemake pipeline via shell script:
+-   `turso/run.sh rule -j <num_of_maximum_parallel_processes>`
+    For clustering -j 56 should conclude in 30-60min
+    Separating and changing reference -j 1-4
+
+#### 6. Follow the progress:
+-   To stream the progress `less +F logs/latest/progress.log`
+-   `ctrl + c` then `q` exits the stream. Pipeline is still running in background.
+-   Logs are found in `logs/<datetime>/<job_id>.out`
+
+#### 7. Useful slurm commands:
+-   `slurm w q` to see running jobs
+-   `slurm w qq`to see running jobs with resourse usage
+-   `scancel -M ukko2 <job_id>` to cancel job
+-   `seff -M ukko2 <job_id>` to see used resources and run time of job
+-   `squeue -o '%A %.28R %j' -u <username>` to see if you have any jobs running
+
 ---
 
 Hmmer documentation: <http://eddylab.org/software/hmmer/Userguide.pdf>
+Guide for slurm and other useful documentation (everything might not be applicable for Turso) <https://scicomp.aalto.fi/>
