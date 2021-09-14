@@ -1,6 +1,5 @@
 ## Dependencies
 - Diamond   https://github.com/bbuchfink/diamond
-- Raxml-ng  https://github.com/amkozlov/raxml-ng
 - Muscle    http://www.drive5.com/muscle/
 - ete3      https://github.com/etetoolkit/ete
 - Hmmer     https://github.com/EddyRivasLab/hmmer
@@ -156,5 +155,5 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 
 ---
 
-Hmmer documentation: <http://eddylab.org/software/hmmer/Userguide.pdf>
-Guide for slurm and other useful documentation (everything might not be applicable for Turso) <https://scicomp.aalto.fi/>
+-   Hmmer documentation: <http://eddylab.org/software/hmmer/Userguide.pdf>
+-   Guide for slurm and other useful documentation (everything might not be applicable for Turso) <https://scicomp.aalto.fi/>
