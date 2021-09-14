@@ -148,7 +148,7 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 
 #### On turso, it's not possible to use `--taxonomy` as cluster reference out of the box
 -   This is due to disk quota limits on Turso. Ete3 tries to download taxonomy database into `~` which is not meant for data storage. This exceeds disk quota limit and is interrupted.
--   One solution to fix this is to run Ete3 on your local machine and copy contents of `~/.etetoolkit` on your local machine into $WKRDIR (e.g. `/wrk/users/<username>/ncbi`) and make symbolic link `ln -s /wrk/users/<username>/ncbi ~/.etetoolkit`
+-   Workaround solution to fix this is to run Ete3 on your local machine and copy contents of `~/.etetoolkit` on your local machine into $WKRDIR (e.g. `/wrk/users/<username>/ncbi`) and make symbolic link `ln -s /wrk/users/<username>/ncbi ~/.etetoolkit`
 
 #### Problems with Diamond clustering for version > 2.0.8.
 -   Use Diamond v2.0.8 for now
