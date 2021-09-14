@@ -162,6 +162,19 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 #### Problems with Diamond clustering for version > 2.0.8.
 -   Use Diamond v2.0.8 for now
 
+## Additional downloads:
+
+#### Swiss-protein database:
+-   If working on cluster download and extract somewhere in $WRKDIR
+-   `wget https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz`
+-   `gzip -d uniprot_sprot.fasta.gz`
+-   Add path to parameters.yaml and/or turso/parameters.yaml
+
+#### Pfam database (for hmmscan):
+-   If working on cluster download and extract somewhere in $WRKDIR
+-   `wget http://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.seed.gz`
+-   `gzip -d Pfam-A.seed.gz`
+-   Add path to parameters.yaml and/or turso/parameters.yaml
 ---
 -   University of Helsinki HPC user guide: <https://wiki.helsinki.fi/display/it4sci/HPC+Environment+User+Guide>
 -   Hmmer documentation: <http://eddylab.org/software/hmmer/Userguide.pdf>
