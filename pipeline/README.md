@@ -121,14 +121,14 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 #### 2. Download Database e.g. swissprot into $WRKDIR
 
 #### 3. Edit `turso/parameters.yaml`:
--   Dependencies should be located in `/proj/<username>/`
--   Data such as Swissprotein and Pfam DB should be located somewhere in `/wrk/users/<username>`
--    Work (wrkdir) and temporary (tempdir) directory should be located in `/wrk/users/<username>`
+-   Dependencies should be located in `/proj/<username>/` ($PROJ)
+-   Data such as Swissprotein and Pfam DB should be located somewhere in `/wrk/users/<username>` ($WRKDIR)
+-    Work (wrkdir) and temporary (tempdir) directory should be located in `/wrk/users/<username>` ($WRKDIR)
 
 #### 5. Run the Snakemake pipeline via shell script:
 -   `turso/run.sh rule -j <num_of_maximum_parallel_processes>`
-    For clustering -j 56 should conclude in 30-60min
-    Separating and changing reference -j 1-4
+-    For clustering -j 56 should conclude in 30-60min
+-    Separating and changing reference -j 1-4
 
 #### 6. Follow the progress:
 -   To stream the progress `less +F logs/latest/progress.log`
@@ -137,7 +137,7 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 
 #### 7. Useful slurm commands:
 -   `slurm w q` to see running jobs
--   `slurm w qq`to see running jobs with resourse usage
+-   `slurm w qq` to see running jobs with resourse usage
 -   `scancel -M ukko2 <job_id>` to cancel job
 -   `seff -M ukko2 <job_id>` to see used resources and run time of job
 -   `squeue -o '%A %.28R %j' -u <username>` to see if you have any jobs running
