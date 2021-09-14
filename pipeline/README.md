@@ -7,9 +7,11 @@
 Compile Diamond from source (version 2.0.8 does not have issues with clustering):
 ```
 wget https://github.com/bbuchfink/diamond/archive/refs/tags/v2.0.8.tar.gz
+tar -xvzf v2.0.8.tar.gz
 cd diamond-2.0.8
 mkdir bin
 cd bin
+module load GCC CMake       # Only on computer cluster
 cmake -DEXTRA=ON ..
 make
 ```
@@ -18,15 +20,18 @@ Compile Hmmer and easel from source:
 git clone https://github.com/EddyRivasLab/hmmer
 cd hmmer
 git clone https://github.com/EddyRivasLab/easel
+module load Autoconf        # Only on computer cluster
 autoconf
 ./configure
 make
-make check                 # optional: run automated tests
+make check                  # optional: run automated tests
 cd easel
 make
 ```
 Download muscle:
 <http://www.drive5.com/muscle/downloads.htm>
+wget http://www.drive5.com/muscle/downloads3.8.31/muscle3.8.31_i86linux64.tar.gz
+tar -xvzf v2.0.8.tar.gz
 
 ete3 and snakemake via Conda environment
 ```
@@ -118,6 +123,7 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 #### 1. Install Mamba (Conda):
 -   `wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh`
 -   `bash Mambaforge-$(uname)-$(uname -m).sh`
+-   install into `/proj/<username>/mamba`
 #### 2. Download repository and dependencies somewhere into $PROJ on Turso
 
 #### 3. Download Database e.g. swissprot into $WRKDIR
@@ -157,6 +163,6 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 -   Use Diamond v2.0.8 for now
 
 ---
-
+-   University of Helsinki HPC user guide: <https://wiki.helsinki.fi/display/it4sci/HPC+Environment+User+Guide>
 -   Hmmer documentation: <http://eddylab.org/software/hmmer/Userguide.pdf>
 -   Guide for slurm and other useful documentation (everything might not be applicable for Turso) <https://scicomp.aalto.fi/>
