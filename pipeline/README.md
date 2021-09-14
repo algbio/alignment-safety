@@ -142,6 +142,18 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 -   `seff -M ukko2 <job_id>` to see used resources and run time of job
 -   `squeue -o '%A %.28R %j' -u <username>` to see if you have any jobs running
 
+## Issues:
+
+#### It's not possible to run rules, such as, `all`, `msa`, `safe`, `identity`, `hmmsearch`, `hmmscan`, `phmmer` before separating clusters `separate_clusters`
+-   This is due to that Snakemake will look for files in `fasta/` and `clean/` to execute these rules. Before separating clusters there are no files in those folders.
+
+#### On turso, it's not possible to use `--taxonomy` as cluster reference out of the box
+-   This is due to disk quota limits on Turso. Ete3 tries to download taxonomy database into `~` which is not meant for data storage. This exceeds disk quota limit and is interrupted.
+-   One solution to fix this is to run Ete3 on your local machine and copy contents of `~/.etetoolkit` on your local machine into $WKRDIR (e.g. `/wrk/users/<username>/ncbi`) and make symbolic link `ln -s /wrk/users/<username>/ncbi ~/.etetoolkit`
+
+#### Problems with Diamond clustering for version > 2.0.8.
+-   Use Diamond v2.0.8 for now
+
 ---
 
 Hmmer documentation: <http://eddylab.org/software/hmmer/Userguide.pdf>
