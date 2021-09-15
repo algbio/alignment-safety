@@ -1,7 +1,7 @@
 # download e.g. swiss protein db from: 
 # https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
 db_file: 'data/uniprot_sprot.fasta'
-# PFAM protein domain database from PFAM
+# PFAM protein domain database from http://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.seed.gz
 family_db: 'data/pfam/Pfam-A.seed' 
 diamond: './../../diamond-2.0.8/bin/diamond'
 raxml: './../../raxml-ng/bin/raxml-ng'

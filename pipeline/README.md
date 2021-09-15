@@ -1,18 +1,43 @@
 ## Dependencies
 - Diamond   https://github.com/bbuchfink/diamond
-- Raxml-ng  https://github.com/amkozlov/raxml-ng
 - Muscle    http://www.drive5.com/muscle/
 - ete3      https://github.com/etetoolkit/ete
 - Hmmer     https://github.com/EddyRivasLab/hmmer
 
-Compile Diamond from source:
+Compile Diamond from source (version 2.0.8 does not have issues with clustering):
 ```
 wget https://github.com/bbuchfink/diamond/archive/refs/tags/v2.0.8.tar.gz
+tar -xvzf v2.0.8.tar.gz
 cd diamond-2.0.8
 mkdir bin
 cd bin
+module load GCC CMake       # Only on computer cluster
 cmake -DEXTRA=ON ..
 make
+```
+Compile Hmmer and easel from source:
+```
+git clone https://github.com/EddyRivasLab/hmmer
+cd hmmer
+git clone https://github.com/EddyRivasLab/easel
+module load Autoconf        # Only on computer cluster
+autoconf
+./configure
+make
+make check                  # optional: run automated tests
+cd easel
+make
+```
+Download muscle:
+<http://www.drive5.com/muscle/downloads.htm>
+wget http://www.drive5.com/muscle/downloads3.8.31/muscle3.8.31_i86linux64.tar.gz
+tar -xvzf v2.0.8.tar.gz
+
+ete3 and snakemake via Conda environment
+```
+cd alignment-safety/pipeline
+conda env create -f environment.yaml
+conda activate pipeline
 ```
 (optional)
 Compile Raxml-ng from source:
@@ -24,32 +49,9 @@ cd build
 cmake ..
 make
 ```
-
-Compile Hmmer and easel from source:
-```
-git clone https://github.com/EddyRivasLab/hmmer
-cd hmmer
-git clone https://github.com/EddyRivasLab/easel
-autoconf
-./configure
-make
-make check                 # optional: run automated tests
-cd easel
-make
-```
 (optional)
 Follow instruction for MMseqs2 installation (compilation from source recommended for better performance):
 <https://github.com/soedinglab/MMseqs2#installation>
-
-Download muscle:
-<http://www.drive5.com/muscle/downloads.htm>
-
-ete3 and snakemake via Conda environment
-```
-cd alignment-safety/pipeline
-conda env create -f environment.yaml
-conda activate pipeline
-```
 
 ---
 
@@ -115,7 +117,65 @@ conda activate pipeline
     Runs `hmmscan` on all clusters. Outputs to `WORK_DIR/hmmscan/`.
 - `phmmer`<br/>
     Runs `phmmer` on all clusters. Outputs to `WORK_DIR/phmmer/`.
-    
----
 
-Hmmer documentation: <http://eddylab.org/software/hmmer/Userguide.pdf>
+## How to configure and run the pipeline on cluster?
+
+#### 1. Install Mamba (Conda):
+-   `wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh`
+-   `bash Mambaforge-$(uname)-$(uname -m).sh`
+-   install into `/proj/<username>/mamba`
+#### 2. Download repository and dependencies somewhere into $PROJ on Turso
+
+#### 3. Download Database e.g. swissprot into $WRKDIR
+
+#### 4. Edit `turso/parameters.yaml`:
+-   Dependencies should be located in `/proj/<username>/` ($PROJ)
+-   Data such as Swissprotein and Pfam DB should be located somewhere in `/wrk/users/<username>` ($WRKDIR)
+-    Work (wrkdir) and temporary (tempdir) directory should be located in `/wrk/users/<username>` ($WRKDIR)
+
+#### 5. Run the Snakemake pipeline via shell script:
+-   `turso/run.sh rule -j <num_of_maximum_parallel_processes>`
+-    For clustering -j 56 should conclude in 30-60min
+-    Separating and changing reference -j 1-4
+
+#### 6. Follow the progress:
+-   To stream the progress `less +F logs/latest/progress.log`
+-   `ctrl + c` then `q` exits the stream. Pipeline is still running in background.
+-   Logs are found in `logs/<datetime>/<job_id>.out`
+
+#### 7. Useful slurm commands:
+-   `slurm w q` to see running jobs
+-   `slurm w qq` to see running jobs with resource usage
+-   `scancel -M ukko2 <job_id>` to cancel job
+-   `seff -M ukko2 <job_id>` to see used resources and run time of job
+-   `squeue -o '%A %.28R %j' -u <username>` to see if you have any jobs running
+
+## Issues:
+
+#### It's not possible to run rules, such as, `all`, `msa`, `safe`, `identity`, `hmmsearch`, `hmmscan`, `phmmer` before separating clusters `separate_clusters`
+-   This is due to that Snakemake will look for files in `fasta/` and `clean/` to execute these rules. Before separating clusters there are no files in those folders.
+
+#### On turso, it's not possible to use `--taxonomy` as cluster reference out of the box
+-   This is due to disk quota limits on Turso. Ete3 tries to download taxonomy database into `~` which is not meant for data storage. This exceeds disk quota limit and is interrupted.
+-   Workaround solution to fix this is to run Ete3 on your local machine and copy contents of `~/.etetoolkit` on your local machine into $WKRDIR (e.g. `/wrk/users/<username>/ncbi`) and make symbolic link `ln -s /wrk/users/<username>/ncbi ~/.etetoolkit`
+
+#### Problems with Diamond clustering for version > 2.0.8.
+-   Use Diamond v2.0.8 for now
+
+## Additional downloads:
+
+#### Swiss-protein database:
+-   If working on cluster download and extract somewhere in $WRKDIR
+-   `wget https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz`
+-   `gzip -d uniprot_sprot.fasta.gz`
+-   Add path to parameters.yaml and/or turso/parameters.yaml
+
+#### Pfam database (for hmmscan):
+-   If working on cluster download and extract somewhere in $WRKDIR
+-   `wget http://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.seed.gz`
+-   `gzip -d Pfam-A.seed.gz`
+-   Add path to parameters.yaml and/or turso/parameters.yaml
+---
+-   University of Helsinki HPC user guide: <https://wiki.helsinki.fi/display/it4sci/HPC+Environment+User+Guide>
+-   Hmmer documentation: <http://eddylab.org/software/hmmer/Userguide.pdf>
+-   Guide for slurm and other useful documentation (everything might not be applicable for Turso) <https://scicomp.aalto.fi/>
