@@ -44,21 +44,40 @@ def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+# Sample clusters uniformly by their size
+def uniform_sample(clusters, bin_width, bin_size):
+    bins = {}
+    for cluster_key in clusters.keys():
+        bin = int(len(clusters[cluster_key])/bin_width)
+        if not bin in bins:
+            bins[bin] = []
+        bins[bin].append(cluster_key)
+    uniform = []
+    for bin in bins.keys():
+        print(bin)
+        for i in range(bin_size):
+            uniform.append(bins[bin][random.randint(0, len(bins[bin])-1)])
+    return uniform
+
 # Separates all clusters
-def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size, max_size, n=-1):
+def separate_clusters(clusters, key_map, db_filename, clustering_path, args):
     mkdir(os.path.join(clustering_path, "fasta"))
     mkdir(os.path.join(clustering_path, "clean"))
     mkdir(os.path.join(clustering_path, "refs"))
     db_cluster_count = len(clusters.keys())
     # Delete clusters that dont fit min-max criteria
     for key in list(clusters.keys()):
-        if min_size > len(clusters[key]) or len(clusters[key]) > max_size:
+        if args.min > len(clusters[key]) or len(clusters[key]) > args.max:
             del clusters[key]
 
-    included = clusters.keys()
-    if n > 0:
-        included = random.sample(clusters.keys(), min(len(clusters.keys()), n))
 
+    included = clusters.keys()
+    # Random sampling from all clusters
+    print(args.uniform)
+    if args.uniform:
+        included = uniform_sample(clusters, args.bin_width, args.bin_size)
+    elif args.n > 0:
+        included = random.sample(clusters.keys(), min(len(clusters.keys()), args.n))
     c = 0
     db_fasta = ""
     with open(db_filename, "r") as f:
@@ -111,7 +130,7 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, min_size,
         f.write(f"Database: {db_filename}\n")
         f.write(f"Clustering parameters: {clustering_path}\n")
         f.write(get_info(clusters, included))
-        f.write(f"Cluster size range treshold: {min_size}-{max_size}\n")
+        f.write(f"Cluster size range treshold: {args.min}-{args.max}\n")
         f.write(f"Total number of sequences: {c}\n")
         f.write(f"Total number of clusters: {len(included)}\n")
 
@@ -193,7 +212,7 @@ def main(args):
         return
 
     if args.action == "a":
-        separate_clusters(clusters, key_map, args.db, "/".join(args.clusters.split("/")[:-1]), args.min, args.max, args.n)
+        separate_clusters(clusters, key_map, args.db, "/".join(args.clusters.split("/")[:-1]), args)
 
     elif args.action == "i":
         print(get_info(clusters))
@@ -242,6 +261,9 @@ if __name__ == '__main__':
     parser.add_argument("--max", type=int, default=10000, help="maximum size of the cluster {1000}")
     parser.add_argument("--n", type=int, default=-1, help="If specified, n-number of random clusters will be selected")
     parser.add_argument("--id", type=str, help="cluster id to separate")
+    parser.add_argument("--uniform", action="store_true", help="To output clusters uniformly distributed by their range")
+    parser.add_argument("--bin_size", type=int, default=1, help="How many clusters to draw from each bin.")
+    parser.add_argument("--bin_width", type=int, default=10, help="i.e. '100' will sample '--bin_size'-number of clusters every between sizes 0-99, 100-199, ...")
     args = parser.parse_args()
     if check_args(parser, args):
         main(args)

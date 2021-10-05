@@ -14,7 +14,7 @@ wrkdir: "out"
 datadir: "data"
 tempdir: "temp"
 # Minimum identity-% to report an alignment
-min_identity: '90'  # '10' - '100'
+min_identity: '20'  # '10' - '100'
 #       id <= 25%    : 'usens' : Ultra sensitive
 # 25% < id <= 40%    : 'vsens' : Very sensitive
 # 40% < id <= 90%    : 'sens' : Sensitive
@@ -27,7 +27,7 @@ clustering_algorithm: 'multi-step'
 cluster_min_size: '50'
 cluster_max_size: '10000'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
-cluster_number: '10'
+cluster_number: '100'
 # Parameter to calculate safety windows. Default: 0.75
 alpha_safe: 0.75
 # Reference criterion
@@ -37,3 +37,8 @@ alpha_safe: 0.75
 # "--similarity" - Highest hmmsearch score (i.e. most similar sequence to the MSA of the cluster)
 # "--taxonomy" - Highest node in taxonomic tree, DB should contain taxonomic id as "OX=id"
 ref_criterion: '--clustering'
+
+# To output clusters uniformly distributed by their range
+uniform: true
+bin_size: 1 # How many clusters to draw from each bin.
+bin_width: 10 # i.e. '100' will sample '--bin_size'-number of clusters every between sizes 0-99, 100-199, ...

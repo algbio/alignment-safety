@@ -20,6 +20,9 @@ REF_CRITERION = config["ref_criterion"]
 WORK_DIR = config["wrkdir"]
 DATA_DIR = config["datadir"]
 TEMP_DIR = config["tempdir"]
+UNIFORM = (f"--uniform --bin_size {config['bin_size']} --bin_width {config['bin_width']}") if config["uniform"] else ""
+
+print(UNIFORM)
 
 if CLUSTER_SENSITIVITY == "auto":
     min_id = int(MIN_IDENTITY)
@@ -354,7 +357,7 @@ checkpoint separate_clusters:
         time = "00:30:00",
         queue = "short"
     shell:
-        "python3 scripts/clusteread.py a {input} --n {params.n} --min {params.min_size} --max {params.max_size}"
+        "python3 scripts/clusteread.py a {input} --n {params.n} --min {params.min_size} --max {params.max_size} {UNIFORM}"
 
 CLUSTER_REQS = ""
 if CLUSTER_ALGO == "mcl" or CLUSTER_ALGO == "multi-step":
