@@ -25,6 +25,7 @@ int print_usage(char **argv, int help) {
 	std::cout << "\t-e, --startgap\tInteger, set the cost of starting a gap alignment. (Default: 11)\n";
 	std::cout << "\t-s, --special\tInteger, sets the cost of aligning symbols with special characters.\n\t            \tINF value ignores these charachters. (Default: 1)\n";
 	std::cout << "\t-i, --threads\tInteger, specifies the number of threads (Default: 1).\n";
+	std::cout << "\t-r, --reference\tProtein identity, selects reference protein. By default, this is the first protein.\n";
 	std::cout << "\t-h, --help\tShows this help message.\n";
 	return help;
 }
@@ -59,12 +60,12 @@ int main(int argc, char **argv) {
 	bool help_flag = false;
 	bool read_file = false;
 	bool read_cost_matrix = false;
+	std::string reference = "-";
 
 	int threads = 1;
 
 	int c;
 	while (1) {
-		// TODO: Read cost_matrix file
 		static struct option long_options[] = {
 			{ "verbose", no_argument, &verbose_flag, 1 }, // this does nothing for now
 			{ "alpha", required_argument, 0, 'a' },
@@ -76,11 +77,12 @@ int main(int argc, char **argv) {
 			{ "file", required_argument, 0, 'f' },
 			{ "help", no_argument, 0, 'h' },
 			{ "threads", required_argument, 0, 'i' },
+			{ "reference", required_argument, 0, 'r' },
 			{ 0, 0, 0, 0 }
 		};
 	
 		int option_index = 0;
-		c = getopt_long(argc, argv, "a:t:c:g:e:s:f:hi:", long_options, &option_index);
+		c = getopt_long(argc, argv, "a:t:c:g:e:s:f:hi:r:", long_options, &option_index);
 		if (c == -1) break;
 
 		switch (c) {
@@ -113,6 +115,9 @@ int main(int argc, char **argv) {
 				break;
 			case 'i':
 				threads = atoi(optarg);
+				break;
+			case 'r':
+				reference = optarg;
 				break;
 			case '?': break;
 			default: abort();
@@ -189,8 +194,6 @@ int main(int argc, char **argv) {
 	if ((int) proteins.size() > 0 && ignore_special && contains_special(proteins.back().sequence))
 		proteins.pop_back();
 
-	// proteins[0] will be the reference
-
 	int PS = (int) proteins.size();
 
 	if (PS == 0) {
@@ -198,11 +201,37 @@ int main(int argc, char **argv) {
 		return 2;
 	}
 
+	// find reference protein
+	auto split = [&](std::string str, char delimiter) -> std::vector<std::string> {
+		size_t pos = 0;
+		std::vector<std::string> ret;
+		while ((pos = str.find(delimiter)) != std::string::npos) {
+			std::string token = str.substr(0, pos);
+			ret.push_back(token);
+			str.erase(0, pos + 1); // + 1 for delimiter length
+		}
+		ret.push_back(str);
+		return ret;
+	};
+	int ref = 0;
+	if (reference != "-") {
+		bool found = false;
+		for (int i = 0; i < PS; i++) {
+			if (reference == split(proteins[i].descriptor, '|')[1]) {
+				if (found)
+					std::cerr << "Reference identity found more than once. Using the last found protein as reference.\n";
+				ref = i;
+				found = true;
+			}
+		}
+		if (!found) std::cerr << "Reference identity not found, using the first protein as reference.\n";
+	}
+
 	// reference protein and amount of proteins in the cluster
-	std::cout << 0 << ' ' << proteins[0].sequence << '\n' << PS << '\n';
+	std::cout << ref << ' ' << proteins[ref].sequence << '\n' << PS << '\n';
 	std::vector<std::string> output(PS);
-	std::vector<int> random_order(PS - 1);
-	for (int i = 0; i < PS - 1; i++) random_order[i] = i + 1;
+	std::vector<int> random_order;
+	for (int i = 0; i < PS; i++) if (i != ref) random_order.push_back(i);
 	std::random_device rd;
 	std::mt19937 g(rd());
 	std::shuffle(random_order.begin(), random_order.end(), g);
@@ -212,10 +241,10 @@ int main(int argc, char **argv) {
 		int i = random_order[j];
 //		std::cerr << "handling id " << i << std::endl;
 //		std::cerr << omp_get_thread_num() << std::endl;
-		const std::string &a = proteins[0].sequence;
+		const std::string &a = proteins[ref].sequence;
 		const std::string &b = proteins[i].sequence;
 		output[i] += std::to_string(i) + ' ' + b + ' ';
-		//std::cout << i << ' ' << b << ' ' << std::flush;
+//		std::cout << i << ' ' << b << ' ' << std::flush;
 
 		Dag d = gen_dag(a, b, cost_matrix, TH, GAP_COST, START_GAP);
 		std::vector<std::vector<int>> adj = d.adj;
@@ -273,5 +302,5 @@ int main(int argc, char **argv) {
 		}
 		//std::cout << std::flush;
 	}
-	for (int i = 1; i < PS; i++) std::cout << output[i];
+	for (int i = 0; i < PS; i++) if (i != ref) std::cout << output[i];
 }
