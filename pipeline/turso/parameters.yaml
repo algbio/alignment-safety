@@ -1,6 +1,6 @@
 # download e.g. swiss protein db from: 
 # https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
-db_file: '/wrk/users/gyntartu/pipeline/data/uniprot_sprot.fasta'
+db_file: '/wrk/users/gyntartu/pipeline/data/alphafold/alphafold.fasta'
 # PFAM protein domain database from http://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.seed.gz
 family_db: '/wrk/users/gyntartu/pipeline/data/pfam/Pfam-A.seed' 
 diamond: '/proj/gyntartu/diamond-2.0.8/bin/diamond'
@@ -11,10 +11,10 @@ safety: '/proj/gyntartu/alignment-safety/safety-windows/main'
 mmseqs: "/proj/gyntartu/MMseqs2/bin/mmseqs"
 # output directory
 wrkdir: "/wrk/users/gyntartu/pipeline/out"
-datadir: "/wrk/users/gyntartu/pipeline/data"
+datadir: "/wrk/users/gyntartu/pipeline/data/alphafold"
 tempdir: "/wrk/users/gyntartu/pipeline/temp"
 # Minimum identity-% to report an alignment
-min_identity: '90'  # '10' - '100'
+min_identity: '30'  # '10' - '100'
 # https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#sensitivity-modes
 #       id <= 25%    : --ultra-sensitive
 # 25% < id <= 40%    : --very-sensitive
@@ -25,7 +25,7 @@ sensitivity: 'auto'
 # multi-step or mcl or mmseqs. multi-step and mcl uses DIAMOND. mmseqs uses MMseqs2.
 clustering_algorithm: 'multi-step'
 # Clusters smaller/bigger than these limits will not be considered
-cluster_min_size: '100'
+cluster_min_size: '10'
 cluster_max_size: '10000'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
 # set to -1 if you want all clusters
@@ -39,4 +39,8 @@ alpha_safe: 0.75
 # "--highlow" - Highest lowest pair-wise identity score
 # "--similarity" - Highest hmmsearch score (i.e. most similar sequence to the MSA of the cluster)
 # "--taxonomy" - Highest node in taxonomic tree, DB should contain taxonomic id as "OX=id"
-ref_criterion: '--taxonomy'
+ref_criterion: '--clustering'
+# To output clusters uniformly distributed by their range
+uniform: false
+bin_size: 1 # How many clusters to draw from each bin.
+bin_width: 10 # i.e. '100' will sample '--bin_size'-number of clusters every between sizes 0-99, 100-199, ...
