@@ -9,7 +9,12 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 set(SOURCES main.cc safety_windows.cc alpha_safe_paths.cc optimal_paths.cc)
 add_executable(${ProjectId} ${SOURCES})
 # compiler flags for debugging
-set(CMAKE_CXX_FLAGS "-O3 -fopenmp")
+if (APPLE)
+    set(CMAKE_CXX_FLAGS "-O3 -openmp")
+else()
+    set(CMAKE_CXX_FLAGS "-O3 -fopenmp")
+endif()
+
 # GMP
 find_package(GMP REQUIRED)
 # if .h files are in other folder?
