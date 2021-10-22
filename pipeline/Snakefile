@@ -120,6 +120,11 @@ def estimate_cpu_time(filename, wildcards, attempt):
         t = min(k * k / 1000 * 0.3 + 5, 500) * attempt
         return f"{int(t/60):02}:{int(t%60):02}:00"
 
+def get_ref(filename, wildcards, attempt):
+    with open(filename, "r") as f:
+        return f.readline().split(" ")[0][1:].split("|")[1]
+         
+
 rule _safe:
     input:
         fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
@@ -129,12 +134,13 @@ rule _safe:
     resources:
         mem_mb = lambda wildcards, attempt, input: estimate_mem(str(input), wildcards, attempt),
         time = lambda wildcards, attempt, input: estimate_cpu_time(str(input), wildcards, attempt),
+        ref = lambda wildcards, attempt, input: get_ref(str(input), wildcards, attempt),
         logdir = LOG_DIR,
         queue = "short"
     params:
         alpha = config["alpha_safe"]
     shell:
-        "{SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {params.alpha} > {output}"
+        "{SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {params.alpha} -r \"{resources.ref}\" > {output}"
 
 rule identity:
     input:

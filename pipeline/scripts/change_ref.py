@@ -24,28 +24,33 @@ def rmf(paths):
 def clean_column_ids(df, col):
     return df[col].map(lambda x: x.split("|")[1])
 
-def set_ref(path, ref):
+def get_ref(path, ref):
     data = {}
     with open(path, "r") as f:
         db_fasta = ("\n" + f.read()).split("\n>")[1:]
         for protein in db_fasta:
             protein_id, sequence = clusteread.parse_fasta(protein)
             clean_id = protein_id.split("|")[1]
-            data[clean_id] = protein
-
-    with open(path, "w") as f:
-        f.write(">" + data[ref] + "\n")
-        for id in data.keys():
-            if id == ref:
-                continue
-            f.write(">" + data[id] + "\n")
+            if clean_id == ref:
+                return protein
+    
+    assert False, f"ERROR: ref: {ref} not found in file: {path}"
+    """
+    No need to put the reference first anymore
+    as safety-aligner accepts reference id as parameter
+    """
+    # with open(path, "w") as f:
+    #     f.write(">" + data[ref] + "\n")
+    #     for id in data.keys():
+    #         if id == ref:
+    #             continue
+    #         f.write(">" + data[id] + "\n")
  
     return data[ref]
 
 def set_refs(path, ref, file_zip):
     cluster_num = file_zip[0].split("/")[-1].split(".")[0]
-    set_ref(file_zip[0], ref)
-    ref_fasta = set_ref(file_zip[1], ref)
+    ref_fasta = get_ref(file_zip[1], ref)
     id, seq = clusteread.parse_fasta(ref_fasta)
     with open(os.path.join(path, "refs", cluster_num + ".ref.fasta"), "w") as f:
         f.write(">" + id + "\n" + seq + "\n")
