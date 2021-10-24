@@ -178,8 +178,8 @@ rule _hmmscan:
     threads: workflow.cores
     resources:
         logdir = LOG_DIR,
-        mem_mb = 512,
-        time = "00:05:00",
+        mem_mb = lambda wildcards, attempt, input: 512 * attempt,
+        time = lambda wildcards, attempt, input: f"00:{15*attempt:02}:00",
         queue = "short"
     shell:
         "{HMMER_PATH}/src/hmmscan --tblout {output} -E 0.0000000001 --noali {input.profile} {input.fasta} > /dev/null"
@@ -202,8 +202,8 @@ rule _hmmscan_align:
     threads: workflow.cores
     resources:
         logdir = LOG_DIR,
-        mem_mb = 512,
-        time = "00:05:00",
+        mem_mb = lambda wildcards, attempt, input: 512 * attempt,
+        time = lambda wildcards, attempt, input: f"00:{10*attempt:02}:00",
         queue = "short"
     shell:
         "{HMMER_PATH}/src/hmmscan -o {output} {input.profile} {input.fasta}"
