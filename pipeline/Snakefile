@@ -21,6 +21,7 @@ WORK_DIR = config["wrkdir"]
 DATA_DIR = config["datadir"]
 TEMP_DIR = config["tempdir"]
 UNIFORM = (f"--uniform --bin_size {config['bin_size']} --bin_width {config['bin_width']}") if config["uniform"] else ""
+ALPHA_SAFE = config["alpha_safe"]
 
 print(UNIFORM)
 
@@ -44,13 +45,13 @@ def clean_filename(filename):
 
 DB_FILENAME = clean_filename(DB_FILE)
 WORK_DIR = os.path.join(WORK_DIR, f"{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}")
-CLUSTER_IDS, = glob_wildcards(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
+CLUSTER_IDS, = glob_wildcards(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
 
-def agg_input(wildcards):
-    checkpoint_output = checkpoints.separate_clusters.get(**wildcards).output[1]
-    CLUSTER_IDS, = glob_wildcards(os.path.join(checkpoint_output, "{id}.clean.fasta"))
-    a = expand(os.path.join(WORK_DIR, "clean", "{i}.clean.fasta"), i=CLUSTER_IDS)
-    return a
+# def agg_input(wildcards):
+#     checkpoint_output = checkpoints.separate_clusters.get(**wildcards).output[1]
+#     CLUSTER_IDS, = glob_wildcards(os.path.join(checkpoint_output, "{id}.clean.fasta"))
+#     a = expand(os.path.join(WORK_DIR, "fasta", "{i}.fasta"), i=CLUSTER_IDS)
+#     return a
 
 def get_timestamp():
     return datetime.today().strftime('%Y-%m-%dT%H:%M')
@@ -103,9 +104,7 @@ rule change_ref:
     shell:
         "python3 scripts/change_ref.py {input.db} {input.path} {REF_CRITERION} | tee {output}"
 
-rule safe:
-    input:
-        expand(os.path.join(WORK_DIR, "safety", "{id}.out"), id=CLUSTER_IDS)
+
 
 def estimate_mem(filename,  wildcards, attempt):
     with open(filename, "r") as f:
@@ -124,12 +123,18 @@ def get_ref(filename, wildcards, attempt):
     with open(filename, "r") as f:
         return f.readline().split(" ")[0][1:].split("|")[1]
          
+# turns 0.75f into ".a75"
+ALPHA_SAFE_S = "a" + str(ALPHA_SAFE).split(".")[-1]
+
+rule safe:
+    input:
+        expand(os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}", "{id}.out"), id=CLUSTER_IDS)
 
 rule _safe:
     input:
-        fasta = ancient(os.path.join(WORK_DIR, "clean", "{id}.clean.fasta"))
+        fasta = ancient(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
     output:
-        os.path.join(WORK_DIR, "safety", "{id}.out")
+        os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}", "{id}.out")
     threads: workflow.cores
     resources:
         mem_mb = lambda wildcards, attempt, input: estimate_mem(str(input), wildcards, attempt),
@@ -137,10 +142,8 @@ rule _safe:
         ref = lambda wildcards, attempt, input: get_ref(str(input), wildcards, attempt),
         logdir = LOG_DIR,
         queue = "short"
-    params:
-        alpha = config["alpha_safe"]
     shell:
-        "{SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {params.alpha} -r \"{resources.ref}\" > {output}"
+        "{SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {ALPHA_SAFE} -r \"{resources.ref}\" > {output}"
 
 rule identity:
     input:
