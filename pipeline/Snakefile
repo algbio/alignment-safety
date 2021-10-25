@@ -182,7 +182,7 @@ rule _hmmscan:
         time = lambda wildcards, attempt, input: f"00:{15*attempt:02}:00",
         queue = "short"
     shell:
-        "{HMMER_PATH}/src/hmmscan --tblout {output} -E 0.0000000001 --noali {input.profile} {input.fasta} > /dev/null"
+        "{HMMER_PATH}/src/hmmscan --tblout {output} --noali {input.profile} {input.fasta} > /dev/null"
 
 # search sequences agaianst a pfam domain database
 rule hmmscan_align:
