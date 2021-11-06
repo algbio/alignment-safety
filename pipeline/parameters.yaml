@@ -1,6 +1,6 @@
 # download e.g. swiss protein db from: 
 # https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
-db_file: 'data/alphafold/soybean.fasta'
+db_file: 'data/alphafold/alphafold.fasta'
 # PFAM protein domain database from http://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.seed.gz
 family_db: 'data/pfam/Pfam-A.seed' 
 diamond: './../../diamond-2.0.8/bin/diamond'

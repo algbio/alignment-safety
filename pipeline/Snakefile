@@ -119,8 +119,9 @@ def estimate_cpu_time(filename, wildcards, attempt):
         t = min(k * k / 1000 * 0.3 + 5, 500) * attempt
         return f"{int(t/60):02}:{int(t%60):02}:00"
 
-def get_ref(filename, wildcards, attempt):
-    with open(filename, "r") as f:
+def get_ref(wildcards, attempt):
+    path = os.path.join(WORK_DIR, "refs", wildcards.id + ".ref.fasta")
+    with open(path, "r") as f:
         return f.readline().split(" ")[0][1:].split("|")[1]
          
 # turns 0.75f into ".a75"
@@ -139,7 +140,7 @@ rule _safe:
     resources:
         mem_mb = lambda wildcards, attempt, input: estimate_mem(str(input), wildcards, attempt),
         time = lambda wildcards, attempt, input: estimate_cpu_time(str(input), wildcards, attempt),
-        ref = lambda wildcards, attempt, input: get_ref(str(input), wildcards, attempt),
+        ref = lambda wildcards, attempt, input: get_ref(wildcards, attempt),
         logdir = LOG_DIR,
         queue = "short"
     shell:
@@ -343,7 +344,7 @@ rule _msa:
         cpus = 1,
         queue = "short"
     shell:
-        "{MUSCLE_PATH} -in {input} -out {output}"
+        "{MUSCLE_PATH} -in {input} -out {output} -quiet"
 
 # Separates all clusters (that fit the threshold) into separate fasta-files
 checkpoint separate_clusters:
