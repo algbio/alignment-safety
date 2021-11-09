@@ -1,6 +1,6 @@
 # download e.g. swiss protein db from: 
 # https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
-db_file: '/wrk/users/gyntartu/pipeline/data/alphafold/alphafold.fasta'
+db_file: '/wrk/users/gyntartu/pipeline/data/uniprot_sprot.fasta'
 # PFAM protein domain database from http://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.seed.gz
 family_db: '/wrk/users/gyntartu/pipeline/data/pfam/Pfam-A.seed' 
 diamond: '/proj/gyntartu/diamond-2.0.8/bin/diamond'
@@ -26,10 +26,10 @@ sensitivity: 'auto'
 clustering_algorithm: 'multi-step'
 # Clusters smaller/bigger than these limits will not be considered
 cluster_min_size: '10'
-cluster_max_size: '10000'
+cluster_max_size: '50'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
 # set to -1 if you want all clusters
-cluster_number: '-1'
+cluster_number: '10'
 # Parameter to calculate safety windows. Default: 0.75
 # 0.5 <= a < 1.0
 alpha_safe: 0.75
@@ -44,3 +44,6 @@ ref_criterion: '--clustering'
 uniform: false
 bin_size: 1 # How many clusters to draw from each bin.
 bin_width: 10 # i.e. '100' will sample '--bin_size'-number of clusters every between sizes 0-99, 100-199, ...
+# true if you want to benchmark safety window program with "/usr/bin/time -v command"
+# benchmarks will be in {wrkdir}/{{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}}/{benchmarks}
+benchmark: true

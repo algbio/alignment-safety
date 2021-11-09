@@ -22,6 +22,7 @@ DATA_DIR = config["datadir"]
 TEMP_DIR = config["tempdir"]
 UNIFORM = (f"--uniform --bin_size {config['bin_size']} --bin_width {config['bin_width']}") if config["uniform"] else ""
 ALPHA_SAFE = config["alpha_safe"]
+BENCHMARK = config["benchmark"]
 
 print(UNIFORM)
 
@@ -119,12 +120,13 @@ def estimate_cpu_time(filename, wildcards, attempt):
         t = min(k * k / 1000 * 0.3 + 5, 500) * attempt
         return f"{int(t/60):02}:{int(t%60):02}:00"
 
-def get_ref(filename, wildcards, attempt):
-    with open(filename, "r") as f:
+def get_ref(wildcards, attempt):
+    path = os.path.join(WORK_DIR, "refs", wildcards.id + ".ref.fasta")
+    with open(path, "r") as f:
         return f.readline().split(" ")[0][1:].split("|")[1]
          
 # turns 0.75f into ".a75"
-ALPHA_SAFE_S = "a" + str(ALPHA_SAFE).split(".")[-1]
+ALPHA_SAFE_S = "a" + f"{ALPHA_SAFE:.2f}".split(".")[-1]
 
 rule safe:
     input:
@@ -134,16 +136,26 @@ rule _safe:
     input:
         fasta = ancient(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
     output:
-        os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}", "{id}.out")
-    threads: workflow.cores
+        out = os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}", "{id}.out"),
+        benchmark = os.path.join(WORK_DIR, f"benchmark", "{id}.out") if BENCHMARK else []
+    threads: 1
     resources:
         mem_mb = lambda wildcards, attempt, input: estimate_mem(str(input), wildcards, attempt),
         time = lambda wildcards, attempt, input: estimate_cpu_time(str(input), wildcards, attempt),
-        ref = lambda wildcards, attempt, input: get_ref(str(input), wildcards, attempt),
+        ref = lambda wildcards, attempt, input: get_ref(wildcards, attempt),
         logdir = LOG_DIR,
-        queue = "short"
+        queue = "short",
     shell:
-        "{SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {ALPHA_SAFE} -r \"{resources.ref}\" > {output}"
+        "/usr/bin/time -v {SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {ALPHA_SAFE} -r \"{resources.ref}\" > {output.out} 2> {output.benchmark}" if BENCHMARK else "{SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {ALPHA_SAFE} -r \"{resources.ref}\" > {output.out}"
+
+        # '''
+        # if [ {BENCHMARK} == True ]
+        # then
+        #     /usr/bin/time -v {SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {ALPHA_SAFE} -r \"{resources.ref}\" > {output.out}
+        # else
+        #     {SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {ALPHA_SAFE} -r \"{resources.ref}\" > {output.out}
+        # fi
+        # '''
 
 rule identity:
     input:
@@ -185,7 +197,7 @@ rule _hmmscan:
         time = lambda wildcards, attempt, input: f"00:{15*attempt:02}:00",
         queue = "short"
     shell:
-        "{HMMER_PATH}/src/hmmscan --tblout {output} -E 0.0000000001 --noali {input.profile} {input.fasta} > /dev/null"
+        "{HMMER_PATH}/src/hmmscan --tblout {output} --noali {input.profile} {input.fasta} > /dev/null"
 
 # search sequences agaianst a pfam domain database
 rule hmmscan_align:
@@ -343,7 +355,7 @@ rule _msa:
         cpus = 1,
         queue = "short"
     shell:
-        "{MUSCLE_PATH} -in {input} -out {output}"
+        "{MUSCLE_PATH} -in {input} -out {output} -quiet"
 
 # Separates all clusters (that fit the threshold) into separate fasta-files
 checkpoint separate_clusters:

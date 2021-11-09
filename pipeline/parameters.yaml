@@ -1,6 +1,6 @@
 # download e.g. swiss protein db from: 
 # https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
-db_file: 'data/alphafold/soybean.fasta'
+db_file: 'data/alphafold/alphafold.fasta'
 # PFAM protein domain database from http://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.seed.gz
 family_db: 'data/pfam/Pfam-A.seed' 
 diamond: './../../diamond-2.0.8/bin/diamond'
@@ -42,3 +42,6 @@ ref_criterion: '--clustering'
 uniform: false
 bin_size: 1 # How many clusters to draw from each bin.
 bin_width: 10 # i.e. '100' will sample '--bin_size'-number of clusters every between sizes 0-99, 100-199, ...
+# true if you want to benchmark safety window program with "/usr/bin/time -v command"
+# benchmarks will be in {wrkdir}/{{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}}/{benchmarks}
+benchmark: true
