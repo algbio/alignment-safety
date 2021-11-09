@@ -37,12 +37,123 @@ struct Protein {
 };
 
 static int verbose_flag; // this does nothing for now
+bool use_approx = false;
+
+float alpha = 0.75, TH = 0;
+
+int GAP_COST = 1;
+int START_GAP = 11;
+int SP = 1;
+bool ignore_special = false;
+std::string file, cost_matrix_file;
+bool help_flag = false;
+bool read_file = false;
+bool read_cost_matrix = false;
+std::string reference = "-";
+int threads = 1;
+
+// BLOSUM62 matrix
+int cost_matrix[21][21] = {
+	// Ala  Arg  Asn  Asp  Cys  Gln  Glu  Gly  His  Ile  Leu  Lys  Met  Phe  Pro  Ser  Thr  Trp  Tyr  Val  Def
+	{  -4,   1,   2,   2,   0,   1,   1,   0,   2,   1,   1,   1,   1,   2,   1,  -1,   0,   3,   2,   0,  SP }, // Ala
+	{   1,  -5,   0,   2,   3,  -1,   0,   2,   0,   3,   2,  -2,   1,   3,   2,   1,   1,   3,   2,   3,  SP }, // Arg
+	{   2,   0,  -6,  -1,   3,   0,   0,   0,  -1,   3,   3,   0,   2,   3,   2,  -1,   0,   4,   2,   3,  SP }, // Asn
+	{   2,   2,  -1,  -6,   3,   0,  -2,   1,   1,   3,   4,   1,   3,   3,   1,   0,   1,   4,   3,   3,  SP }, // Asp
+	{   0,   3,   3,   3,  -9,   3,   4,   3,   3,   1,   1,   3,   1,   2,   3,   1,   1,   2,   2,   1,  SP }, // Cys
+	{   1,  -1,   0,   0,   3,  -5,  -2,   2,   0,   3,   2,  -1,   0,   3,   1,   0,   1,   2,   1,   2,  SP }, // Gln
+	{   1,   0,   0,  -2,   4,  -2,  -5,   2,   0,   3,   3,  -1,   2,   3,   1,   0,   1,   3,   2,   2,  SP }, // Glu
+	{   0,   2,   0,   1,   3,   2,   2,  -6,   2,   4,   4,   2,   3,   3,   2,   0,   2,   2,   3,   3,  SP }, // Gly
+	{   2,   0,  -1,   1,   3,   0,   0,   2,  -8,   3,   3,   1,   2,   1,   2,   1,   2,   2,  -2,   3,  SP }, // His
+	{   1,   3,   3,   3,   1,   3,   3,   4,   3,  -4,  -2,   3,  -1,   0,   3,   2,   1,   3,   1,  -3,  SP }, // Ile
+	{   1,   2,   3,   4,   1,   2,   3,   4,   3,  -2,  -4,   2,  -2,   0,   3,   2,   1,   2,   1,  -1,  SP }, // Leu
+	{   1,  -2,   0,   1,   3,  -1,  -1,   2,   1,   3,   2,  -5,   1,   3,   1,   0,   1,   3,   2,   2,  SP }, // Lys
+	{   1,   1,   2,   3,   1,   0,   2,   3,   2,  -1,  -2,   1,  -5,   0,   2,   1,   1,   1,   1,  -1,  SP }, // Met
+	{   2,   3,   3,   3,   2,   3,   3,   3,   1,   0,   0,   3,   0,  -6,   4,   2,   2,  -1,  -3,   1,  SP }, // Phe
+	{   1,   2,   2,   1,   3,   1,   1,   2,   2,   3,   3,   1,   2,   4,  -7,   1,   1,   4,   3,   2,  SP }, // Pro
+	{  -1,   1,  -1,   0,   1,   0,   0,   0,   1,   2,   2,   0,   1,   2,   1,  -4,  -1,   3,   2,   2,  SP }, // Ser
+	{   0,   1,   0,   1,   1,   1,   1,   2,   2,   1,   1,   1,   1,   2,   1,  -1,  -5,   2,   2,   0,  SP }, // Thr
+	{   3,   3,   4,   4,   2,   2,   3,   2,   2,   3,   2,   3,   1,  -1,   4,   3,   2,  -11, -2,   3,  SP }, // Trp
+	{   2,   2,   2,   3,   2,   1,   2,   3,  -2,   1,   1,   2,   1,  -3,   3,   2,   2,  -2,  -7,   1,  SP }, // Tyr
+	{   0,   3,   3,   3,   1,   2,   2,   3,   3,  -3,  -1,   2,  -1,   1,   2,   2,   0,   3,   1,  -4,  SP }, // Val
+	{  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP }, // Def
+};
+
+std::vector<Protein> proteins;
+int ref = 0; // reference protein
+std::vector<int> random_order;
+
+template<class T, class K>
+void run_case(const int j, std::vector<std::string> &output) {
+	int i = random_order[j];
+//		std::cerr << "handling id " << i << std::endl;
+//		std::cerr << omp_get_thread_num() << std::endl;
+	const std::string &a = proteins[ref].sequence;
+	const std::string &b = proteins[i].sequence;
+	output[i] += std::to_string(i) + ' ' + b + ' ';
+//		std::cout << i << ' ' << b << ' ' << std::flush;
+
+	Dag d = gen_dag(a, b, cost_matrix, TH, GAP_COST, START_GAP);
+	std::vector<std::vector<int>> adj = d.adj;
+
+	std::vector<std::vector<K>> ratios = path_ratios<T, K>(d);
+
+
+	std::vector<int> path = find_alpha_path<K>(d, ratios, alpha);
+	std::unordered_map<int, int> cnt;
+	for (int v: path) {
+		assert(cnt[v] == 0);
+		cnt[v]++;
+	}
+
+	std::vector<K> r = find_ratios<K>(path, adj, ratios);
+	std::vector<std::pair<int, int>> windows_tmp = safety_windows<K>(r, path, alpha);
+
+	std::vector<std::pair<int, int>> windows, windowsp;
+	/*auto outside = [&](const int &L, const int &R) {
+		if (windows.empty()) return false;
+		auto [bL, bR] = windows.back();
+		return bL >= L && bR <= R;
+	};
+	auto inside = [&](const int &L, const int &R) {
+		if (windows.empty()) return false;
+		auto [bL, bR] = windows.back();
+		return L >= bL && R <= bR;
+	};*/
+	
+	std::map<int, std::pair<int, int>> transr = d.transr;
+	for (int i = 0; i < (int) windows_tmp.size(); i++) {
+		auto [LT, RT] = windows_tmp[i];
+		int L = transr[LT].first, R = transr[RT].first;
+		int Lp = transr[LT].second, Rp = transr[RT].second;
+		
+		// This removes safety windows, that are a subset of another safety window.
+		// Here, this is only the case, if gaps are being used.
+		// As we print the safety windows wrt. both strings, we don't want to remove these kind
+		// of subsets, though, as we'd lose to one-to-one correspondence between the safety-windows
+		// of both strings.
+		/*while (outside(L, R)) windows.pop_back();
+		if (!inside(L, R)) windows.emplace_back(L, R);*/
+
+		windows.emplace_back(L, R);
+		windowsp.emplace_back(Lp, Rp);
+	}
+
+
+	output[i] += std::to_string(windows.size()) + '\n';
+	//std::cout << windows.size() << std::endl;
+	for (int k = 0; k < (int) windows.size(); k++) {
+		auto [x, y] = windows[k];
+		auto [xp, yp] = windowsp[k];
+		//std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
+		output[i] += std::to_string(x) + ' ' + std::to_string(y) + ' ' + std::to_string(xp) + ' ' + std::to_string(yp) + '\n';
+	}
+	//std::cout << std::flush;
+}
 
 int main(int argc, char **argv) {
 	std::cerr << std::fixed << std::setprecision(10); // debug output
 	std::cout << std::fixed << std::setprecision(10); // debug output
 
-	mpq_class alpha = 0.75, TH = 0;
 
 	/*
 	std::string a = "EBCDE";
@@ -52,17 +163,6 @@ int main(int argc, char **argv) {
 	std::cout << dp[n][m][0] << std::endl;
 	*/
 
-	int GAP_COST = 1;
-	int START_GAP = 11;
-	int SP = 1;
-	bool ignore_special = false;
-	std::string file, cost_matrix_file;
-	bool help_flag = false;
-	bool read_file = false;
-	bool read_cost_matrix = false;
-	std::string reference = "-";
-
-	int threads = 1;
 
 	int c;
 	while (1) {
@@ -78,14 +178,17 @@ int main(int argc, char **argv) {
 			{ "help", no_argument, 0, 'h' },
 			{ "threads", required_argument, 0, 'i' },
 			{ "reference", required_argument, 0, 'r' },
+			{ "approximation", no_argument, 0, 'p' },
 			{ 0, 0, 0, 0 }
 		};
 	
 		int option_index = 0;
-		c = getopt_long(argc, argv, "a:t:c:g:e:s:f:hi:r:", long_options, &option_index);
+		c = getopt_long(argc, argv, "a:t:c:g:e:s:f:hi:r:p", long_options, &option_index);
 		if (c == -1) break;
 
 		switch (c) {
+			if (long_options[option_index].flag != 0)
+				break;
 			case 'a':
 				alpha = std::stof(optarg);
 				break;
@@ -119,6 +222,9 @@ int main(int argc, char **argv) {
 			case 'r':
 				reference = optarg;
 				break;
+			case 'p':
+				use_approx = true;
+				break;
 			case '?': break;
 			default: abort();
 		}
@@ -137,31 +243,6 @@ int main(int argc, char **argv) {
 		std::cerr << "Warning: for alpha values < 0.5, the program will not behave well defined and might crash.\n";
 	}
 
-	// BLOSUM62 matrix
-	int cost_matrix[21][21] = {
-		// Ala  Arg  Asn  Asp  Cys  Gln  Glu  Gly  His  Ile  Leu  Lys  Met  Phe  Pro  Ser  Thr  Trp  Tyr  Val  Def
-		{  -4,   1,   2,   2,   0,   1,   1,   0,   2,   1,   1,   1,   1,   2,   1,  -1,   0,   3,   2,   0,  SP }, // Ala
-		{   1,  -5,   0,   2,   3,  -1,   0,   2,   0,   3,   2,  -2,   1,   3,   2,   1,   1,   3,   2,   3,  SP }, // Arg
-		{   2,   0,  -6,  -1,   3,   0,   0,   0,  -1,   3,   3,   0,   2,   3,   2,  -1,   0,   4,   2,   3,  SP }, // Asn
-		{   2,   2,  -1,  -6,   3,   0,  -2,   1,   1,   3,   4,   1,   3,   3,   1,   0,   1,   4,   3,   3,  SP }, // Asp
-		{   0,   3,   3,   3,  -9,   3,   4,   3,   3,   1,   1,   3,   1,   2,   3,   1,   1,   2,   2,   1,  SP }, // Cys
-		{   1,  -1,   0,   0,   3,  -5,  -2,   2,   0,   3,   2,  -1,   0,   3,   1,   0,   1,   2,   1,   2,  SP }, // Gln
-		{   1,   0,   0,  -2,   4,  -2,  -5,   2,   0,   3,   3,  -1,   2,   3,   1,   0,   1,   3,   2,   2,  SP }, // Glu
-		{   0,   2,   0,   1,   3,   2,   2,  -6,   2,   4,   4,   2,   3,   3,   2,   0,   2,   2,   3,   3,  SP }, // Gly
-		{   2,   0,  -1,   1,   3,   0,   0,   2,  -8,   3,   3,   1,   2,   1,   2,   1,   2,   2,  -2,   3,  SP }, // His
-		{   1,   3,   3,   3,   1,   3,   3,   4,   3,  -4,  -2,   3,  -1,   0,   3,   2,   1,   3,   1,  -3,  SP }, // Ile
-		{   1,   2,   3,   4,   1,   2,   3,   4,   3,  -2,  -4,   2,  -2,   0,   3,   2,   1,   2,   1,  -1,  SP }, // Leu
-		{   1,  -2,   0,   1,   3,  -1,  -1,   2,   1,   3,   2,  -5,   1,   3,   1,   0,   1,   3,   2,   2,  SP }, // Lys
-		{   1,   1,   2,   3,   1,   0,   2,   3,   2,  -1,  -2,   1,  -5,   0,   2,   1,   1,   1,   1,  -1,  SP }, // Met
-		{   2,   3,   3,   3,   2,   3,   3,   3,   1,   0,   0,   3,   0,  -6,   4,   2,   2,  -1,  -3,   1,  SP }, // Phe
-		{   1,   2,   2,   1,   3,   1,   1,   2,   2,   3,   3,   1,   2,   4,  -7,   1,   1,   4,   3,   2,  SP }, // Pro
-		{  -1,   1,  -1,   0,   1,   0,   0,   0,   1,   2,   2,   0,   1,   2,   1,  -4,  -1,   3,   2,   2,  SP }, // Ser
-		{   0,   1,   0,   1,   1,   1,   1,   2,   2,   1,   1,   1,   1,   2,   1,  -1,  -5,   2,   2,   0,  SP }, // Thr
-		{   3,   3,   4,   4,   2,   2,   3,   2,   2,   3,   2,   3,   1,  -1,   4,   3,   2,  -11, -2,   3,  SP }, // Trp
-		{   2,   2,   2,   3,   2,   1,   2,   3,  -2,   1,   1,   2,   1,  -3,   3,   2,   2,  -2,  -7,   1,  SP }, // Tyr
-		{   0,   3,   3,   3,   1,   2,   2,   3,   3,  -3,  -1,   2,  -1,   1,   2,   2,   0,   3,   1,  -4,  SP }, // Val
-		{  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP }, // Def
-	};
 
 	if (read_cost_matrix) {
 		std::ifstream costmat(cost_matrix_file);
@@ -180,7 +261,7 @@ int main(int argc, char **argv) {
 	};
 
 	std::ifstream input(file);
-	std::vector<Protein> proteins;
+	proteins.clear();
 	for (std::string line; std::getline(input, line); ) {
 		if ((int) line.size() <= 0) continue;
 		if (line[0] == '>') {
@@ -213,7 +294,6 @@ int main(int argc, char **argv) {
 		ret.push_back(str);
 		return ret;
 	};
-	int ref = 0;
 	if (reference != "-") {
 		bool found = false;
 		for (int i = 0; i < PS; i++) {
@@ -230,77 +310,18 @@ int main(int argc, char **argv) {
 	// reference protein and amount of proteins in the cluster
 	std::cout << ref << ' ' << proteins[ref].sequence << '\n' << PS << '\n';
 	std::vector<std::string> output(PS);
-	std::vector<int> random_order;
+	random_order.clear();
 	for (int i = 0; i < PS; i++) if (i != ref) random_order.push_back(i);
 	std::random_device rd;
 	std::mt19937 g(rd());
 	std::shuffle(random_order.begin(), random_order.end(), g);
 
 	#pragma omp parallel for num_threads(threads)
-	for (int j = 0; j < PS - 1; j++) {
-		int i = random_order[j];
-//		std::cerr << "handling id " << i << std::endl;
-//		std::cerr << omp_get_thread_num() << std::endl;
-		const std::string &a = proteins[ref].sequence;
-		const std::string &b = proteins[i].sequence;
-		output[i] += std::to_string(i) + ' ' + b + ' ';
-//		std::cout << i << ' ' << b << ' ' << std::flush;
+	for (int j = 0; j < PS - 1; j++)
+		if (!use_approx)
+			run_case<mpz_class, mpq_class>(j, output);
+		else
+			run_case<float, float>(j, output);
 
-		Dag d = gen_dag(a, b, cost_matrix, TH, GAP_COST, START_GAP);
-		std::vector<std::vector<int>> adj = d.adj;
-
-		std::vector<std::vector<mpq_class>> ratios = path_ratios(d);
-
-		std::vector<int> path = find_alpha_path(d, ratios, alpha);
-		std::unordered_map<int, int> cnt;
-		for (int v: path) {
-			assert(cnt[v] == 0);
-			cnt[v]++;
-		}
-
-		std::vector<mpq_class> r = find_ratios(path, adj, ratios);
-		std::vector<std::pair<int, int>> windows_tmp = safety_windows(r, path, alpha);
-
-		std::vector<std::pair<int, int>> windows, windowsp;
-		auto outside = [&](const int &L, const int &R) {
-			if (windows.empty()) return false;
-			auto [bL, bR] = windows.back();
-			return bL >= L && bR <= R;
-		};
-		auto inside = [&](const int &L, const int &R) {
-			if (windows.empty()) return false;
-			auto [bL, bR] = windows.back();
-			return L >= bL && R <= bR;
-		};
-		
-		std::map<int, std::pair<int, int>> transr = d.transr;
-		for (int i = 0; i < (int) windows_tmp.size(); i++) {
-			auto [LT, RT] = windows_tmp[i];
-			int L = transr[LT].first, R = transr[RT].first;
-			int Lp = transr[LT].second, Rp = transr[RT].second;
-			
-			// This removes safety windows, that are a subset of another safety window.
-			// Here, this is only the case, if gaps are being used.
-			// As we print the safety windows wrt. both strings, we don't want to remove these kind
-			// of subsets, though, as we'd lose to one-to-one correspondence between the safety-windows
-			// of both strings.
-			/*while (outside(L, R)) windows.pop_back();
-			if (!inside(L, R)) windows.emplace_back(L, R);*/
-
-			windows.emplace_back(L, R);
-			windowsp.emplace_back(Lp, Rp);
-		}
-
-
-		output[i] += std::to_string(windows.size()) + '\n';
-		//std::cout << windows.size() << std::endl;
-		for (int k = 0; k < (int) windows.size(); k++) {
-			auto [x, y] = windows[k];
-			auto [xp, yp] = windowsp[k];
-			//std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
-			output[i] += std::to_string(x) + ' ' + std::to_string(y) + ' ' + std::to_string(xp) + ' ' + std::to_string(yp) + '\n';
-		}
-		//std::cout << std::flush;
-	}
 	for (int i = 0; i < PS; i++) if (i != ref) std::cout << output[i];
 }
