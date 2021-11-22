@@ -11,7 +11,7 @@ safety: './../safety-windows/main'
 mmseqs: "./../../MMseqs2/bin/mmseqs"
 # output directory
 wrkdir: "out"
-datadir: "data"
+datadir: "data/alphafold"
 tempdir: "temp"
 # Minimum identity-% to report an alignment
 min_identity: '30'  # '10' - '100'
@@ -27,9 +27,9 @@ clustering_algorithm: 'multi-step'
 cluster_min_size: '5'
 cluster_max_size: '10000'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
-cluster_number: '-1'
+cluster_number: '10'
 # Parameter to calculate safety windows. Default: 0.75
-alpha_safe: 0.75
+alpha_safe: 0.5
 # Reference criterion
 # "--clustering" - default, depends on clustering: mcl or multi-step
 # "--identity" - Highest mean pair-wise identity score
@@ -40,8 +40,8 @@ ref_criterion: '--clustering'
 
 # To output clusters uniformly distributed by their range
 uniform: false
-bin_size: 1 # How many clusters to draw from each bin.
+bin_size: 20 # How many clusters to draw from each bin.
 bin_width: 10 # i.e. '100' will sample '--bin_size'-number of clusters every between sizes 0-99, 100-199, ...
 # true if you want to benchmark safety window program with "/usr/bin/time -v command"
-# benchmarks will be in {wrkdir}/{{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}}/{benchmarks}
-benchmark: true
+# benchmarks will be in {wrkdir}/{{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}}/safe.{alpha_safe}/{benchmarks}
+benchmark: false

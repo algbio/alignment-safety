@@ -59,6 +59,12 @@ def uniform_sample(clusters, bin_width, bin_size):
             uniform.append(bins[bin][random.randint(0, len(bins[bin])-1)])
     return uniform
 
+def clean_id(key):
+    if "|" in key:
+        return key.split("|")[1]
+    else:
+        return key.split(":")[1]
+
 # Separates all clusters
 def separate_clusters(clusters, key_map, db_filename, clustering_path, args):
     mkdir(os.path.join(clustering_path, "fasta"))
@@ -87,7 +93,7 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, args):
     ii = 1
     for key in clusters.keys():
         if key in included:
-            cluster_num[key.split("|")[1]] = str(ii)
+            cluster_num[clean_id(key)] = str(ii)
             ii += 1
 
     print("Writing reference sequences to fasta-files...")
@@ -95,7 +101,8 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, args):
     for protein_fasta in db_fasta:
         id, sequence = parse_fasta(protein_fasta)
         if id in included and id == key_map[id]:
-            cleaned = id.split("|")[1]
+            
+            cleaned = clean_id(id)
             c += 1
             agh.append(id)
             # sys.stdout.write("\r%d%%" % int(c * 100.0 / len(included)))
@@ -115,7 +122,7 @@ def separate_clusters(clusters, key_map, db_filename, clustering_path, args):
             # if(sequence.count("X") > 0):
             #     continue
             cluster_id = key_map[id]
-            cleaned = cluster_id.split("|")[1]
+            cleaned = clean_id(cluster_id)
             c += 1
             if not key_map[id] in agh:
                 print(f"cluster: {id} not found")

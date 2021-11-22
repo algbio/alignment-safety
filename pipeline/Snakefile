@@ -1,6 +1,7 @@
 configfile: 'parameters.yaml'
 
 from datetime import datetime
+import urllib
 print("Preprocessing config", flush = True)
 
 DB_FILE = config["db_file"]
@@ -198,6 +199,36 @@ rule _hmmscan:
         queue = "short"
     shell:
         "{HMMER_PATH}/src/hmmscan --tblout {output} --noali {input.profile} {input.fasta} > /dev/null"
+
+def mkdir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+def parse_fasta(protein_fasta):
+    id = protein_fasta.split()[0]
+    sequence = ''.join(protein_fasta.split("\n")[1:])
+    return (id, sequence)
+    
+rule pdb:
+    input:
+        expand(os.path.join(WORK_DIR, "pdb", "{id}"), id=CLUSTER_IDS)
+
+rule _pdb:
+    input:
+        fasta = os.path.join(WORK_DIR, "fasta", "{id}.fasta")
+    output:
+        directory(os.path.join(WORK_DIR, "pdb", "{id}"))
+    run:
+        mkdir(os.path.join(WORK_DIR, "pdb", wildcards.id))
+        with open(input.fasta, "r") as f:
+            db_fasta = ("\n" + f.read()).split("\n>")[1:]
+            for protein in db_fasta:
+                accession_id = parse_fasta(protein)[0].split(":")[1]
+                print(f"https://alphafold.ebi.ac.uk/files/{accession_id}-model_v1.pdb")
+                urllib.request.urlretrieve(
+                    f"https://alphafold.ebi.ac.uk/files/{accession_id}-model_v1.pdb",
+                    os.path.join(WORK_DIR, "pdb", wildcards.id, f"{accession_id}-model_v1.pdb")
+                )
 
 # search sequences agaianst a pfam domain database
 rule hmmscan_align:
