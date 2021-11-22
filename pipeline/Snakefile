@@ -138,7 +138,7 @@ rule _safe:
         fasta = ancient(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
     output:
         out = os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}", "{id}.out"),
-        benchmark = os.path.join(WORK_DIR, f"benchmark", "{id}.out") if BENCHMARK else []
+        benchmark = os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}", f"benchmark", "{id}.out") if BENCHMARK else []
     threads: 1
     resources:
         mem_mb = lambda wildcards, attempt, input: estimate_mem(str(input), wildcards, attempt),
