@@ -12,14 +12,14 @@
 
 // translate fasta file letters to amino acid symbols (see http://www.math.utep.edu/Faculty/mleung/bioinformatics/aacodon.html)
 //                    A   B  C  D  E   F  G  H  I   J   K   L   M  N   O   P  Q  R   S   T   U   V   W   X   Y   Z
-const int LTA[26] = { 0, 20, 4, 3, 6, 13, 7, 8, 9, 20, 11, 10, 12, 2, 20, 14, 5, 1, 15, 16, 20, 19, 17, 20, 18, 20 };
+const int64_t LTA[26] = { 0, 20, 4, 3, 6, 13, 7, 8, 9, 20, 11, 10, 12, 2, 20, 14, 5, 1, 15, 16, 20, 19, 17, 20, 18, 20 };
 
-std::vector<std::vector<std::vector<int>>>
+std::vector<std::vector<std::vector<int64_t>>>
 dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
-		const int sn, const int sm) {
-	int n = (int) adj.size() - 1;
+		const int64_t sn, const int64_t sm) {
+	int64_t n = (int64_t) adj.size() - 1;
 	assert(n > 0);
-	int m = (int) adj[0].size() - 1;
+	int64_t m = (int64_t) adj[0].size() - 1;
 	assert(m > 0);
 
 	auto cmp = [&](const Node &a, const Node &b) {
@@ -30,8 +30,8 @@ dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 	std::priority_queue<Node, std::vector<Node>, decltype(cmp)> q(cmp);
 	q.push(Node(sn, sm, 0, 0));
 
-	std::vector<std::vector<std::vector<int>>> dist(n + 1,
-		std::vector<std::vector<int>>(m + 1, std::vector<int>(3, (1 << 30))));
+	std::vector<std::vector<std::vector<int64_t>>> dist(n + 1,
+		std::vector<std::vector<int64_t>>(m + 1, std::vector<int64_t>(3, (1 << 30))));
 	dist[sn][sm][0] = 0;
 
 	while (!q.empty()) {
@@ -57,16 +57,16 @@ dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 }
 
 std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const std::string &a,
-		const std::string &b, const int GAP_COST, const int START_GAP, const int cost_matrix[21][21],
-		int sign) {
-	int n = (int) a.size();
-	int m = (int) b.size();
+		const std::string &b, const int64_t GAP_COST, const int64_t START_GAP, const int64_t cost_matrix[21][21],
+		int64_t sign) {
+	int64_t n = (int64_t) a.size();
+	int64_t m = (int64_t) b.size();
 
 	// create affine linear gap cost graph (see README for illustration)
 	std::vector<std::vector<std::vector<std::vector<Node>>>> adj(n + 1,
 			std::vector<std::vector<std::vector<Node>>>(m + 1,
 			std::vector<std::vector<Node>>(3)));
-	for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) {
+	for (int64_t i = 0; i <= n; i++) for (int64_t j = 0; j <= m; j++) {
 		// Those errors shouldn't appear anymore
 		if (i < n) {
 			if (a[i] < 'A' || a[i] > 'Z') {
@@ -107,26 +107,26 @@ std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const s
 	return adj;
 }
 
-std::vector<std::vector<std::vector<int>>>
+std::vector<std::vector<std::vector<int64_t>>>
 opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj, bool dir) {
-	int n = (int) adj.size() - 1;
+	int64_t n = (int64_t) adj.size() - 1;
 	assert(n > 0);
-	int m = (int) adj[0].size() - 1;
+	int64_t m = (int64_t) adj[0].size() - 1;
 	assert(m > 0);
 //	return dijkstra(adj, (dir ? n : 0), (dir ? m : 0));
 
-	std::vector<std::vector<std::vector<int>>> d(n + 1, std::vector<std::vector<int>>(m + 1, std::vector<int>(3, (1 << 30))));
+	std::vector<std::vector<std::vector<int64_t>>> d(n + 1, std::vector<std::vector<int64_t>>(m + 1, std::vector<int64_t>(3, (1 << 30))));
 	(dir ? d[n][m][0] : d[0][0][0]) = 0;
-	auto update_dist = [&](int i, int j, int k) {
+	auto update_dist = [&](int64_t i, int64_t j, int64_t k) {
 		for (const Node &node: adj[i][j][k]) {
 			d[node.N_index][node.M_index][node.type] = std::min(d[node.N_index][node.M_index][node.type], d[i][j][k] + node.cost);
 		}
 	};
 	if (!dir) {
-		for (int i = 0; i <= n; i++) for (int j = 0; j <= m; j++) for (int k = 2; k >= 0; k--)
+		for (int64_t i = 0; i <= n; i++) for (int64_t j = 0; j <= m; j++) for (int64_t k = 2; k >= 0; k--)
 			update_dist(i, j, k);
 	} else {
-		for (int i = n; i >= 0; i--) for (int j = m; j >= 0; j--) for (int k = 0; k <= 2; k++)
+		for (int64_t i = n; i >= 0; i--) for (int64_t j = m; j >= 0; j--) for (int64_t k = 0; k <= 2; k++)
 			update_dist(i, j, k);
 	}
 	return d;
