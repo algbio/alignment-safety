@@ -19,7 +19,7 @@
 int64_t print64_t_usage(char **argv, int64_t help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile> [OPTION...]\n\n";
 	std::cout << "\t-a, --alpha\tFloating value, choose edges that appear in (alpha*100)% of all\n\t            \t(sub-)optimal paths in the alpha-safe path. (Default: 0.75)\n";
-	std::cout << "\t-d, --delta\tFloating value, set the treshold for suboptimality. (Default: 0.0, Range: [0.0, 1.0])\n";
+	std::cout << "\t-d, --delta\tInteger value, defines suboptimal paths to be in the delta neighborhood of the optimal. (Default: 0, Range: [0.0, inf))\n";
 	std::cout << "\t-c, --costmat\tReads the aligning cost of two symbols from a text file.\n\t            \tThe text file is a lower triangular matrix with 20 lines. (Default: BLOSUM62)\n";
 	std::cout << "\t-g, --gapcost\tInteger, set the cost of aligning a character to a gap. (Default: 1)\n";
 	std::cout << "\t-e, --startgap\tInteger, set the cost of starting a gap alignment. (Default: 11)\n";
