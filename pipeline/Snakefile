@@ -2,30 +2,35 @@ configfile: 'parameters.yaml'
 
 from datetime import datetime
 import urllib
+import os
+
 print("Preprocessing config", flush = True)
 
-DB_FILE = config["db_file"]
-CLUSTER = ""
-DIAMOND_PATH = config["diamond"]
-RAXML_PATH = config["raxml"]
-MUSCLE_PATH = config["muscle"]
-HMMER_PATH = config["hmmer"]
+USERNAME = os.environ.get("USER")
+
+# Paths
+DB_FILE = config["db_file"].replace("<username>", USERNAME)
+DIAMOND_PATH = config["diamond"].replace("<username>", USERNAME)
+RAXML_PATH = config["raxml"].replace("<username>", USERNAME)
+MUSCLE_PATH = config["muscle"].replace("<username>", USERNAME)
+HMMER_PATH = config["hmmer"].replace("<username>", USERNAME)
+SAFETY_PATH = config["safety"].replace("<username>", USERNAME)
+MMSEQS_PATH = config["mmseqs"].replace("<username>", USERNAME)
+WORK_DIR = config["wrkdir"].replace("<username>", USERNAME)
+DATA_DIR = config["datadir"].replace("<username>", USERNAME)
+TEMP_DIR = config["tempdir"].replace("<username>", USERNAME)
+STRIDE = config["stride"].replace("<username>", USERNAME)
+
+# Parameters
 MIN_IDENTITY = config["min_identity"]
 CLUSTER_ALGO = config["clustering_algorithm"]
 CLUSTER_SENSITIVITY = config["sensitivity"]
 FAMILY_DB = config["family_db"]
 FAMILY_PROFILE = FAMILY_DB.replace("seed", "hmm")
-SAFETY_PATH = config["safety"]
-MMSEQS_PATH = config["mmseqs"]
 REF_CRITERION = config["ref_criterion"]
-WORK_DIR = config["wrkdir"]
-DATA_DIR = config["datadir"]
-TEMP_DIR = config["tempdir"]
 UNIFORM = (f"--uniform --bin_size {config['bin_size']} --bin_width {config['bin_width']}") if config["uniform"] else ""
 ALPHA_SAFE = config["alpha_safe"]
 BENCHMARK = config["benchmark"]
-STRIDE = config["stride"]
-
 # turns 0.75f into ".a75"
 ALPHA_SAFE_S = "a" + f"{ALPHA_SAFE:.2f}".split(".")[-1]
 

@@ -1,21 +1,21 @@
 # download e.g. swiss protein db from: 
 # https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
-db_file: '/wrk/users/$(whoami)/pipeline/data/uniprot_sprot.fasta'
+db_file: '/wrk/users/<username>/pipeline/data/alphafold/alphafold.fasta'
 # PFAM protein domain database from http://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.seed.gz
-family_db: '/wrk/users/$(whoami)/pipeline/data/pfam/Pfam-A.seed' 
-diamond: '/proj/$(whoami)/diamond-2.0.8/bin/diamond'
-raxml: '/proj/$(whoami)/raxml-ng/bin/raxml-ng'
-muscle: '/proj/$(whoami)/muscle/muscle3.8.31_i86linux64'
-hmmer: '/proj/$(whoami)/hmmer'
-safety: '/proj/$(whoami)/alignment-safety/safety-windows/main'
-mmseqs: "/proj/$(whoami)/MMseqs2/bin/mmseqs"
+family_db: '/wrk/users/<username>/pipeline/data/pfam/Pfam-A.seed' 
+diamond: '/proj/<username>/diamond-2.0.8/bin/diamond'
+raxml: '/proj/<username>/raxml-ng/bin/raxml-ng'
+muscle: '/proj/<username>/muscle/muscle3.8.31_i86linux64'
+hmmer: '/proj/<username>/hmmer'
+safety: '/proj/<username>/alignment-safety/safety-windows/main'
+mmseqs: "/proj/<username>/MMseqs2/bin/mmseqs"
 stride: ""
 # output directory
-wrkdir: "/wrk/users/$(whoami)/pipeline/out"
-datadir: "/wrk/users/$(whoami)/pipeline/data/alphafold"
-tempdir: "/wrk/users/$(whoami)/pipeline/temp"
+wrkdir: "/wrk/users/<username>/pipeline/out"
+datadir: "/wrk/users/<username>/pipeline/data/alphafold"
+tempdir: "/wrk/users/<username>/pipeline/temp"
 # Minimum identity-% to report an alignment
-min_identity: '30'  # '10' - '100'
+min_identity: '20'  # '10' - '100'
 # https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#sensitivity-modes
 #       id <= 25%    : --ultra-sensitive
 # 25% < id <= 40%    : --very-sensitive
@@ -30,10 +30,10 @@ cluster_min_size: '10'
 cluster_max_size: '50'
 # Maximum number of clusters, will be chosen randomly if less than available clusters
 # set to -1 if you want all clusters
-cluster_number: '10'
+cluster_number: '-1'
 # Parameter to calculate safety windows. Default: 0.75
 # 0.5 <= a < 1.0
-alpha_safe: 0.75
+alpha_safe: 0.99
 # Reference criterion
 # "--clustering" - default, depends on clustering: mcl or multi-step
 # "--identity" - Highest mean pair-wise identity score
@@ -42,9 +42,9 @@ alpha_safe: 0.75
 # "--taxonomy" - Highest node in taxonomic tree, DB should contain taxonomic id as "OX=id"
 ref_criterion: '--clustering'
 # To output clusters uniformly distributed by their range
-uniform: false
-bin_size: 1 # How many clusters to draw from each bin.
+uniform: true
+bin_size: 10 # How many clusters to draw from each bin.
 bin_width: 10 # i.e. '100' will sample '--bin_size'-number of clusters every between sizes 0-99, 100-199, ...
 # true if you want to benchmark safety window program with "/usr/bin/time -v command"
 # benchmarks will be in {wrkdir}/{{DB_FILENAME}.{MIN_IDENTITY}.{CLUSTER_ALGO}}/safe.{alpha_safe}/{benchmarks}
-benchmark: true
+benchmark: false

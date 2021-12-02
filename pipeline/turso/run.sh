@@ -28,7 +28,7 @@ if [ $# -eq 0 ]; then
 fi
 
 source $HOME/.bashrc
-cd /proj/gyntartu/alignment-safety/pipeline
+cd /proj/$(whoami)/alignment-safety/pipeline
 
 module purge
 module load GCC
