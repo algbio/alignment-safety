@@ -6,24 +6,24 @@
 
 // given a dag of optimal paths, find a path with almost safe (> alpha) paths
 
-std::vector<int> topsort(std::vector<std::vector<int>> &dag);
+std::vector<int64_t> topsort(std::vector<std::vector<int64_t>> &dag);
 
 // Find path from src to dest. Assertion error in case if such path does not exist
-void find_path(int src, int dest, std::vector<int> &path,
-		std::vector<std::vector<int>> &dag, std::vector<int> &order);
+void find_path(int64_t src, int64_t dest, std::vector<int64_t> &path,
+		std::vector<std::vector<int64_t>> &dag, std::vector<int64_t> &order);
 
 // For each vertex, save the amount of paths starting from the vertex to the sink
 template<class T>
-std::vector<T> amount_paths(std::vector<std::vector<int>> &dag) {
-	int n = (int) dag.size();
-	std::vector<int> sorted = topsort(dag);
-	int sink = sorted.back();
+std::vector<T> amount_paths(std::vector<std::vector<int64_t>> &dag) {
+	int64_t n = (int64_t) dag.size();
+	std::vector<int64_t> sorted = topsort(dag);
+	int64_t sink = sorted.back();
 
 	//std::vector<mpz_class> am(n, mpz_class(0));
 	std::vector<T> am(n, T(0));
 	am[sink] = 1;
-	for (int i = n - 1; i >= 0; i--) {
-		for (int v: dag[sorted[i]]) am[sorted[i]] += am[v];
+	for (int64_t i = n - 1; i >= 0; i--) {
+		for (int64_t v: dag[sorted[i]]) am[sorted[i]] += am[v];
 	}
 	return am;
 }
@@ -31,11 +31,11 @@ std::vector<T> amount_paths(std::vector<std::vector<int>> &dag) {
 // For each edge, calculate the % of s-t paths they are part in
 template<class T, class K>
 std::vector<std::vector<K>> path_ratios(Dag &d) {
-	std::vector<std::vector<int>> &dag = d.adj;
-	int n = (int) dag.size();
+	std::vector<std::vector<int64_t>> &dag = d.adj;
+	int64_t n = (int64_t) dag.size();
 
-	std::vector<std::vector<int>> rdag(n);
-	for (int i = 0; i < n; i++) for (int v: dag[i]) rdag[v].push_back(i);
+	std::vector<std::vector<int64_t>> rdag(n);
+	for (int64_t i = 0; i < n; i++) for (int64_t v: dag[i]) rdag[v].push_back(i);
 
 	// TODO: perhaps create a dag class with source/sink variables
 	//std::vector<mpz_class> am = amount_paths(dag);
@@ -43,13 +43,13 @@ std::vector<std::vector<K>> path_ratios(Dag &d) {
 	std::vector<T> am = amount_paths<T>(dag);
 	std::vector<T> ram = amount_paths<T>(rdag);
 
-	for (int i = 0; i < n; i++) assert(am[i] <= am[d.src]);
+	for (int64_t i = 0; i < n; i++) assert(am[i] <= am[d.src]);
 
 	std::vector<std::vector<K>> ratios(n);
 
-	int SRC = d.src;
+	int64_t SRC = d.src;
 
-	for (int i = 0; i < n; i++) for (int v: dag[i]) {
+	for (int64_t i = 0; i < n; i++) for (int64_t v: dag[i]) {
 		// nxt = am[v] * ram[i] / am[SRC]
 		//mpq_class nxt = am[v] * ram[i];
 		K nxt = am[v] * ram[i];
@@ -61,18 +61,18 @@ std::vector<std::vector<K>> path_ratios(Dag &d) {
 
 // Find s--t path that contains all edges with occurence ratio > alpha. Might fail if alpha < 0.5
 template<class K>
-std::vector<int> find_alpha_path(Dag &d,
+std::vector<int64_t> find_alpha_path(Dag &d,
 		std::vector<std::vector<K>> &ratios, K alpha) {
-	std::vector<std::vector<int>> &dag = d.adj;
-	int n = (int) ratios.size();
-	std::vector<int> sorted = topsort(dag);
+	std::vector<std::vector<int64_t>> &dag = d.adj;
+	int64_t n = (int64_t) ratios.size();
+	std::vector<int64_t> sorted = topsort(dag);
 
-	std::vector<std::pair<int, int>> needed;
-	for (int i = 0; i < n; i++) {
-		int u = sorted[i];
-		int am = 0;
-		for (int j = 0; j < (int) dag[u].size(); j++) {
-			int v = dag[u][j];
+	std::vector<std::pair<int64_t, int64_t>> needed;
+	for (int64_t i = 0; i < n; i++) {
+		int64_t u = sorted[i];
+		int64_t am = 0;
+		for (int64_t j = 0; j < (int64_t) dag[u].size(); j++) {
+			int64_t v = dag[u][j];
 			K d = ratios[u][j];
 			assert(d <= 1);
 			if (d > alpha) needed.emplace_back(u, v), am++;
@@ -84,11 +84,11 @@ std::vector<int> find_alpha_path(Dag &d,
 	for (auto [x,y]: needed) std::cerr << x << ' ' << y << std::endl;
 	std::cerr << "NEEDED DBG END" << std::endl;*/
 
-	std::vector<int> order(n);
-	for (int i = 0; i < n; i++) order[sorted[i]] = i;
+	std::vector<int64_t> order(n);
+	for (int64_t i = 0; i < n; i++) order[sorted[i]] = i;
 
-	std::vector<int> path;
-	int last = d.src;
+	std::vector<int64_t> path;
+	int64_t last = d.src;
 	for (auto [u,v]: needed) {
 		find_path(last, u, path, dag, order);
 		last = v;
