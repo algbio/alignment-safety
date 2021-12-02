@@ -6,7 +6,7 @@ project(${ProjectId})
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 # all .cc/.cpp files
-set(SOURCES main.cc safety_windows.cc alpha_safe_paths.cc optimal_paths.cc)
+set(SOURCES main.cc alpha_safe_paths.cc optimal_paths.cc draw_subgraph.cc)
 add_executable(${ProjectId} ${SOURCES})
 # compiler flags for debugging
 if (APPLE)
