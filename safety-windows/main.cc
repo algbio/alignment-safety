@@ -90,7 +90,7 @@ void run_case(const int64_t j, std::vector<std::string> &output) {
 //		std::cerr << omp_get_thread_num() << std::endl;
 	const std::string &a = proteins[ref].sequence;
 	const std::string &b = proteins[i].sequence;
-	output[i] += std::to_string(i) + ' ' + b + ' ';
+	output[i] += proteins[i].descriptor + '\n' + b + '\n';
 //		std::cout << i << ' ' << b << ' ' << std::flush;
 
 	Dag d = gen_dag<K>(a, b, cost_matrix, delta, GAP_COST, START_GAP, verbose_flag);
@@ -139,7 +139,7 @@ void run_case(const int64_t j, std::vector<std::string> &output) {
 	}
 
 
-	output[i] += std::to_string(windows.size()) + '\n' + proteins[i].descriptor + '\n';
+	output[i] += std::to_string(windows.size()) + '\n';
 	//std::cout << windows.size() << std::endl;
 	for (int64_t k = 0; k < (int64_t) windows.size(); k++) {
 		auto [x, y] = windows[k];
@@ -306,8 +306,8 @@ signed main(int argc, char **argv) {
 	}
 
 	// reference protein and amount of proteins in the cluster
-	std::cout << ref << ' ' << proteins[ref].sequence << '\n';
-	std::cout << proteins[ref].descriptor << '\n' << PS << '\n';
+	std::cout << proteins[ref].descriptor << '\n' << proteins[ref].sequence << '\n';
+	std::cout << PS << '\n';
 	std::vector<std::string> output(PS);
 	random_order.clear();
 	for (int64_t i = 0; i < PS; i++) if (i != ref) random_order.push_back(i);
