@@ -20,6 +20,7 @@ WORK_DIR = config["wrkdir"].replace("<username>", USERNAME)
 DATA_DIR = config["datadir"].replace("<username>", USERNAME)
 TEMP_DIR = config["tempdir"].replace("<username>", USERNAME)
 STRIDE = config["stride"].replace("<username>", USERNAME)
+PDB_DIR = config["pdbdir"].replace("<username>", USERNAME)
 
 # Parameters
 MIN_IDENTITY = config["min_identity"]
@@ -30,6 +31,7 @@ FAMILY_PROFILE = FAMILY_DB.replace("seed", "hmm")
 REF_CRITERION = config["ref_criterion"]
 UNIFORM = (f"--uniform --bin_size {config['bin_size']} --bin_width {config['bin_width']}") if config["uniform"] else ""
 ALPHA_SAFE = config["alpha_safe"]
+DELTA_SAFE = config["delta_safe"]
 BENCHMARK = config["benchmark"]
 # turns 0.75f into ".a75"
 ALPHA_SAFE_S = "a" + f"{ALPHA_SAFE:.2f}".split(".")[-1]
@@ -71,7 +73,7 @@ print("Finished config preprocessing", flush = True)
 
 rule all:
     input:
-        expand(os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}", "{id}.out"), id=CLUSTER_IDS),
+        expand(os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "phmmer", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS),
@@ -126,13 +128,13 @@ def get_ref(wildcards, attempt):
 
 rule safe:
     input:
-        expand(os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}", "{id}.out"), id=CLUSTER_IDS)
+        expand(os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}.out"), id=CLUSTER_IDS)
 
 rule _safe:
     input:
         fasta = ancient(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
     output:
-        out = os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}", "{id}.out"),
+        out = os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}.out"),
         benchmark = os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}", f"benchmark", "{id}.out") if BENCHMARK else []
     threads: 1
     resources:
@@ -142,7 +144,7 @@ rule _safe:
         logdir = LOG_DIR,
         queue = "short",
     shell:
-        "/usr/bin/time -v {SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {ALPHA_SAFE} -r \"{resources.ref}\" > {output.out} 2> {output.benchmark}" if BENCHMARK else "{SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {ALPHA_SAFE} -r \"{resources.ref}\" > {output.out}"
+        "/usr/bin/time -v {SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {ALPHA_SAFE} --delta {DELTA_SAFE} -r \"{resources.ref}\" > {output.out} 2> {output.benchmark}" if BENCHMARK else "{SAFETY_PATH} -f {input.fasta} --threads {threads} --alpha {ALPHA_SAFE} --delta {DELTA_SAFE} -r \"{resources.ref}\" > {output.out}"
 
 
 rule identity:
@@ -217,26 +219,12 @@ rule stride:
 
 rule _stride:
     input:
-        os.path.join(WORK_DIR, "pdb", "{sequence}.pdb")
+        lambda wildcards: os.path.join(PDB_DIR, wildcards.sequence.split("/")[-1] + "-model_v1.pdb")
     output:
         os.path.join(WORK_DIR, "stride", "{sequence}.out")
     shell:
         "{STRIDE} {input} > {output}"
-
-rule pdb:
-    input:
-        expand(os.path.join(WORK_DIR, "pdb", "{sequence}.pdb"), sequence=get_sequences())
-
-rule _pdb:
-    output:
-        os.path.join(WORK_DIR, "pdb", "{sequence}.pdb")
-    run:
-        accession = wildcards.sequence.split("/")[1]
-        print(accession)
-        urllib.request.urlretrieve(
-            f"https://alphafold.ebi.ac.uk/files/{accession}-model_v1.pdb",
-            str(output)
-        )
+        
 
 # search sequences agaianst a pfam domain database
 rule hmmscan_align:
