@@ -10,6 +10,8 @@ hmmer: '/proj/<username>/hmmer'
 safety: '/proj/<username>/alignment-safety/safety-windows/main'
 mmseqs: "/proj/<username>/MMseqs2/bin/mmseqs"
 stride: ""
+dssp: ""
+
 # output directory
 wrkdir: "/wrk/users/<username>/pipeline/out"
 datadir: "/wrk/users/<username>/pipeline/data/alphafold"

@@ -10,6 +10,8 @@ hmmer: './../../hmmer'
 safety: './../safety-windows/main'
 mmseqs: "./../../MMseqs2/bin/mmseqs"
 stride: "./../../stride/stride"
+dssp: "./../../dssp/build/mkdssp"
+
 # output directory
 wrkdir: "out"
 datadir: "data/alphafold"
