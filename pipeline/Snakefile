@@ -22,12 +22,12 @@ TEMP_DIR = config["tempdir"].replace("<username>", USERNAME)
 STRIDE = config["stride"].replace("<username>", USERNAME)
 DSSP = config["dssp"].replace("<username>", USERNAME)
 PDB_DIR = config["pdbdir"].replace("<username>", USERNAME)
+FAMILY_DB = config["family_db"].replace("<username>", USERNAME)
 
 # Parameters
 MIN_IDENTITY = config["min_identity"]
 CLUSTER_ALGO = config["clustering_algorithm"]
 CLUSTER_SENSITIVITY = config["sensitivity"]
-FAMILY_DB = config["family_db"]
 FAMILY_PROFILE = FAMILY_DB.replace("seed", "hmm")
 REF_CRITERION = config["ref_criterion"]
 UNIFORM = (f"--uniform --bin_size {config['bin_size']} --bin_width {config['bin_width']}") if config["uniform"] else ""
@@ -74,7 +74,7 @@ print("Finished config preprocessing", flush = True)
 
 rule all:
     input:
-        expand(os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}.out"), id=CLUSTER_IDS),
+        #expand(os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "phmmer", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "hmmsearch", "{id}.out"), id=CLUSTER_IDS),
         expand(os.path.join(WORK_DIR, "hmmscan", "{id}.out"), id=CLUSTER_IDS),
@@ -211,7 +211,11 @@ def get_sequences():
         with open(os.path.join(WORK_DIR, "fasta", f"{cluster}.fasta"), "r") as f:
             db_fasta = ("\n" + f.read()).split("\n>")[1:]
             for protein in db_fasta:
-                a.append(os.path.join(cluster, parse_fasta(protein)[0].split(":")[1]))
+                s = parse_fasta(protein)[0]
+                if ":" in s:
+                    a.append(os.path.join(cluster, s.split(":")[1]))
+                else:
+                    a.append(os.path.join(cluster, s.split("|")[1]))
     return a
 
 rule stride:

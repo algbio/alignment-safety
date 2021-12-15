@@ -323,6 +323,4 @@ signed main(int argc, char **argv) {
 			run_case<double, double>(j, output);
 
 	for (int64_t i = 0; i < PS; i++) if (i != ref) std::cout << output[i];
-
-	std::cout << verbose_flag << std::endl;
 }
