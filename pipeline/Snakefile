@@ -20,6 +20,7 @@ WORK_DIR = config["wrkdir"].replace("<username>", USERNAME)
 DATA_DIR = config["datadir"].replace("<username>", USERNAME)
 TEMP_DIR = config["tempdir"].replace("<username>", USERNAME)
 STRIDE = config["stride"].replace("<username>", USERNAME)
+DSSP = config["dssp"].replace("<username>", USERNAME)
 PDB_DIR = config["pdbdir"].replace("<username>", USERNAME)
 
 # Parameters
@@ -224,6 +225,18 @@ rule _stride:
         os.path.join(WORK_DIR, "stride", "{sequence}.out")
     shell:
         "{STRIDE} {input} > {output}"
+
+rule dssp:
+    input:
+        expand(os.path.join(WORK_DIR, "dssp", "{sequence}.out"), sequence=get_sequences())
+
+rule _dssp:
+    input:
+        lambda wildcards: os.path.join(PDB_DIR, wildcards.sequence.split("/")[-1] + "-model_v1.pdb")
+    output:
+        os.path.join(WORK_DIR, "dssp", "{sequence}.out") 
+    shell:
+        "mkdir -p $(dirname {input}) & grep \"^ATOM\" {input} > {input} & {DSSP} --output-format dssp {input} {output}"
         
 
 # search sequences agaianst a pfam domain database
