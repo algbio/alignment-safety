@@ -16,7 +16,7 @@
 #include "optimal_paths.h"
 #include "draw_subgraph.h"
 
-int64_t print64_t_usage(char **argv, int64_t help) {
+int64_t print_usage(char **argv, int64_t help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile> [OPTION...]\n\n";
 	std::cout << "\t-a, --alpha\tFloating value, choose edges that appear in (alpha*100)% of all\n\t            \t(sub-)optimal paths in the alpha-safe path. (Default: 0.75)\n";
 	std::cout << "\t-d, --delta\tInteger value, defines suboptimal paths to be in the delta neighborhood of the optimal. (Default: 0, Range: [0.0, inf))\n";
@@ -36,7 +36,7 @@ struct Protein {
 	Protein(std::string descriptor) : descriptor(descriptor) {}
 };
 
-static int verbose_flag; // this does nothing for now
+static int verbose_flag;
 bool use_approx = false;
 
 float alpha = 0.75, TH = 0;
@@ -128,7 +128,7 @@ void run_case(const int64_t j, std::vector<std::string> &output) {
 		
 		// This removes safety windows, that are a subset of another safety window.
 		// Here, this is only the case, if gaps are being used.
-		// As we print64_t the safety windows wrt. both strings, we don't want to remove these kind
+		// As we print the safety windows wrt. both strings, we don't want to remove these kind
 		// of subsets, though, as we'd lose to one-to-one correspondence between the safety-windows
 		// of both strings.
 		/*while (outside(L, R)) windows.pop_back();
@@ -228,10 +228,10 @@ signed main(int argc, char **argv) {
 	}
 	
 	if (help_flag) {
-		return print64_t_usage(argv, 0);
+		return print_usage(argv, 0);
 	}
 	if (!read_file) {
-		return print64_t_usage(argv, 1);
+		return print_usage(argv, 1);
 	}
 
 	if (alpha >= 1.0) {
