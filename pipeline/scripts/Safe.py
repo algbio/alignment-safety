@@ -24,6 +24,7 @@ class SafeSequence():
         self.raw_seq_windows = raw_seq_windows
         self.bases = np.zeros(len(sequence), dtype=bool)
         self.init()
+        self.safe_coverage = np.sum(self.bases) * 1.0 / len(sequence)
 
     def init(self):
         for window in merge_windows(self.raw_seq_windows):
@@ -65,3 +66,11 @@ def read_safe_sequences(safety_path):
 class Cluster():
     def __init__(self, safe_path):
         self.ref_seq, self.ref_accession, self.sequences = read_safe_sequences(safe_path)
+        self.mapping = {}
+        for seq in self.sequences:
+            self.mapping[seq.accession] = seq
+
+    def get(self, accession):
+        return self.mapping[accession]
+
+            
