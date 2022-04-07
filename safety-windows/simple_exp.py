@@ -8,6 +8,7 @@ Creates some log files in ./experiments directories as well.
 Assumes the program ./main is in the running directory.
 """
 
+import datetime
 import math
 import sys
 import os
@@ -52,7 +53,8 @@ sp = path.rsplit('/')[-1]
 csv = exp_path + f"{sp}.csv"
 print(f"Writing to csv file {csv}")
 with open(csv, 'w') as f: # use mode 'w' to overwrite last file
-    f.write("Alpha,Delta,AVG number of safety windows per sequence,STD Dev of number of safety windows per sequence,Coverage,Runtime,Memory\n")
+    #        Alpha,Delta,Approximation,AVG number of safety windows per sequence,STD Dev of number of safety windows per sequence,Coverage,Runtime,Memory\n")
+    f.write("Alpha,Delta,Approx,AVG number safety windows,STD Dev,Coverage,Runtime,Memory (GB)\n")
 
 # Content written into csv file will first be saved into this list
 csvlines = []
@@ -61,8 +63,11 @@ def time_to_csv(logfile):
     with open(logfile, 'r') as lgf:
         lines = lgf.readlines()[-23:]
 
-        runtime = float(lines[1].split(' ')[-1]) + float(lines[2].split(' ')[-1])
-        mem = int(lines[9].split(' ')[-1])
+        runtime_float = float(lines[1].split(' ')[-1]) + float(lines[2].split(' ')[-1])
+        runtime_float = round(runtime_float)
+        runtime = str(datetime.timedelta(seconds = runtime_float))
+        mem = float(lines[9].split(' ')[-1]) / 1000000.0 # to gb
+        mem = round(mem, 3)
         csvlines[-1].extend([runtime, mem])
 
 def output_to_csv(sw_out):
@@ -92,6 +97,7 @@ def output_to_csv(sw_out):
         for b in cov:
             if b:
                 COV += 1
+        print("Coverage: ", COV, n)
         COV *= 1.0/n
 
         for sws in swss:
@@ -100,6 +106,8 @@ def output_to_csv(sw_out):
         if am > 1:
             STDDEV /= n - 1
 
+        AVG = round(AVG, 3)
+        STDDEV = round(STDDEV, 3)
         csvlines[-1].extend([AVG, STDDEV, COV])
 
 
@@ -110,10 +118,11 @@ prg = f"./main -f {path}"
 logfile = f"{exp_path}/calc.log"
 sw_out = f"{exp_path}/{sp}.out"
 for inp in inputs:
-    run(prg + f" -a {inp[0]} -d {inp[1]} > {sw_out}", logfile)
-    csvlines.append([inp[0], inp[1]])
-    output_to_csv(sw_out)
-    time_to_csv(logfile)
+    for prec in [0, 1]:
+        run(prg + f" -a {inp[0]} -d {inp[1]} -p {prec} > {sw_out}", logfile)
+        csvlines.append([inp[0], inp[1], prec])
+        output_to_csv(sw_out)
+        time_to_csv(logfile)
 
 
 with open(csv, 'a') as f:
