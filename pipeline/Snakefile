@@ -208,24 +208,25 @@ def get_sequences():
     clusters, = glob_wildcards(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
     a = []
     not_found = 0
-    for cluster in clusters:
-        with open(os.path.join(WORK_DIR, "fasta", f"{cluster}.fasta"), "r") as f:
-            db_fasta = ("\n" + f.read()).split("\n>")[1:]
-            for protein in db_fasta:
-                s = parse_fasta(protein)[0]
-                if ":" in s:
-                    accession = s.split(":")[1]
-                else:
-                    accession = s.split("|")[1]
-                path = os.path.join(PDB_DIR, f"AF-{accession}-F1-model_v2.pdb")
-                if os.path.isfile(path):
-                    # print("found")
-                    a.append(os.path.join(cluster, accession))
-                else:
-                    # print(path)
-                    not_found += 1
+    # for cluster in clusters:
+    #     with open(os.path.join(WORK_DIR, "fasta", f"{cluster}.fasta"), "r") as f:
+    #         db_fasta = ("\n" + f.read()).split("\n>")[1:]
+    #         for protein in db_fasta:
+    #             s = parse_fasta(protein)[0]
+    #             if ":" in s:
+    #                 accession = s.split(":")[1]
+    #             else:
+    #                 accession = s.split("|")[1]
+    #             path = os.path.join(PDB_DIR, f"AF-{accession}-F1-model_v2.pdb")
+    #             if os.path.isfile(path):
+    #                 # print("found")
+    #                 a.append(os.path.join(cluster, accession))
+    #             else:
+    #                 # print(path)
+    #                 not_found += 1
 
-    print(f"Structures found: {len(a)}, not found: {not_found} ({not_found * 100.0/(len(a) + not_found):.2f}%)")
+    if len(a) + not_found > 0:
+        print(f"Structures found: {len(a)}, not found: {not_found} ({not_found * 100.0/(len(a) + not_found):.2f}%)")
     return a
 
 
@@ -244,17 +245,17 @@ rule _stride:
 def get_pdbs():
     clusters, = glob_wildcards(os.path.join(WORK_DIR, "fasta", "{id}.fasta"))
     a = []
-    for cluster in clusters:
-        with open(os.path.join(WORK_DIR, "fasta", f"{cluster}.fasta"), "r") as f:
-            db_fasta = ("\n" + f.read()).split("\n>")[1:]
-            for protein in db_fasta:
-                s = parse_fasta(protein)[0]
-                if ":" in s:
-                    accession = s.split(":")[1]
-                else:
-                    accession = s.split("|")[1]
+    # for cluster in clusters:
+    #     with open(os.path.join(WORK_DIR, "fasta", f"{cluster}.fasta"), "r") as f:
+    #         db_fasta = ("\n" + f.read()).split("\n>")[1:]
+    #         for protein in db_fasta:
+    #             s = parse_fasta(protein)[0]
+    #             if ":" in s:
+    #                 accession = s.split(":")[1]
+    #             else:
+    #                 accession = s.split("|")[1]
 
-                a.append(accession)
+    #             a.append(accession)
 
     return a
 
@@ -282,7 +283,7 @@ rule _pdbs:
 
 rule score_splits:
     input:
-        directory(expand(os.path.join(WORK_DIR, f"tmscore.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}"), id=CLUSTER_IDS))
+        expand(os.path.join(WORK_DIR, f"tmscore.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}"), id=CLUSTER_IDS)
 
 rule _score_splits:
     input:
@@ -311,7 +312,7 @@ rule _score_splits:
 
 rule pdb_splits:
     input:
-        directory(expand(os.path.join(WORK_DIR, f"split.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}"), id=CLUSTER_IDS))
+        expand(os.path.join(WORK_DIR, f"split.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}"), id=CLUSTER_IDS)
 
 rule _pdb_splits:
     input:
@@ -335,6 +336,26 @@ rule _dssp:
     shell:
         "mkdir -p $(dirname {input}) & {DSSP} --output-format dssp {input} {output}"
         
+
+
+print(CLUSTER_IDS)
+rule sample_x:
+    input:
+        ancient(expand(os.path.join(WORK_DIR, f"X.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}.fasta"), id=CLUSTER_IDS))
+
+rule _sample_x:
+    input:
+        ancient(os.path.join(WORK_DIR, f"safety.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}.out"))
+    output:
+        os.path.join(WORK_DIR, f"X.{ALPHA_SAFE_S}.d{DELTA_SAFE}", "{id}.fasta")
+    threads: workflow.cores
+    resources:
+        logdir = LOG_DIR,
+        mem_mb = 512,
+        time = "00:05:00",
+        queue = "short"
+    shell:
+        "python3 scripts/safety_sampler.py {input} {output} -x"
 
 # search sequences agaianst a pfam domain database
 rule hmmscan_align:
