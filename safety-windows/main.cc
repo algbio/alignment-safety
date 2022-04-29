@@ -18,15 +18,20 @@
 
 int64_t print_usage(char **argv, int64_t help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile> [OPTION...]\n\n";
-	std::cout << "\t-a, --alpha\tFloating value, choose edges that appear in (alpha*100)% of all\n\t            \t(sub-)optimal paths in the alpha-safe path. (Default: 0.75)\n";
-	std::cout << "\t-d, --delta\tInteger value, defines suboptimal paths to be in the delta neighborhood of the optimal. (Default: 0, Range: [0.0, inf))\n";
-	std::cout << "\t-c, --costmat\tReads the aligning cost of two symbols from a text file.\n\t            \tThe text file is a lower triangular matrix with 20 lines. (Default: BLOSUM62)\n";
-	std::cout << "\t-g, --gapcost\tInteger, set the cost of aligning a character to a gap. (Default: 1)\n";
-	std::cout << "\t-e, --startgap\tInteger, set the cost of starting a gap alignment. (Default: 11)\n";
-	std::cout << "\t-s, --special\tInteger, sets the cost of aligning symbols with special characters.\n\t            \tINF value ignores these charachters. (Default: 1)\n";
-	std::cout << "\t-i, --threads\tInteger, specifies the number of threads (Default: 1).\n";
-	std::cout << "\t-r, --reference\tProtein identity, selects reference protein. By default, this is the first protein.\n";
-	std::cout << "\t-h, --help\tShows this help message.\n";
+	std::cout << "\t-a, --alpha        \tFloating value, choose edges that appear in (alpha*100)% of all\n";
+	std::cout << "\t                   \t(sub-)optimal paths in the alpha-safe path. (Default: 0.75)\n";
+	std::cout << "\t-p, --approximation\tBoolean, if true, big integers will be approximated by doubles. Output might be less accurate, but running speed will be increased. (Default: false)\n";
+	std::cout << "\t-d, --delta        \tInteger value, defines suboptimal paths to be in the delta neighborhood of the optimal. (Default: 0, Range: [0.0, inf))\n";
+	std::cout << "\t-c, --costmat      \tReads the aligning cost of two symbols from a text file.\n";
+	std::cout << "\t                   \tThe text file is a lower triangular matrix with 20 lines. (Default: BLOSUM62)\n";
+	std::cout << "\t-g, --gapcost      \tInteger, set the cost of aligning a character to a gap. (Default: 1)\n";
+	std::cout << "\t-e, --startgap     \tInteger, set the cost of starting a gap alignment. (Default: 11)\n";
+	std::cout << "\t-s, --special      \tInteger, sets the cost of aligning symbols with special characters.\n";
+	std::cout << "\t                   \tINF value ignores these charachters. (Default: 1)\n";
+	std::cout << "\t-i, --threads      \tInteger, specifies the number of threads (Default: 1).\n";
+	std::cout << "\t-r, --reference    \tProtein identity, selects reference protein. By default, this is the first protein.\n";
+	std::cout << "\t-w, --drawgraph    \tOutput in stdout a dot code for plotting the Delta suboptimal subgraph.\n";
+	std::cout << "\t-h, --help         \tShows this help message.\n";
 	return help;
 }
 
@@ -38,6 +43,7 @@ struct Protein {
 
 static int verbose_flag;
 bool use_approx = false;
+bool drawgraph = false;
 
 float alpha = 0.75, TH = 0;
 int64_t delta = 0;
@@ -108,6 +114,11 @@ void run_case(const int64_t j, std::vector<std::string> &output) {
 	std::vector<K> r = find_ratios<K>(path, adj, ratios);
 	std::vector<std::pair<int64_t, int64_t>> windows_tmp = safety_windows<K>(r, path, alpha);
 
+	if (drawgraph) {
+		draw_subgraph(j, d, path, windows_tmp);
+		return;
+	}
+
 	std::vector<std::pair<int64_t, int64_t>> windows, windowsp;
 	/*auto outside = [&](const int64_t &L, const int64_t &R) {
 		if (windows.empty()) return false;
@@ -170,6 +181,7 @@ signed main(int argc, char **argv) {
 			{ "threads", required_argument, 0, 'i' },
 			{ "reference", required_argument, 0, 'r' },
 			{ "approximation", no_argument, 0, 'p' },
+			{ "drawgraph", no_argument, 0, 'w' },
 			{ 0, 0, 0, 0 }
 		};
 	
@@ -221,6 +233,9 @@ signed main(int argc, char **argv) {
 				break;
 			case 'p':
 				use_approx = true;
+				break;
+			case 'w':
+				drawgraph = true;
 				break;
 			case '?': break;
 			default: abort();

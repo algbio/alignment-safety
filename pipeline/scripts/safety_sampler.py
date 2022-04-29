@@ -1,53 +1,26 @@
 import argparse
 import random
 
-def read_safety_windows(file):
-    with open(file, "r") as f:
-        data = {}
-        seqID = {} # Sequence of IDs per cluster
-        seq = {} # Sequence per cluster
-        references = {} # Reference sequence for each cluster
-        referencesID = {} # Reference ID sequence for each cluster
-        nS = {} # Number of sequence in each cluster
-        intervals = {} # Interval for each safety window in each sequence/reference in each cluster
-        intervalsAligned = {} # Intervals for each safety in each sequence in each cluster
-        windowC = {} # Number of windows per sequences per cluster
-        
-        fn = open(file,'r') # read the file
-            
-        line = fn.readline().replace('"', '').split() # reference line 
-        referencesID = line[0] # reference ID sequence in that cluster
-        references = line[1] # reference sequence in that cluster
-        nS = int(fn.readline().splitlines()[0]) # number of other sequence in that cluster
-        for s in range(1,nS):
-            line = fn.readline().replace('"', '').split()
-            seqID[s] = str(line[0])
-            seq[s] = str(line[1])
-            intervals[s] = list()
-            intervalsAligned[s] = list()
-            for k in range(0,int(line[2])):
-                line = fn.readline().split()
-                intervals[s].append((int(line[0]),int(line[1])))
-                intervalsAligned[s].append((int(line[2]),int(line[3])))
-        
-        data['reference'] = references
-        data['sequences per cluster'] = nS
-        data['safety windows intervals'] = intervals
-        data['sequences windows intervals'] = intervalsAligned
-        data['sequences'] = seq
-        
-        return data
-    assert False, "Reading file not succesful"
+from Safe import Cluster, merge_windows, read_safe_sequences
 
-def generate_random_sequences(data, output_file):
+
+def generate_random_sequences(cluster, output_file, fill_x):
     with open(output_file, "w") as out:
-        for seq_i in data["sequences"].keys():
-            out.write(f">rs{seq_i}\n")
-            random_seq = sample_from(data["sequences"][seq_i], len(data["sequences"][seq_i]))
-            for window in data["sequences windows intervals"][seq_i]:
+        out.write(f">{cluster.ref_accession}\n")
+        out.write(cluster.ref_seq + "\n")
+        for seq in cluster.sequences:
+            out.write(f">{seq.accession}\n")
+
+            if fill_x:
+                random_seq = "X" * len(seq.sequence)
+            else:
+                random_seq = sample_from(seq.sequence, len(seq.sequence))
+                
+            for window in merge_windows(seq.raw_seq_windows):
                 start = window[0]
                 end = window[1]
-                random_seq = random_seq[:start] + data["sequences"][seq_i][start:end+1] + random_seq[end+1:]
+                random_seq = random_seq[:start] + seq.sequence[start:end+1] + random_seq[end+1:]
+
             out.write(random_seq + "\n")
 
 def sample_from(seq, l):
@@ -59,14 +32,14 @@ def sample_from(seq, l):
     return out
 
 def main(args):
-    data = read_safety_windows(args.safety_file)
-    print(data)
-    generate_random_sequences(data, args.output_file)
+    cluster = Cluster(args.safety_file)
+    generate_random_sequences(cluster, args.output_file, args.x)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("safety_file", type=str, help="Emerald output file")
     parser.add_argument("output_file", type=str, help="Where to write output (in fasta-format)")
-    parser.add_argument("--inverse", action="store_true", help="To only randomly sample inside of safety intervals")
+    # parser.add_argument("--inverse", action="store_true", help="To only randomly sample inside of safety intervals")
+    parser.add_argument("-x", action="store_true", help="Fill safety intervals with 'X'")
     args = parser.parse_args()
     main(args)

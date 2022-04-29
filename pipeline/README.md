@@ -130,8 +130,8 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 
 #### 4. Edit `turso/parameters.yaml`:
 -   Dependencies should be located in `/proj/<username>/` ($PROJ)
--   Data such as Swissprotein and Pfam DB should be located somewhere in `/wrk/users/<username>` ($WRKDIR)
--    Work (wrkdir) and temporary (tempdir) directory should be located in `/wrk/users/<username>` ($WRKDIR)
+-   Data such as Swissprotein and Pfam DB should be located somewhere in `/wrk-vakka/users/<username>` ($WRKDIR)
+-    Work (wrkdir) and temporary (tempdir) directory should be located in `/wrk-vakka/users/<username>` ($WRKDIR)
 
 #### 5. Run the Snakemake pipeline via shell script:
 -   `turso/run.sh rule -j <num_of_maximum_parallel_processes>`
@@ -157,7 +157,7 @@ Follow instruction for MMseqs2 installation (compilation from source recommended
 
 #### On turso, it's not possible to use `--taxonomy` as cluster reference out of the box
 -   This is due to disk quota limits on Turso. Ete3 tries to download taxonomy database into `~` which is not meant for data storage. This exceeds disk quota limit and is interrupted.
--   Workaround solution to fix this is to run Ete3 on your local machine and copy contents of `~/.etetoolkit` on your local machine into $WKRDIR (e.g. `/wrk/users/<username>/ncbi`) and make symbolic link `ln -s /wrk/users/<username>/ncbi ~/.etetoolkit`
+-   Workaround solution to fix this is to run Ete3 on your local machine and copy contents of `~/.etetoolkit` on your local machine into $WKRDIR (e.g. `/wrk-vakka/users/<username>/ncbi`) and make symbolic link `ln -s /wrk-vakka/users/<username>/ncbi ~/.etetoolkit`
 
 #### Problems with Diamond clustering for version > 2.0.8.
 -   Use Diamond v2.0.8 for now

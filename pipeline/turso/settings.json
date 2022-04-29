@@ -1,6 +1,6 @@
 {
     "SBATCH_DEFAULTS": "mem=1024 time=00:05:00 nodes=1 mail-type=FAIL",
-    "CLUSTER_NAME": "ukko2",
+    "CLUSTER_NAME": "ukko",
     "CLUSTER_CONFIG": "",
     "ADVANCED_ARGUMENT_CONVERSION": "no"
 }
