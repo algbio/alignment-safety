@@ -90,237 +90,240 @@ int64_t ref = 0; // reference protein
 std::vector<int64_t> random_order;
 
 template<class T, class K>
-void run_case(const int64_t j, std::vector<std::string> &output) {
-	int64_t i = random_order[j];
-//		std::cerr << "handling id " << i << std::endl;
-//		std::cerr << omp_get_thread_num() << std::endl;
-	const std::string &a = proteins[ref].sequence;
-	const std::string &b = proteins[i].sequence;
-	output[i] += proteins[i].descriptor + '\n' + b + '\n';
-//		std::cout << i << ' ' << b << ' ' << std::flush;
+	void run_case(const int64_t j, std::vector<std::string> &output) {
+		int64_t i = random_order[j];
+	//		std::cerr << "handling id " << i << std::endl;
+	//		std::cerr << omp_get_thread_num() << std::endl;
+		const std::string &a = proteins[ref].sequence;
+		const std::string &b = proteins[i].sequence;
+		output[i] += proteins[i].descriptor + '\n' + b + '\n';
+	//		std::cout << i << ' ' << b << ' ' << std::flush;
 
-	Dag d = gen_dag<K>(a, b, cost_matrix, delta, GAP_COST, START_GAP, verbose_flag);
-	std::vector<std::vector<int64_t>> adj = d.adj;
+		Dag d = gen_dag<K>(a, b, cost_matrix, delta, GAP_COST, START_GAP, verbose_flag);
+		std::vector<std::vector<int64_t>> adj = d.adj;
 
-	std::vector<std::vector<K>> ratios = path_ratios<T, K>(d);
+		std::vector<std::vector<K>> ratios = path_ratios<T, K>(d);
 
-	std::vector<int64_t> path = find_alpha_path<K>(d, ratios, alpha);
-	std::unordered_map<int64_t, int64_t> cnt;
-	for (int64_t v: path) {
-		assert(cnt[v] == 0);
-		cnt[v]++;
-	}
+		std::vector<int64_t> path = find_alpha_path<K>(d, ratios, alpha);
+		std::unordered_map<int64_t, int64_t> cnt;
+		for (int64_t v: path) {
+			assert(cnt[v] == 0);
+			cnt[v]++;
+		}
 
-	std::vector<K> r = find_ratios<K>(path, adj, ratios);
-	std::vector<std::pair<int64_t, int64_t>> windows_tmp = safety_windows<K>(r, path, alpha);
+		std::vector<K> r = find_ratios<K>(path, adj, ratios);
+		std::vector<std::pair<int64_t, int64_t>> windows_tmp = safety_windows<K>(r, path, alpha);
 
-	if (drawgraph) {
-		draw_subgraph(j, d, path, windows_tmp);
-		return;
-	}
+		if (drawgraph) {
+			std::string dot = draw_subgraph(j, (int64_t) a.size(), (int64_t) b.size(), d, path, windows_tmp);
+			std::string file_g = "fasta_" + std::to_string(j) + ".dot";
+			std::ofstream str(file_g, std::ofstream::out);
+			str << dot;
+			str.close();
+		}
 
-	std::vector<std::pair<int64_t, int64_t>> windows, windowsp;
-	/*auto outside = [&](const int64_t &L, const int64_t &R) {
-		if (windows.empty()) return false;
-		auto [bL, bR] = windows.back();
-		return bL >= L && bR <= R;
-	};
-	auto inside = [&](const int64_t &L, const int64_t &R) {
-		if (windows.empty()) return false;
-		auto [bL, bR] = windows.back();
-		return L >= bL && R <= bR;
-	};*/
-	
-	std::map<int64_t, std::pair<int64_t, int64_t>> transr = d.transr;
-	for (int64_t i = 0; i < (int64_t) windows_tmp.size(); i++) {
-		auto [LT, RT] = windows_tmp[i];
-		int64_t L = transr[LT].first, R = transr[RT].first;
-		int64_t Lp = transr[LT].second, Rp = transr[RT].second;
-		
-		// This removes safety windows, that are a subset of another safety window.
-		// Here, this is only the case, if gaps are being used.
-		// As we print the safety windows wrt. both strings, we don't want to remove these kind
-		// of subsets, though, as we'd lose to one-to-one correspondence between the safety-windows
-		// of both strings.
-		/*while (outside(L, R)) windows.pop_back();
-		if (!inside(L, R)) windows.emplace_back(L, R);*/
-
-		windows.emplace_back(L, R);
-		windowsp.emplace_back(Lp, Rp);
-	}
-
-
-	output[i] += std::to_string(windows.size()) + '\n';
-	//std::cout << windows.size() << std::endl;
-	for (int64_t k = 0; k < (int64_t) windows.size(); k++) {
-		auto [x, y] = windows[k];
-		auto [xp, yp] = windowsp[k];
-		//std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
-		output[i] += std::to_string(x) + ' ' + std::to_string(y) + ' ' + std::to_string(xp) + ' ' + std::to_string(yp) + '\n';
-	}
-	//std::cout << std::flush;
-}
-
-signed main(int argc, char **argv) {
-	std::cerr << std::fixed << std::setprecision(10); // debug output
-	std::cout << std::fixed << std::setprecision(10); // debug output
-
-
-	int64_t c;
-	while (1) {
-		static struct option long_options[] = {
-			{ "verbose", no_argument, &verbose_flag, 1 }, // this does nothing for now
-			{ "alpha", required_argument, 0, 'a' },
-			{ "delta", required_argument, 0, 'd' },
-			{ "costmat", required_argument, 0, 'c' },
-			{ "gapcost", required_argument, 0, 'g' },
-			{ "startgap", required_argument, 0, 'e' },
-			{ "special", required_argument, 0, 's' },
-			{ "file", required_argument, 0, 'f' },
-			{ "help", no_argument, 0, 'h' },
-			{ "threads", required_argument, 0, 'i' },
-			{ "reference", required_argument, 0, 'r' },
-			{ "approximation", no_argument, 0, 'p' },
-			{ "drawgraph", no_argument, 0, 'w' },
-			{ 0, 0, 0, 0 }
+		std::vector<std::pair<int64_t, int64_t>> windows, windowsp;
+		/*auto outside = [&](const int64_t &L, const int64_t &R) {
+			if (windows.empty()) return false;
+			auto [bL, bR] = windows.back();
+			return bL >= L && bR <= R;
 		};
-	
-		int option_index = 0;
-		c = getopt_long(argc, argv, "a:d:c:g:e:s:f:hi:r:p", long_options, &option_index);
-		if (c == -1) break;
+		auto inside = [&](const int64_t &L, const int64_t &R) {
+			if (windows.empty()) return false;
+			auto [bL, bR] = windows.back();
+			return L >= bL && R <= bR;
+		};*/
+		
+		std::map<int64_t, std::pair<int64_t, int64_t>> transr = d.transr;
+		for (int64_t i = 0; i < (int64_t) windows_tmp.size(); i++) {
+			auto [LT, RT] = windows_tmp[i];
+			int64_t L = transr[LT].first, R = transr[RT].first;
+			int64_t Lp = transr[LT].second, Rp = transr[RT].second;
+			
+			// This removes safety windows, that are a subset of another safety window.
+			// Here, this is only the case, if gaps are being used.
+			// As we print the safety windows wrt. both strings, we don't want to remove these kind
+			// of subsets, though, as we'd lose to one-to-one correspondence between the safety-windows
+			// of both strings.
+			/*while (outside(L, R)) windows.pop_back();
+			if (!inside(L, R)) windows.emplace_back(L, R);*/
 
-		switch (c) {
-			case 0:
-				if (long_options[option_index].flag != 0)
+			windows.emplace_back(L, R);
+			windowsp.emplace_back(Lp, Rp);
+		}
+
+
+		output[i] += std::to_string(windows.size()) + '\n';
+		//std::cout << windows.size() << std::endl;
+		for (int64_t k = 0; k < (int64_t) windows.size(); k++) {
+			auto [x, y] = windows[k];
+			auto [xp, yp] = windowsp[k];
+			//std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
+			output[i] += std::to_string(x) + ' ' + std::to_string(y) + ' ' + std::to_string(xp) + ' ' + std::to_string(yp) + '\n';
+		}
+		//std::cout << std::flush;
+	}
+
+	signed main(int argc, char **argv) {
+		std::cerr << std::fixed << std::setprecision(10); // debug output
+		std::cout << std::fixed << std::setprecision(10); // debug output
+
+
+		int64_t c;
+		while (1) {
+			static struct option long_options[] = {
+				{ "verbose", no_argument, &verbose_flag, 1 }, // this does nothing for now
+				{ "alpha", required_argument, 0, 'a' },
+				{ "delta", required_argument, 0, 'd' },
+				{ "costmat", required_argument, 0, 'c' },
+				{ "gapcost", required_argument, 0, 'g' },
+				{ "startgap", required_argument, 0, 'e' },
+				{ "special", required_argument, 0, 's' },
+				{ "file", required_argument, 0, 'f' },
+				{ "help", no_argument, 0, 'h' },
+				{ "threads", required_argument, 0, 'i' },
+				{ "reference", required_argument, 0, 'r' },
+				{ "approximation", no_argument, 0, 'p' },
+				{ "drawgraph", no_argument, 0, 'w' },
+				{ 0, 0, 0, 0 }
+			};
+		
+			int option_index = 0;
+			c = getopt_long(argc, argv, "a:d:c:g:e:s:f:hi:r:p", long_options, &option_index);
+			if (c == -1) break;
+
+			switch (c) {
+				case 0:
+					if (long_options[option_index].flag != 0)
+						break;
+					std::cout << "Option " << long_options[option_index].name;
+					if (optarg)
+						std::cout << " with arg " << optarg;
+					std::cout << std::endl;
 					break;
-				std::cout << "Option " << long_options[option_index].name;
-				if (optarg)
-					std::cout << " with arg " << optarg;
-				std::cout << std::endl;
-				break;
-			case 'a':
-				alpha = std::stof(optarg);
-				break;
-			case 'd':
-				delta = std::stof(optarg);
-				break;
-			case 'c':
-				read_cost_matrix = true;
-				cost_matrix_file = optarg;
-				break;
-			case 'g':
-				GAP_COST = atoi(optarg);
-				break;
-			case 'e':
-				START_GAP = atoi(optarg);
-				break;
-			case 's':
-				if (strcmp(optarg, "INF") == 0) ignore_special = true;
-				else SP = atoi(optarg);
-				break;
-			case 'f':
-				read_file = true;
-				file = optarg;
-				break;
-			case 'h':
-				help_flag = true;
-				break;
-			case 'i':
-				threads = atoi(optarg);
-				break;
-			case 'r':
-				reference = optarg;
-				break;
-			case 'p':
-				use_approx = true;
-				break;
-			case 'w':
-				drawgraph = true;
-				break;
-			case '?': break;
-			default: abort();
-		}
-	}
-	
-	if (help_flag) {
-		return print_usage(argv, 0);
-	}
-	if (!read_file) {
-		return print_usage(argv, 1);
-	}
-
-	if (alpha >= 1.0) {
-		std::cerr << "Warning: for alpha values >= 1.0, the program will not return any safety windows.\n";
-	} else if (alpha < 0.5) {
-		std::cerr << "Warning: for alpha values < 0.5, the program will not behave well defined and might crash.\n";
-	}
-
-
-	if (read_cost_matrix) {
-		std::ifstream costmat(cost_matrix_file);
-		for (int64_t i = 0; i < 20; i++) for (int64_t j = 0; j <= i; j++) {
-			costmat >> cost_matrix[i][j];
-			cost_matrix[j][i] = cost_matrix[i][j];
-		}
-	}
-
-	// TODO: Read these from the LTA array instead
-	std::vector<char> special_chars = { 'B', 'X', 'Z' };
-	auto contains_special = [&](const std::string &a) {
-		for (char c: special_chars)
-			if (a.find(c) != std::string::npos) return true;
-		return false;
-	};
-
-	std::ifstream input(file);
-	proteins.clear();
-	for (std::string line; std::getline(input, line); ) {
-		if ((int64_t) line.size() <= 0) continue;
-		if (line[0] == '>') {
-			if ((int64_t) proteins.size() > 0 && ignore_special && contains_special(proteins.back().sequence))
-				proteins.pop_back();
-			proteins.push_back(Protein(line));
-		} else {
-			proteins.back().sequence += line;
-		}
-	}
-	if ((int64_t) proteins.size() > 0 && ignore_special && contains_special(proteins.back().sequence))
-		proteins.pop_back();
-
-	int64_t PS = (int64_t) proteins.size();
-
-	if (PS == 0) {
-		std::cout << "Protein sequence list is empty.\n";
-		return 2;
-	}
-
-	char delim = proteins[0].descriptor.find('|') != std::string::npos ? '|' : ':'; // '|' is used by swiss prot, ':' is used by alpha fold
-	// find reference protein
-	auto split = [&](std::string str, char delimiter) -> std::vector<std::string> {
-		size_t pos = 0;
-		std::vector<std::string> ret;
-		while ((pos = str.find(delimiter)) != std::string::npos) {
-			std::string token = str.substr(0, pos);
-			ret.push_back(token);
-			str.erase(0, pos + 1); // + 1 for delimiter length
-		}
-		ret.push_back(str);
-		return ret;
-	};
-	if (reference != "-") {
-		bool found = false;
-		for (int64_t i = 0; i < PS; i++) {
-			if (reference == split(proteins[i].descriptor, delim)[1]) {
-				if (found)
-					std::cerr << "Reference identity found more than once. Using the last found protein as reference.\n";
-				ref = i;
-				found = true;
+				case 'a':
+					alpha = std::stof(optarg);
+					break;
+				case 'd':
+					delta = std::stof(optarg);
+					break;
+				case 'c':
+					read_cost_matrix = true;
+					cost_matrix_file = optarg;
+					break;
+				case 'g':
+					GAP_COST = atoi(optarg);
+					break;
+				case 'e':
+					START_GAP = atoi(optarg);
+					break;
+				case 's':
+					if (strcmp(optarg, "INF") == 0) ignore_special = true;
+					else SP = atoi(optarg);
+					break;
+				case 'f':
+					read_file = true;
+					file = optarg;
+					break;
+				case 'h':
+					help_flag = true;
+					break;
+				case 'i':
+					threads = atoi(optarg);
+					break;
+				case 'r':
+					reference = optarg;
+					break;
+				case 'p':
+					use_approx = true;
+					break;
+				case 'w':
+					drawgraph = true;
+					break;
+				case '?': break;
+				default: abort();
 			}
 		}
-		if (!found) std::cerr << "Reference identity not found, using the first protein as reference.\n";
-	}
+		
+		if (help_flag) {
+			return print_usage(argv, 0);
+		}
+		if (!read_file) {
+			return print_usage(argv, 1);
+		}
 
-	// reference protein and amount of proteins in the cluster
+		if (alpha >= 1.0) {
+			std::cerr << "Warning: for alpha values >= 1.0, the program will not return any safety windows.\n";
+		} else if (alpha < 0.5) {
+			std::cerr << "Warning: for alpha values < 0.5, the program will not behave well defined and might crash.\n";
+		}
+
+
+		if (read_cost_matrix) {
+			std::ifstream costmat(cost_matrix_file);
+			for (int64_t i = 0; i < 20; i++) for (int64_t j = 0; j <= i; j++) {
+				costmat >> cost_matrix[i][j];
+				cost_matrix[j][i] = cost_matrix[i][j];
+			}
+		}
+
+		// TODO: Read these from the LTA array instead
+		std::vector<char> special_chars = { 'B', 'X', 'Z' };
+		auto contains_special = [&](const std::string &a) {
+			for (char c: special_chars)
+				if (a.find(c) != std::string::npos) return true;
+			return false;
+		};
+
+		std::ifstream input(file);
+		proteins.clear();
+		for (std::string line; std::getline(input, line); ) {
+			if ((int64_t) line.size() <= 0) continue;
+			if (line[0] == '>') {
+				if ((int64_t) proteins.size() > 0 && ignore_special && contains_special(proteins.back().sequence))
+					proteins.pop_back();
+				proteins.push_back(Protein(line));
+			} else {
+				proteins.back().sequence += line;
+			}
+		}
+		if ((int64_t) proteins.size() > 0 && ignore_special && contains_special(proteins.back().sequence))
+			proteins.pop_back();
+
+		int64_t PS = (int64_t) proteins.size();
+
+		if (PS == 0) {
+			std::cout << "Protein sequence list is empty.\n";
+			return 2;
+		}
+
+		char delim = proteins[0].descriptor.find('|') != std::string::npos ? '|' : ':'; // '|' is used by swiss prot, ':' is used by alpha fold
+		// find reference protein
+		auto split = [&](std::string str, char delimiter) -> std::vector<std::string> {
+			size_t pos = 0;
+			std::vector<std::string> ret;
+			while ((pos = str.find(delimiter)) != std::string::npos) {
+				std::string token = str.substr(0, pos);
+				ret.push_back(token);
+				str.erase(0, pos + 1); // + 1 for delimiter length
+			}
+			ret.push_back(str);
+			return ret;
+		};
+		if (reference != "-") {
+			bool found = false;
+			for (int64_t i = 0; i < PS; i++) {
+				if (reference == split(proteins[i].descriptor, delim)[1]) {
+					if (found)
+						std::cerr << "Reference identity found more than once. Using the last found protein as reference.\n";
+					ref = i;
+					found = true;
+				}
+			}
+			if (!found) std::cerr << "Reference identity not found, using the first protein as reference.\n";
+		}
+
+		// reference protein and amount of proteins in the cluster
 	std::cout << proteins[ref].descriptor << '\n' << proteins[ref].sequence << '\n';
 	std::cout << PS << '\n';
 	std::vector<std::string> output(PS);
