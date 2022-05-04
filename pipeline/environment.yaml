@@ -3,14 +3,11 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python==3.8
   - snakemake-minimal==6.5.2
   - jupyter
   - pandas
   - ete3
-  - snakemake-minimal
   - ipykernel
-  - fastcluster
   - matplotlib
   - seaborn
   - scikit-learn
@@ -18,6 +15,5 @@ dependencies:
   - biopython
   - panel
   - jupyter_bokeh
-  - schrodinger::pymol
   - nglview
 # to update "conda env update --name pipeline --file environment.yaml"
