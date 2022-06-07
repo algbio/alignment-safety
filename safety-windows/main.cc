@@ -30,7 +30,8 @@ int64_t print_usage(char **argv, int64_t help) {
 	std::cout << "\t                   \tINF value ignores these charachters. (Default: 1)\n";
 	std::cout << "\t-i, --threads      \tInteger, specifies the number of threads (Default: 1).\n";
 	std::cout << "\t-r, --reference    \tProtein identity, selects reference protein. By default, this is the first protein.\n";
-	std::cout << "\t-w, --drawgraph    \tOutput in stdout a dot code for plotting the Delta suboptimal subgraph.\n";
+	std::cout << "\t-w, --drawgraph    \tOutput in stdout a dot code for plotting the Delta suboptimal subgraph (for debug purposes).\n";
+	std::cout << "\t-k, --alignments   \tNon-negative integer n, create a fasta file containing randomly chosen n suboptimal alignments. (Default: 0)\n";
 	std::cout << "\t-h, --help         \tShows this help message.\n";
 	return help;
 }
@@ -56,6 +57,7 @@ std::string file, cost_matrix_file;
 bool help_flag = false;
 bool read_file = false;
 bool read_cost_matrix = false;
+int64_t print_alignments = 0;
 std::string reference = "-";
 int64_t threads = 1;
 
@@ -90,79 +92,84 @@ int64_t ref = 0; // reference protein
 std::vector<int64_t> random_order;
 
 template<class T, class K>
-	void run_case(const int64_t j, std::vector<std::string> &output) {
-		int64_t i = random_order[j];
-	//		std::cerr << "handling id " << i << std::endl;
-	//		std::cerr << omp_get_thread_num() << std::endl;
-		const std::string &a = proteins[ref].sequence;
-		const std::string &b = proteins[i].sequence;
-		output[i] += "Sequence " + std::to_string(i) + ": " + proteins[i].descriptor + '\n' + b + '\n';
-	//		std::cout << i << ' ' << b << ' ' << std::flush;
+void run_case(const int64_t j, std::vector<std::string> &output) {
+	int64_t i = random_order[j];
+//		std::cerr << "handling id " << i << std::endl;
+//		std::cerr << omp_get_thread_num() << std::endl;
+	const std::string &a = proteins[ref].sequence;
+	const std::string &b = proteins[i].sequence;
+	output[i] += "Sequence " + std::to_string(i) + ": " + proteins[i].descriptor + '\n' + b + '\n';
+//		std::cout << i << ' ' << b << ' ' << std::flush;
 
-		Dag d = gen_dag<K>(a, b, cost_matrix, delta, GAP_COST, START_GAP, verbose_flag);
-		std::vector<std::vector<int64_t>> adj = d.adj;
+	Dag d = gen_dag<K>(a, b, cost_matrix, delta, GAP_COST, START_GAP, verbose_flag);
+	std::vector<std::vector<int64_t>> adj = d.adj;
 
-		std::vector<std::vector<K>> ratios = path_ratios<T, K>(d);
-
-		std::vector<int64_t> path = find_alpha_path<K>(d, ratios, alpha);
-		std::unordered_map<int64_t, int64_t> cnt;
-		for (int64_t v: path) {
-			assert(cnt[v] == 0);
-			cnt[v]++;
-		}
-
-		std::vector<K> r = find_ratios<K>(path, adj, ratios);
-		std::vector<std::pair<int64_t, int64_t>> windows_tmp = safety_windows<K>(r, path, alpha);
-
-		if (drawgraph) {
-			std::string dot = draw_subgraph(i, (int64_t) a.size() + 1, (int64_t) b.size() + 1, d, path, windows_tmp, a, b);
-			std::string file_g = "fasta_" + std::to_string(i) + ".dot";
-			std::ofstream str(file_g, std::ofstream::out);
-			str << dot;
-			str.close();
-		}
-
-		std::vector<std::pair<int64_t, int64_t>> windows, windowsp;
-		/*auto outside = [&](const int64_t &L, const int64_t &R) {
-			if (windows.empty()) return false;
-			auto [bL, bR] = windows.back();
-			return bL >= L && bR <= R;
-		};
-		auto inside = [&](const int64_t &L, const int64_t &R) {
-			if (windows.empty()) return false;
-			auto [bL, bR] = windows.back();
-			return L >= bL && R <= bR;
-		};*/
-		
-		std::map<int64_t, std::pair<int64_t, int64_t>> transr = d.transr;
-		for (int64_t i = 0; i < (int64_t) windows_tmp.size(); i++) {
-			auto [LT, RT] = windows_tmp[i];
-			int64_t L = transr[LT].first, R = transr[RT].first;
-			int64_t Lp = transr[LT].second, Rp = transr[RT].second;
-			
-			// This removes safety windows, that are a subset of another safety window.
-			// Here, this is only the case, if gaps are being used.
-			// As we print the safety windows wrt. both strings, we don't want to remove these kind
-			// of subsets, though, as we'd lose to one-to-one correspondence between the safety-windows
-			// of both strings.
-			/*while (outside(L, R)) windows.pop_back();
-			if (!inside(L, R)) windows.emplace_back(L, R);*/
-
-			windows.emplace_back(L, R);
-			windowsp.emplace_back(Lp, Rp);
-		}
-
-
-		output[i] += std::to_string(windows.size()) + '\n';
-		//std::cout << windows.size() << std::endl;
-		for (int64_t k = 0; k < (int64_t) windows.size(); k++) {
-			auto [x, y] = windows[k];
-			auto [xp, yp] = windowsp[k];
-			//std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
-			output[i] += std::to_string(x) + ' ' + std::to_string(y) + ' ' + std::to_string(xp) + ' ' + std::to_string(yp) + '\n';
-		}
-		//std::cout << std::flush;
+	if (print_alignments > 0) {
+		std::string fasta_file = "align_" + std::to_string(ref) + "_" + std::to_string(i) + ".fasta";
+		alignments_into_fasta(print_alignments, d, a, fasta_file);
 	}
+
+	std::vector<std::vector<K>> ratios = path_ratios<T, K>(d);
+
+	std::vector<int64_t> path = find_alpha_path<K>(d, ratios, alpha);
+	std::unordered_map<int64_t, int64_t> cnt;
+	for (int64_t v: path) {
+		assert(cnt[v] == 0);
+		cnt[v]++;
+	}
+
+	std::vector<K> r = find_ratios<K>(path, adj, ratios);
+	std::vector<std::pair<int64_t, int64_t>> windows_tmp = safety_windows<K>(r, path, alpha);
+
+	if (drawgraph) {
+		std::string dot = draw_subgraph(i, (int64_t) a.size() + 1, (int64_t) b.size() + 1, d, path, windows_tmp, a, b);
+		std::string file_g = "fasta_" + std::to_string(i) + ".dot";
+		std::ofstream str(file_g, std::ofstream::out);
+		str << dot;
+		str.close();
+	}
+
+	std::vector<std::pair<int64_t, int64_t>> windows, windowsp;
+	/*auto outside = [&](const int64_t &L, const int64_t &R) {
+		if (windows.empty()) return false;
+		auto [bL, bR] = windows.back();
+		return bL >= L && bR <= R;
+	};
+	auto inside = [&](const int64_t &L, const int64_t &R) {
+		if (windows.empty()) return false;
+		auto [bL, bR] = windows.back();
+		return L >= bL && R <= bR;
+	};*/
+	
+	std::map<int64_t, std::pair<int64_t, int64_t>> transr = d.transr;
+	for (int64_t i = 0; i < (int64_t) windows_tmp.size(); i++) {
+		auto [LT, RT] = windows_tmp[i];
+		int64_t L = transr[LT].first, R = transr[RT].first;
+		int64_t Lp = transr[LT].second, Rp = transr[RT].second;
+		
+		// This removes safety windows, that are a subset of another safety window.
+		// Here, this is only the case, if gaps are being used.
+		// As we print the safety windows wrt. both strings, we don't want to remove these kind
+		// of subsets, though, as we'd lose to one-to-one correspondence between the safety-windows
+		// of both strings.
+		/*while (outside(L, R)) windows.pop_back();
+		if (!inside(L, R)) windows.emplace_back(L, R);*/
+
+		windows.emplace_back(L, R);
+		windowsp.emplace_back(Lp, Rp);
+	}
+
+
+	output[i] += std::to_string(windows.size()) + '\n';
+	//std::cout << windows.size() << std::endl;
+	for (int64_t k = 0; k < (int64_t) windows.size(); k++) {
+		auto [x, y] = windows[k];
+		auto [xp, yp] = windowsp[k];
+		//std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
+		output[i] += std::to_string(x) + ' ' + std::to_string(y) + ' ' + std::to_string(xp) + ' ' + std::to_string(yp) + '\n';
+	}
+	//std::cout << std::flush;
+}
 
 signed main(int argc, char **argv) {
 	std::cerr << std::fixed << std::setprecision(10); // debug output
@@ -185,11 +192,12 @@ signed main(int argc, char **argv) {
 			{ "reference", required_argument, 0, 'r' },
 			{ "approximation", no_argument, 0, 'p' },
 			{ "drawgraph", no_argument, 0, 'w' },
+			{ "alignments", required_argument, 0, 'k' },
 			{ 0, 0, 0, 0 }
 		};
 	
 		int option_index = 0;
-		c = getopt_long(argc, argv, "a:d:c:g:e:s:f:hi:r:p", long_options, &option_index);
+		c = getopt_long(argc, argv, "a:d:c:g:e:s:f:hi:r:pwk:", long_options, &option_index);
 		if (c == -1) break;
 
 		switch (c) {
@@ -240,24 +248,27 @@ signed main(int argc, char **argv) {
 			case 'w':
 				drawgraph = true;
 				break;
+			case 'k':
+				print_alignments = atoi(optarg);
+				break;
 			case '?': break;
 			default: abort();
 		}
 	}
 	
-	if (help_flag) {
+	if (help_flag)
 		return print_usage(argv, 0);
-	}
-	if (!read_file) {
+
+	if (!read_file)
 		return print_usage(argv, 1);
-	}
 
-	if (alpha >= 1.0) {
+	if (alpha >= 1.0)
 		std::cerr << "Warning: for alpha values >= 1.0, the program will not return any safety windows.\n";
-	} else if (alpha < 0.5) {
+	else if (alpha < 0.5)
 		std::cerr << "Warning: for alpha values < 0.5, the program will not behave well defined and might crash.\n";
-	}
 
+	if (print_alignments < 0)
+		std::cerr << "Warning: alignments value is negative, will be treated as 0.\n";
 
 	if (read_cost_matrix) {
 		std::ifstream costmat(cost_matrix_file);

@@ -29,6 +29,9 @@ std::vector<std::vector<std::vector<int64_t>>>
 dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 		const int64_t sn, const int64_t sm);
 
+// Print suboptimal alignments into a fasta file
+void alignments_into_fasta(int64_t print_alignments, Dag &d, const std::string &a, const std::string &fasta_file);
+
 // Construct alignment paths
 std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const std::string &a,
 		const std::string &b, const int64_t GAP_COST, const int64_t START_GAP, const int64_t cost_matrix[21][21], int64_t sign);

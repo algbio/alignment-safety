@@ -6,12 +6,13 @@
 #include <assert.h>
 #include <array>
 
+#include <fstream>
 #include <iostream>
 
 #include "optimal_paths.h"
 
 // translate fasta file letters to amino acid symbols (see http://www.math.utep.edu/Faculty/mleung/bioinformatics/aacodon.html)
-//                    A   B  C  D  E   F  G  H  I   J   K   L   M  N   O   P  Q  R   S   T   U   V   W   X   Y   Z
+//                        A   B  C  D  E   F  G  H  I   J   K   L   M  N   O   P  Q  R   S   T   U   V   W   X   Y   Z
 const int64_t LTA[26] = { 0, 20, 4, 3, 6, 13, 7, 8, 9, 20, 11, 10, 12, 2, 20, 14, 5, 1, 15, 16, 20, 19, 17, 20, 18, 20 };
 
 std::vector<std::vector<std::vector<int64_t>>>
@@ -54,6 +55,38 @@ dijkstra(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj,
 		}
 	}
 	return dist;
+}
+
+void alignments_into_fasta(int64_t print_alignments, Dag &d, const std::string &a, const std::string &fasta_file) {
+	std::string alignment = "";
+	std::ofstream fasta_stream;
+	fasta_stream.open(fasta_file);
+	int64_t al_idx = 0;
+	std::function<void(std::string)> print_alignment = [&](std::string s) {
+		fasta_stream << ">Alignment_" << al_idx << '\n';
+		fasta_stream << s << '\n';
+	};
+	std::function<void(int64_t)> dfs = [&](int64_t current_node) {
+		if (current_node == d.sink) {
+			print_alignment(alignment);
+			al_idx++;
+			return;
+		}
+		for (int64_t nxt: d.adj[current_node]) {
+			std::pair<int64_t, int64_t> p = d.transr[current_node];
+			std::pair<int64_t, int64_t> n = d.transr[nxt];
+			alignment += (n.first == p.first + 1 ? a[p.first] : '_');
+			dfs(nxt);
+			if (al_idx == print_alignments) {
+				alignment = "";
+				return;
+			}
+			alignment.pop_back();
+		}
+	};
+	if (print_alignments > 0)
+		dfs(d.src);
+	fasta_stream.close();
 }
 
 std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const std::string &a,
