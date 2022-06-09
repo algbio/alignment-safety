@@ -21,6 +21,7 @@ std::string draw_subgraph(const int64_t IDX, const int64_t n, const int64_t m, c
 		}
 		if (a1 < 0 || a2 < 0) return 0;
 		if (order[a1] > order[a2]) {
+			std::cerr << "Error. order of left index larger than order of right index.\n";
 			std::cerr << "DBG: " << i1 << ' ' << j1 << ' ' << i2 << ' ' << j2 << ' ' << a1 << ' ' << a2 << std::endl;
 			assert(false);
 		}
@@ -60,9 +61,9 @@ std::string draw_subgraph(const int64_t IDX, const int64_t n, const int64_t m, c
 					assert(!in_alpha_path(i, j) || !in_alpha_path(l, k));
 				} else {
 					int s;
-					if ((s = is_safe(l, k, i, j))) edge += ((s % 2) ? " [color=red, penwidth=3]" : " [color=purple, penwidth=3]");
-					else if (in_alpha_path(i, j) && in_alpha_path(l, k)) edge += " [color=blue, penwidth=3]";
-					else edge += " [style=bold]";
+					if ((s = is_safe(l, k, i, j))) edge += ((s % 2) ? " [color=red, penwidth=8]" : " [color=red, penwidth=8]"); // If wished, we can differentiate between two seperate SW by color here. Though, some SW are intersecting each other.
+					//else if (in_alpha_path(i, j) && in_alpha_path(l, k)) edge += " [color=blue, penwidth=3]";
+					else edge += " [penwidth=3]";
 				}
 				edges.push_back(edge);
 			}
