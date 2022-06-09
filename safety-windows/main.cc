@@ -49,11 +49,11 @@ bool drawgraph = false;
 float alpha = 0.75, TH = 0;
 int64_t delta = 0;
 
-int64_t GAP_COST = 1;
-int64_t START_GAP = 11;
-int64_t SP = 1;
+int64_t GAP_COST = -1;
+int64_t START_GAP = -11;
+int64_t SP = -1;
 bool ignore_special = false;
-std::string file, cost_matrix_file;
+std::string file, cost_matrix_file, file_without_path;
 bool help_flag = false;
 bool read_file = false;
 bool read_cost_matrix = false;
@@ -64,26 +64,26 @@ int64_t threads = 1;
 // BLOSUM62 matrix
 int64_t cost_matrix[21][21] = {
 	// Ala  Arg  Asn  Asp  Cys  Gln  Glu  Gly  His  Ile  Leu  Lys  Met  Phe  Pro  Ser  Thr  Trp  Tyr  Val  Def
-	{  -4,   1,   2,   2,   0,   1,   1,   0,   2,   1,   1,   1,   1,   2,   1,  -1,   0,   3,   2,   0,  SP }, // Ala
-	{   1,  -5,   0,   2,   3,  -1,   0,   2,   0,   3,   2,  -2,   1,   3,   2,   1,   1,   3,   2,   3,  SP }, // Arg
-	{   2,   0,  -6,  -1,   3,   0,   0,   0,  -1,   3,   3,   0,   2,   3,   2,  -1,   0,   4,   2,   3,  SP }, // Asn
-	{   2,   2,  -1,  -6,   3,   0,  -2,   1,   1,   3,   4,   1,   3,   3,   1,   0,   1,   4,   3,   3,  SP }, // Asp
-	{   0,   3,   3,   3,  -9,   3,   4,   3,   3,   1,   1,   3,   1,   2,   3,   1,   1,   2,   2,   1,  SP }, // Cys
-	{   1,  -1,   0,   0,   3,  -5,  -2,   2,   0,   3,   2,  -1,   0,   3,   1,   0,   1,   2,   1,   2,  SP }, // Gln
-	{   1,   0,   0,  -2,   4,  -2,  -5,   2,   0,   3,   3,  -1,   2,   3,   1,   0,   1,   3,   2,   2,  SP }, // Glu
-	{   0,   2,   0,   1,   3,   2,   2,  -6,   2,   4,   4,   2,   3,   3,   2,   0,   2,   2,   3,   3,  SP }, // Gly
-	{   2,   0,  -1,   1,   3,   0,   0,   2,  -8,   3,   3,   1,   2,   1,   2,   1,   2,   2,  -2,   3,  SP }, // His
-	{   1,   3,   3,   3,   1,   3,   3,   4,   3,  -4,  -2,   3,  -1,   0,   3,   2,   1,   3,   1,  -3,  SP }, // Ile
-	{   1,   2,   3,   4,   1,   2,   3,   4,   3,  -2,  -4,   2,  -2,   0,   3,   2,   1,   2,   1,  -1,  SP }, // Leu
-	{   1,  -2,   0,   1,   3,  -1,  -1,   2,   1,   3,   2,  -5,   1,   3,   1,   0,   1,   3,   2,   2,  SP }, // Lys
-	{   1,   1,   2,   3,   1,   0,   2,   3,   2,  -1,  -2,   1,  -5,   0,   2,   1,   1,   1,   1,  -1,  SP }, // Met
-	{   2,   3,   3,   3,   2,   3,   3,   3,   1,   0,   0,   3,   0,  -6,   4,   2,   2,  -1,  -3,   1,  SP }, // Phe
-	{   1,   2,   2,   1,   3,   1,   1,   2,   2,   3,   3,   1,   2,   4,  -7,   1,   1,   4,   3,   2,  SP }, // Pro
-	{  -1,   1,  -1,   0,   1,   0,   0,   0,   1,   2,   2,   0,   1,   2,   1,  -4,  -1,   3,   2,   2,  SP }, // Ser
-	{   0,   1,   0,   1,   1,   1,   1,   2,   2,   1,   1,   1,   1,   2,   1,  -1,  -5,   2,   2,   0,  SP }, // Thr
-	{   3,   3,   4,   4,   2,   2,   3,   2,   2,   3,   2,   3,   1,  -1,   4,   3,   2,  -11, -2,   3,  SP }, // Trp
-	{   2,   2,   2,   3,   2,   1,   2,   3,  -2,   1,   1,   2,   1,  -3,   3,   2,   2,  -2,  -7,   1,  SP }, // Tyr
-	{   0,   3,   3,   3,   1,   2,   2,   3,   3,  -3,  -1,   2,  -1,   1,   2,   2,   0,   3,   1,  -4,  SP }, // Val
+	{   4,  -1,  -2,  -2,   0,  -1,  -1,   0,  -2,  -1,  -1,  -1,  -1,  -2,  -1,   1,   0,  -3,  -2,   0,  SP }, // Ala
+	{  -1,   5,   0,  -2,  -3,   1,   0,  -2,   0,  -3,  -2,   2,  -1,  -3,  -2,  -1,  -1,  -3,  -2,  -3,  SP }, // Arg
+	{  -2,   0,   6,   1,  -3,   0,   0,   0,   1,  -3,  -3,   0,  -2,  -3,  -2,   1,   0,  -4,  -2,  -3,  SP }, // Asn
+	{  -2,  -2,   1,   6,  -3,   0,   2,  -1,  -1,  -3,  -4,  -1,  -3,  -3,  -1,   0,  -1,  -4,  -3,  -3,  SP }, // Asp
+	{   0,  -3,  -3,  -3,   9,  -3,  -4,  -3,  -3,  -1,  -1,  -3,  -1,  -2,  -3,  -1,  -1,  -2,  -2,  -1,  SP }, // Cys
+	{  -1,   1,   0,   0,  -3,   5,   2,  -2,   0,  -3,  -2,   1,   0,  -3,  -1,   0,  -1,  -2,  -1,  -2,  SP }, // Gln
+	{  -1,   0,   0,   2,  -4,   2,   5,  -2,   0,  -3,  -3,   1,  -2,  -3,  -1,   0,  -1,  -3,  -2,  -2,  SP }, // Glu
+	{   0,  -2,   0,  -1,  -3,  -2,  -2,   6,  -2,  -4,  -4,  -2,  -3,  -3,  -2,   0,  -2,  -2,  -3,  -3,  SP }, // Gly
+	{  -2,   0,   1,  -1,  -3,   0,   0,  -2,   8,  -3,  -3,  -1,  -2,  -1,  -2,  -1,  -2,  -2,   2,  -3,  SP }, // His
+	{  -1,  -3,  -3,  -3,  -1,  -3,  -3,  -4,  -3,   4,   2,  -3,   1,  -0,  -3,  -2,  -1,  -3,  -1,   3,  SP }, // Ile
+	{  -1,  -2,  -3,  -4,  -1,  -2,  -3,  -4,  -3,   2,   4,  -2,   2,   0,  -3,  -2,  -1,  -2,  -1,   1,  SP }, // Leu
+	{  -1,   2,   0,  -1,  -3,   1,   1,  -2,  -1,  -3,  -2,   5,  -1,  -3,  -1,   0,  -1,  -3,  -2,  -2,  SP }, // Lys
+	{  -1,  -1,  -2,  -3,  -1,   0,  -2,  -3,  -2,   1,   2,  -1,   5,   0,  -2,  -1,  -1,  -1,  -1,   1,  SP }, // Met
+	{  -2,  -3,  -3,  -3,  -2,  -3,  -3,  -3,  -1,   0,   0,  -3,   0,   6,  -4,  -2,  -2,   1,   3,  -1,  SP }, // Phe
+	{  -1,  -2,  -2,  -1,  -3,  -1,  -1,  -2,  -2,  -3,  -3,  -1,  -2,  -4,   7,  -1,  -1,  -4,  -3,  -2,  SP }, // Pro
+	{   1,  -1,   1,   0,  -1,   0,   0,   0,  -1,  -2,  -2,   0,  -1,  -2,  -1,   4,   1,  -3,  -2,  -2,  SP }, // Ser
+	{   0,  -1,   0,  -1,  -1,  -1,  -1,  -2,  -2,  -1,  -1,  -1,  -1,  -2,  -1,   1,   5,  -2,  -2,   0,  SP }, // Thr
+	{  -3,  -3,  -4,  -4,  -2,  -2,  -3,  -2,  -2,  -3,  -2,  -3,  -1,   1,  -4,  -3,  -2,  11,   2,  -3,  SP }, // Trp
+	{  -2,  -2,  -2,  -3,  -2,  -1,  -2,  -3,   2,  -1,  -1,  -2,  -1,   3,  -3,  -2,  -2,   2,   7,  -1,  SP }, // Tyr
+	{   0,  -3,  -3,  -3,  -1,  -2,  -2,  -3,  -3,   3,   1,  -2,   1,  -1,  -2,  -2,   0,  -3,  -1,   4,  SP }, // Val
 	{  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP,  SP }, // Def
 };
 
@@ -105,13 +105,14 @@ void run_case(const int64_t j, std::vector<std::string> &output) {
 	std::vector<std::vector<int64_t>> adj = d.adj;
 
 	if (print_alignments > 0) {
-		std::string fasta_file = "align_" + std::to_string(ref) + "_" + std::to_string(i) + ".fasta";
-		alignments_into_fasta(print_alignments, d, a, fasta_file);
+		std::string subop_fasta_file = "suboptimal_" + file_without_path;
+		alignments_into_fasta(print_alignments, d, a, subop_fasta_file, std::to_string(i));
 	}
 
 	std::vector<std::vector<K>> ratios = path_ratios<T, K>(d);
-
 	std::vector<int64_t> path = find_alpha_path<K>(d, ratios, alpha);
+	
+	// Just make sure that every node is contained only once in the path
 	std::unordered_map<int64_t, int64_t> cnt;
 	for (int64_t v: path) {
 		assert(cnt[v] == 0);
@@ -232,6 +233,8 @@ signed main(int argc, char **argv) {
 			case 'f':
 				read_file = true;
 				file = optarg;
+				file_without_path = file.substr(file.find_last_of("/\\") + 1);
+				if (file_without_path == "") file_without_path = file; // file was in the same directory and does not contain / or '\\'
 				break;
 			case 'h':
 				help_flag = true;
@@ -269,6 +272,12 @@ signed main(int argc, char **argv) {
 
 	if (print_alignments < 0)
 		std::cerr << "Warning: alignments value is negative, will be treated as 0.\n";
+	else if (print_alignments > 0) {
+		std::string subop_fasta_file = "suboptimal_" + file_without_path;
+		std::ofstream ofs;
+		ofs.open(subop_fasta_file, std::ofstream::out | std::ofstream::trunc);
+		ofs.close();
+	}
 
 	if (read_cost_matrix) {
 		std::ifstream costmat(cost_matrix_file);
@@ -326,7 +335,7 @@ signed main(int argc, char **argv) {
 		for (int64_t i = 0; i < PS; i++) {
 			if (reference == split(proteins[i].descriptor, delim)[1]) {
 				if (found)
-					std::cerr << "Reference identity found more than once. Using the last found protein as reference.\n";
+					std::cerr << "Representative identity found more than once. Using the last found protein as reference.\n";
 				ref = i;
 				found = true;
 			}
@@ -342,7 +351,8 @@ signed main(int argc, char **argv) {
 	for (int64_t i = 0; i < PS; i++) if (i != ref) random_order.push_back(i);
 	std::random_device rd;
 	std::mt19937 g(rd());
-	std::shuffle(random_order.begin(), random_order.end(), g);
+	if (threads > 1)
+		std::shuffle(random_order.begin(), random_order.end(), g);
 
 	#pragma omp parallel for num_threads(threads)
 	for (int64_t j = 0; j < PS - 1; j++)
