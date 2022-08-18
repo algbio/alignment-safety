@@ -11,7 +11,7 @@
 #include "optimal_paths.h"
 
 
-// given a dag of optimal paths, find a path with almost safe (> alpha) paths
+// given a dag of optimal paths, find a path with almost safe (>= alpha) paths
 
 std::vector<int64_t> topsort(std::vector<std::vector<int64_t>> &dag) {
 	int64_t n = (int64_t) dag.size();

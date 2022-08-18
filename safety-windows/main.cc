@@ -8,13 +8,16 @@
 #include <fstream>
 #include <unordered_map>
 #include <string>
+#include <sstream>
 
+#include <gmpxx.h>
 #include <omp.h>
 
 #include "alpha_safe_paths.h"
 #include "safety_windows.h"
 #include "optimal_paths.h"
 #include "draw_subgraph.h"
+#include "unit_tests.h"
 
 int64_t print_usage(char **argv, int64_t help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile> [OPTION...]\n\n";
@@ -92,25 +95,33 @@ int64_t ref = 0; // reference protein
 std::vector<int64_t> random_order;
 
 template<class T, class K>
-void run_case(const int64_t j, std::vector<std::string> &output) {
+void run_case(const int64_t j, std::vector<std::stringbuf> &output) {
 	int64_t i = random_order[j];
-//		std::cerr << "handling id " << i << std::endl;
-//		std::cerr << omp_get_thread_num() << std::endl;
+	std::ostream output_stream(&(output[i]));
 	const std::string &a = proteins[ref].sequence;
 	const std::string &b = proteins[i].sequence;
-	output[i] += "Sequence " + std::to_string(i) + ": " + proteins[i].descriptor + '\n' + b + '\n';
+	output_stream << "Sequence " << i << ": " << proteins[i].descriptor << '\n' << b << '\n';
+
 //		std::cout << i << ' ' << b << ' ' << std::flush;
 
-	Dag d = gen_dag<K>(a, b, cost_matrix, delta, GAP_COST, START_GAP, verbose_flag);
+	// Create suboptimal space
+	bool random_alignment_as_optimal = false; // TODO: command line option
+	Dag d = gen_dag<K>(a, b, cost_matrix, delta, GAP_COST, START_GAP, random_alignment_as_optimal, verbose_flag);
 	std::vector<std::vector<int64_t>> adj = d.adj;
 
 	if (print_alignments > 0) {
 		std::string subop_fasta_file = "suboptimal_" + file_without_path;
-		alignments_into_fasta(print_alignments, d, a, subop_fasta_file, std::to_string(i));
+		alignments_into_fasta(print_alignments, d, a, subop_fasta_file, std::to_string(i), proteins[i].descriptor);
 	}
 
-	std::vector<std::vector<K>> ratios = path_ratios<T, K>(d);
-	std::vector<int64_t> path = find_alpha_path<K>(d, ratios, alpha);
+	// Find a path that contains all safety windows (it always exists if alpha \in (0.5, 1])
+	std::vector<std::vector<int64_t>> radj((int64_t) adj.size());
+	for (int64_t i = 0; i < (int64_t) adj.size(); i++) for (int64_t v: adj[i]) radj[v].push_back(i);
+	std::vector<T> am = number_of_paths<T>(adj);
+	std::vector<T> ram = number_of_paths<T>(radj);
+
+	std::vector<std::vector<K>> ratios = path_ratios<T, K>(d, am, ram);
+	std::vector<int64_t> path = find_alpha_path<K>(d, ratios, alpha, verbose_flag);
 	
 	// Just make sure that every node is contained only once in the path
 	std::unordered_map<int64_t, int64_t> cnt;
@@ -119,11 +130,12 @@ void run_case(const int64_t j, std::vector<std::string> &output) {
 		cnt[v]++;
 	}
 
+	// Find safety windows
 	std::vector<K> r = find_ratios<K>(path, adj, ratios);
-	std::vector<std::pair<int64_t, int64_t>> windows_tmp = safety_windows<K>(r, path, alpha);
+	auto [swindows, window_ratios] = safety_windows<T, K>(am, ram, path, alpha);
 
 	if (drawgraph) {
-		std::string dot = draw_subgraph(i, (int64_t) a.size() + 1, (int64_t) b.size() + 1, d, path, windows_tmp, a, b);
+		std::string dot = draw_subgraph<K>(i, (int64_t) a.size() + 1, (int64_t) b.size() + 1, d, ratios, alpha, a, b);
 		std::string file_g = "fasta_" + std::to_string(i) + ".dot";
 		std::ofstream str(file_g, std::ofstream::out);
 		str << dot;
@@ -131,26 +143,17 @@ void run_case(const int64_t j, std::vector<std::string> &output) {
 	}
 
 	std::vector<std::pair<int64_t, int64_t>> windows, windowsp;
-	/*auto outside = [&](const int64_t &L, const int64_t &R) {
-		if (windows.empty()) return false;
-		auto [bL, bR] = windows.back();
-		return bL >= L && bR <= R;
-	};
-	auto inside = [&](const int64_t &L, const int64_t &R) {
-		if (windows.empty()) return false;
-		auto [bL, bR] = windows.back();
-		return L >= bL && R <= bR;
-	};*/
 	
 	std::map<int64_t, std::pair<int64_t, int64_t>> transr = d.transr;
-	for (int64_t i = 0; i < (int64_t) windows_tmp.size(); i++) {
-		auto [LT, RT] = windows_tmp[i];
+	for (int64_t i = 0; i < (int64_t) swindows.size(); i++) {
+		auto [LT, RT] = swindows[i];
 		int64_t L = transr[LT].first, R = transr[RT].first;
 		int64_t Lp = transr[LT].second, Rp = transr[RT].second;
 		
 		// This removes safety windows, that are a subset of another safety window.
-		// Here, this is only the case, if gaps are being used.
-		// As we print the safety windows wrt. both strings, we don't want to remove these kind
+		// Here, this is only the case if gaps are being used, due to the projection of already
+		// maximum sized safety windows in the alignment.
+		// Since we print the safety windows wrt. both strings, we don't want to remove these kind
 		// of subsets, though, as we'd lose to one-to-one correspondence between the safety-windows
 		// of both strings.
 		/*while (outside(L, R)) windows.pop_back();
@@ -161,18 +164,19 @@ void run_case(const int64_t j, std::vector<std::string> &output) {
 	}
 
 
-	output[i] += std::to_string(windows.size()) + '\n';
-	//std::cout << windows.size() << std::endl;
+	output_stream << windows.size() << '\n';
 	for (int64_t k = 0; k < (int64_t) windows.size(); k++) {
 		auto [x, y] = windows[k];
 		auto [xp, yp] = windowsp[k];
-		//std::cout << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
-		output[i] += std::to_string(x) + ' ' + std::to_string(y) + ' ' + std::to_string(xp) + ' ' + std::to_string(yp) + '\n';
+		K a = window_ratios[k];
+		output_stream << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
+		gmp_printf("%Qd\n", a);
 	}
-	//std::cout << std::flush;
 }
 
-signed main(int argc, char **argv) {
+int main(int argc, char **argv) {
+	//test_gen_dag();
+	//return 0;
 	std::cerr << std::fixed << std::setprecision(10); // debug output
 	std::cout << std::fixed << std::setprecision(10); // debug output
 
@@ -265,10 +269,10 @@ signed main(int argc, char **argv) {
 	if (!read_file)
 		return print_usage(argv, 1);
 
-	if (alpha >= 1.0)
-		std::cerr << "Warning: for alpha values >= 1.0, the program will not return any safety windows.\n";
-	else if (alpha < 0.5)
-		std::cerr << "Warning: for alpha values < 0.5, the program will not behave well defined and might crash.\n";
+	if (alpha > 1.0)
+		std::cerr << "Warning: for alpha values > 1.0 the program will not return any safety windows.\n";
+	else if (alpha <= 0.5)
+		std::cerr << "Warning: for alpha values <= 0.5 the program will not behave well defined and might crash.\n";
 
 	if (print_alignments < 0)
 		std::cerr << "Warning: alignments value is negative, will be treated as 0.\n";
@@ -343,16 +347,17 @@ signed main(int argc, char **argv) {
 		if (!found) std::cerr << "Reference identity not found, using the first protein as reference.\n";
 	}
 
-	// reference protein and amount of proteins in the cluster
+	// reference protein and number of proteins in the cluster
 	std::cout << proteins[ref].descriptor << '\n' << proteins[ref].sequence << '\n';
 	std::cout << PS << '\n';
-	std::vector<std::string> output(PS);
+	std::vector<std::stringbuf> output(PS);
 	random_order.clear();
 	for (int64_t i = 0; i < PS; i++) if (i != ref) random_order.push_back(i);
-	std::random_device rd;
-	std::mt19937 g(rd());
-	if (threads > 1)
+	if (threads > 1) {
+		std::random_device rd;
+		std::mt19937 g(rd());
 		std::shuffle(random_order.begin(), random_order.end(), g);
+	}
 
 	#pragma omp parallel for num_threads(threads)
 	for (int64_t j = 0; j < PS - 1; j++)
@@ -361,5 +366,5 @@ signed main(int argc, char **argv) {
 		else
 			run_case<double, double>(j, output);
 
-	for (int64_t i = 0; i < PS; i++) if (i != ref) std::cout << output[i];
+	for (int64_t i = 0; i < PS; i++) if (i != ref) std::cout << output[i].str();
 }

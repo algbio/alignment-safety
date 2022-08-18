@@ -4,7 +4,7 @@
 
 #include "optimal_paths.h"
 
-// given a dag of optimal paths, find a path with almost safe (> alpha) paths
+// given a dag of optimal paths, find a path with almost safe (>= alpha) paths
 
 std::vector<int64_t> topsort(std::vector<std::vector<int64_t>> &dag);
 
@@ -14,7 +14,7 @@ void find_path(int64_t src, int64_t dest, std::vector<int64_t> &path,
 
 // For each vertex, save the amount of paths starting from the vertex to the sink
 template<class T>
-std::vector<T> amount_paths(std::vector<std::vector<int64_t>> &dag) {
+std::vector<T> number_of_paths(std::vector<std::vector<int64_t>> &dag) {
 	int64_t n = (int64_t) dag.size();
 	std::vector<int64_t> sorted = topsort(dag);
 	int64_t sink = sorted.back();
@@ -30,18 +30,9 @@ std::vector<T> amount_paths(std::vector<std::vector<int64_t>> &dag) {
 
 // For each edge, calculate the % of s-t paths they are part in
 template<class T, class K>
-std::vector<std::vector<K>> path_ratios(Dag &d) {
+std::vector<std::vector<K>> path_ratios(Dag &d, std::vector<T> &am, std::vector<T> &ram) {
 	std::vector<std::vector<int64_t>> &dag = d.adj;
 	int64_t n = (int64_t) dag.size();
-
-	std::vector<std::vector<int64_t>> rdag(n);
-	for (int64_t i = 0; i < n; i++) for (int64_t v: dag[i]) rdag[v].push_back(i);
-
-	// TODO: perhaps create a dag class with source/sink variables
-	//std::vector<mpz_class> am = amount_paths(dag);
-	//std::vector<mpz_class> ram = amount_paths(rdag);
-	std::vector<T> am = amount_paths<T>(dag);
-	std::vector<T> ram = amount_paths<T>(rdag);
 
 	for (int64_t i = 0; i < n; i++) assert(am[i] <= am[d.src]);
 
@@ -59,10 +50,10 @@ std::vector<std::vector<K>> path_ratios(Dag &d) {
 	return ratios;
 }
 
-// Find s--t path that contains all edges with occurence ratio > alpha. Might fail if alpha < 0.5
+// Find s--t path that contains all edges with occurence ratio >= alpha. Might fail if alpha <= 0.5
 template<class K>
 std::vector<int64_t> find_alpha_path(Dag &d,
-		std::vector<std::vector<K>> &ratios, K alpha) {
+		std::vector<std::vector<K>> &ratios, K alpha, bool verbose_flag) {
 	std::vector<std::vector<int64_t>> &dag = d.adj;
 	int64_t n = (int64_t) ratios.size();
 	std::vector<int64_t> sorted = topsort(dag);
@@ -75,10 +66,12 @@ std::vector<int64_t> find_alpha_path(Dag &d,
 			int64_t v = dag[u][j];
 			K d = ratios[u][j];
 			assert(d <= 1);
-			if (d > alpha) needed.emplace_back(u, v), am++;
+			if (d >= alpha) needed.emplace_back(u, v), am++;
 		}
 		assert(am <= 1);
 	}
+	if (verbose_flag)
+		std::cerr << "Number of edges in SW: " << (int64_t) needed.size() << '\n';
 
 	/*std::cerr << "NEEDED DBG" << std::endl;
 	for (auto [x,y]: needed) std::cerr << x << ' ' << y << std::endl;

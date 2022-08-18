@@ -26,7 +26,7 @@ struct Node {
 };
 
 // Print suboptimal alignments into a fasta file
-void alignments_into_fasta(int64_t print_alignments, Dag &d, const std::string &a, const std::string &fasta_file, const std::string &id);
+std::vector<std::vector<int64_t>> alignments_into_fasta(int64_t print_alignments, Dag &d, const std::string &a, const std::string &fasta_file, const std::string &id, const std::string &descr);
 
 // Construct alignment paths
 std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const std::string &a,
@@ -36,17 +36,20 @@ std::vector<std::vector<std::vector<std::vector<Node>>>> build_dp_matrix(const s
 std::vector<std::vector<std::vector<int64_t>>>
 opt_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj, bool dir);
 
+// Returns the score of a randomly chosen alignment
+int64_t score_of_random_alignment(const std::vector<std::vector<std::vector<std::vector<Node>>>> &adj);
+
 // Find the sub-graph of the alignment paths with (sub-)optimal paths
 template<class K>
 Dag gen_dag(const std::string &a, const std::string &b, const int64_t cost_matrix[21][21],
-		const int64_t delta, const int64_t GAP_COST, const int64_t START_GAP, int &verbose_flag) {
+		const int64_t delta, const int64_t GAP_COST, const int64_t START_GAP, bool random_alignment_as_optimal, int &verbose_flag) {
 	std::vector<std::vector<std::vector<std::vector<Node>>>> e = build_dp_matrix(a, b, GAP_COST, START_GAP, cost_matrix, 1);
 	int64_t n = (int64_t) e.size() - 1;
 	assert(n > 0);
 	int64_t m = (int64_t) e[0].size() - 1;
 	assert(m > 0);
 
-	// find smallest distances for each node
+	// find highest scores for each node
 	std::vector<std::vector<std::vector<std::vector<Node>>>> er(n + 1, std::vector<std::vector<std::vector<Node>>>(m + 1, std::vector<std::vector<Node>>(3)));
 	for (int64_t i = 0; i <= n; i++) for (int64_t j = 0; j <= m; j++) for (int64_t k = 0; k <= 2; k++) {
 		for (Node nxt: e[i][j][k])
@@ -57,7 +60,8 @@ Dag gen_dag(const std::string &a, const std::string &b, const int64_t cost_matri
 	std::vector<std::vector<std::vector<int64_t>>> dpr = opt_alignment(er, 1);
 	assert(dp[n][m][0] == dpr[0][0][0]);
 
-	const int64_t OPT = dp[n][m][0];
+	const int64_t OPT = (random_alignment_as_optimal ? score_of_random_alignment(e) : dp[n][m][0]);
+
 	int64_t current = 0;
 	std::vector<std::vector<int64_t>> adj(1);
 	std::vector<std::vector<std::pair<int64_t, int64_t>>> adj_costs(1);
@@ -81,10 +85,10 @@ Dag gen_dag(const std::string &a, const std::string &b, const int64_t cost_matri
 	};
 
 
-	int64_t subpaths = 0;
+	int64_t subpaths = 0, arcs = 0;
 	auto check_th = [&](const int64_t k, const int64_t OPT, const int64_t delta) {
 		if (k < OPT && k >= OPT - delta) subpaths++;
-		return k >= OPT - delta;
+		return k >= OPT - delta && k <= OPT + delta;
 	};
 
 	for (int64_t i = 0; i <= n; i++) for (int64_t j = 0; j <= m; j++) for (int64_t k = 0; k <= 2; k++) {
@@ -93,6 +97,7 @@ Dag gen_dag(const std::string &a, const std::string &b, const int64_t cost_matri
 		for (const Node &nxt: e[i][j][k]) {
 			if (!check_th(dp[nxt.N_index][nxt.M_index][nxt.type] + dpr[nxt.N_index][nxt.M_index][nxt.type], OPT, delta)) continue;
 			if (check_th(dpr[nxt.N_index][nxt.M_index][nxt.type] + dp[i][j][k] + nxt.cost, OPT, delta)) {
+				arcs++;
 				add_node(nxt);
 				adj[trans[std::make_pair(i, j)][k]].push_back(trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]);
 				adj_costs[trans[std::make_pair(i, j)][k]].emplace_back((trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]), nxt.cost);
@@ -102,6 +107,7 @@ Dag gen_dag(const std::string &a, const std::string &b, const int64_t cost_matri
 	if (verbose_flag) {
 		std::cerr << "TOTAL: " << 3*(n+1)*(m+1) << std::endl;
 		std::cerr << "CURRENT: " << current << std::endl;
+		std::cerr << "Number of arcs: " << arcs << std::endl;
 		std::cerr << OPT - delta << std::endl;
 		if (subpaths) std::cerr << "Found subpaths: " << subpaths << std:: endl;
 	}
