@@ -17,7 +17,6 @@
 #include "safety_windows.h"
 #include "optimal_paths.h"
 #include "draw_subgraph.h"
-#include "unit_tests.h"
 
 int64_t print_usage(char **argv, int64_t help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile> [OPTION...]\n\n";
@@ -170,7 +169,7 @@ void run_case(const int64_t j, std::vector<std::stringbuf> &output) {
 		auto [xp, yp] = windowsp[k];
 		K a = window_ratios[k];
 		output_stream << x << ' ' << y << ' ' << xp << ' ' << yp << '\n';
-		gmp_printf("%Qd\n", a);
+		//gmp_printf("%Qd\n", a);
 	}
 }
 
