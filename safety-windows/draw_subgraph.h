@@ -29,8 +29,8 @@ std::string draw_subgraph(const int64_t IDX, const int64_t n, const int64_t m, c
 	};
 	auto is_opt = [&](int64_t i1, int64_t j1, int64_t i2, int64_t j2) {
 		if (!has(i1, j1) || !has(i2, j2)) return false;
-        for (int64_t a1: d.trans.at(std::make_pair(i1, j1))) if (a1 > -1) {
-            for (int64_t a2: d.trans.at(std::make_pair(i2, j2))) if (a2 > -1) {
+		for (int64_t a1: d.trans.at(std::make_pair(i1, j1))) if (a1 > -1) {
+			for (int64_t a2: d.trans.at(std::make_pair(i2, j2))) if (a2 > -1) {
 				bool is_edge = false;
 				for (int64_t nxt: d.adj[a1]) if (nxt == a2) is_edge = true;
 				if (!is_edge) continue;
