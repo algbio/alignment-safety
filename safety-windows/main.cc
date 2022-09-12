@@ -21,18 +21,18 @@
 int64_t print_usage(char **argv, int64_t help) {
 	std::cout << "How to run: " << argv[0] << " -f <clusterfile> [OPTION...]\n\n";
 	std::cout << "\t-a, --alpha        \tFloating value, choose edges that appear in (alpha*100)% of all\n";
-	std::cout << "\t                   \t(sub-)optimal paths in the alpha-safe path. (Default: 0.75)\n";
+	std::cout << "\t                   \t(sub-)optimal paths to be safe. (Default: 0.75, Range: (0.5, 1])\n";
 	std::cout << "\t-p, --approximation\tBoolean, if true, big integers will be approximated by doubles. Output might be less accurate, but running speed will be increased. (Default: false)\n";
 	std::cout << "\t-d, --delta        \tInteger value, defines suboptimal paths to be in the delta neighborhood of the optimal. (Default: 0, Range: [0.0, inf))\n";
-	std::cout << "\t-c, --costmat      \tReads the aligning cost of two symbols from a text file.\n";
+	std::cout << "\t-c, --costmat      \tReads the aligning score of two symbols from a text file.\n";
 	std::cout << "\t                   \tThe text file is a lower triangular matrix with 20 lines. (Default: BLOSUM62)\n";
-	std::cout << "\t-g, --gapcost      \tInteger, set the cost of aligning a character to a gap. (Default: 1)\n";
-	std::cout << "\t-e, --startgap     \tInteger, set the cost of starting a gap alignment. (Default: 11)\n";
-	std::cout << "\t-s, --special      \tInteger, sets the cost of aligning symbols with special characters.\n";
+	std::cout << "\t-g, --gapcost      \tInteger, set the score of aligning a character to a gap. (Default: 1)\n";
+	std::cout << "\t-e, --startgap     \tInteger, set the score of starting a gap alignment. (Default: 11)\n";
+	std::cout << "\t-s, --special      \tInteger, sets the score of aligning symbols with special characters.\n";
 	std::cout << "\t                   \tINF value ignores these charachters. (Default: 1)\n";
 	std::cout << "\t-i, --threads      \tInteger, specifies the number of threads (Default: 1).\n";
 	std::cout << "\t-r, --reference    \tProtein identity, selects reference protein. By default, this is the first protein.\n";
-	std::cout << "\t-w, --drawgraph    \tOutput in stdout a dot code for plotting the Delta suboptimal subgraph (for debug purposes).\n";
+	std::cout << "\t-w, --drawgraph    \tReturns dot code files of all alignments for plotting the Delta suboptimal subgraph (for debug purposes).\n";
 	std::cout << "\t-k, --alignments   \tNon-negative integer n, create a fasta file containing randomly chosen n suboptimal alignments. (Default: 0)\n";
 	std::cout << "\t-h, --help         \tShows this help message.\n";
 	return help;
@@ -91,11 +91,11 @@ int64_t cost_matrix[21][21] = {
 
 std::vector<Protein> proteins;
 int64_t ref = 0; // reference protein
-std::vector<int64_t> random_order;
+std::vector<int64_t> random_order_of_alignments;
 
 template<class T, class K>
 void run_case(const int64_t j, std::vector<std::stringbuf> &output) {
-	int64_t i = random_order[j];
+	int64_t i = random_order_of_alignments[j];
 	std::ostream output_stream(&(output[i]));
 	const std::string &a = proteins[ref].sequence;
 	const std::string &b = proteins[i].sequence;
@@ -113,12 +113,14 @@ void run_case(const int64_t j, std::vector<std::stringbuf> &output) {
 		alignments_into_fasta(print_alignments, d, a, subop_fasta_file, std::to_string(i), proteins[i].descriptor);
 	}
 
-	// Find a path that contains all safety windows (it always exists if alpha \in (0.5, 1])
+	// Find the number of v-t paths (am) and the number of s-v paths (ram) for all nodes v
 	std::vector<std::vector<int64_t>> radj((int64_t) adj.size());
-	for (int64_t i = 0; i < (int64_t) adj.size(); i++) for (int64_t v: adj[i]) radj[v].push_back(i);
+	for (int64_t i = 0; i < (int64_t) adj.size(); i++)
+		for (int64_t v: adj[i]) radj[v].push_back(i);
 	std::vector<T> am = number_of_paths<T>(adj);
 	std::vector<T> ram = number_of_paths<T>(radj);
 
+	// Find a path that contains all safety windows (it always exists if alpha \in (0.5, 1])
 	std::vector<std::vector<K>> ratios = path_ratios<T, K>(d, am, ram);
 	std::vector<int64_t> path = find_alpha_path<K>(d, ratios, alpha, verbose_flag);
 	
@@ -350,12 +352,12 @@ int main(int argc, char **argv) {
 	std::cout << proteins[ref].descriptor << '\n' << proteins[ref].sequence << '\n';
 	std::cout << PS << '\n';
 	std::vector<std::stringbuf> output(PS);
-	random_order.clear();
-	for (int64_t i = 0; i < PS; i++) if (i != ref) random_order.push_back(i);
+	random_order_of_alignments.clear();
+	for (int64_t i = 0; i < PS; i++) if (i != ref) random_order_of_alignments.push_back(i);
 	if (threads > 1) {
 		std::random_device rd;
 		std::mt19937 g(rd());
-		std::shuffle(random_order.begin(), random_order.end(), g);
+		std::shuffle(random_order_of_alignments.begin(), random_order_of_alignments.end(), g);
 	}
 
 	#pragma omp parallel for num_threads(threads)
