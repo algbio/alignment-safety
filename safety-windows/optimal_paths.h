@@ -15,6 +15,7 @@ struct Dag {
 	int64_t src, sink;
 	std::map<std::pair<int64_t, int64_t>, std::array<int64_t, 3>> trans;
 	std::map<int64_t, std::pair<int64_t, int64_t>> transr;
+	std::map<std::pair<int64_t, int64_t>, bool> in_optimal;
 };
 
 struct Node {
@@ -86,9 +87,13 @@ Dag gen_dag(const std::string &a, const std::string &b, const int64_t cost_matri
 
 
 	int64_t subpaths = 0, arcs = 0;
+	std::map<std::pair<int64_t, int64_t>, bool> in_optimal;
 	auto check_th = [&](const int64_t k, const int64_t OPT, const int64_t delta) {
 		if (k < OPT && k >= OPT - delta) subpaths++;
 		return k >= OPT - delta && k <= OPT + delta;
+	};
+	auto check_opt = [&](const int64_t k, const int64_t OPT, const int64_t delta) {
+		return k == OPT;
 	};
 
 	for (int64_t i = 0; i <= n; i++) for (int64_t j = 0; j <= m; j++) for (int64_t k = 0; k <= 2; k++) {
@@ -99,6 +104,8 @@ Dag gen_dag(const std::string &a, const std::string &b, const int64_t cost_matri
 			if (check_th(dpr[nxt.N_index][nxt.M_index][nxt.type] + dp[i][j][k] + nxt.cost, OPT, delta)) {
 				arcs++;
 				add_node(nxt);
+				in_optimal[std::make_pair(trans[std::make_pair(i, j)][k],
+						trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type])] = check_opt(dpr[nxt.N_index][nxt.M_index][nxt.type] + dp[i][j][k] + nxt.cost, OPT, delta);
 				adj[trans[std::make_pair(i, j)][k]].push_back(trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]);
 				adj_costs[trans[std::make_pair(i, j)][k]].emplace_back((trans[std::make_pair(nxt.N_index, nxt.M_index)][nxt.type]), nxt.cost);
 			}
@@ -112,6 +119,6 @@ Dag gen_dag(const std::string &a, const std::string &b, const int64_t cost_matri
 		if (subpaths) std::cerr << "Found subpaths: " << subpaths << std:: endl;
 	}
 
-	return { adj, adj_costs, 0, trans[std::make_pair(n, m)][0], trans, transr };
+	return { adj, adj_costs, 0, trans[std::make_pair(n, m)][0], trans, transr, in_optimal };
 }
 

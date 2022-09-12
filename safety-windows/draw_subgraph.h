@@ -27,6 +27,18 @@ std::string draw_subgraph(const int64_t IDX, const int64_t n, const int64_t m, c
 		}
 		return false;
 	};
+	auto is_opt = [&](int64_t i1, int64_t j1, int64_t i2, int64_t j2) {
+		if (!has(i1, j1) || !has(i2, j2)) return false;
+        for (int64_t a1: d.trans.at(std::make_pair(i1, j1))) if (a1 > -1) {
+            for (int64_t a2: d.trans.at(std::make_pair(i2, j2))) if (a2 > -1) {
+				bool is_edge = false;
+				for (int64_t nxt: d.adj[a1]) if (nxt == a2) is_edge = true;
+				if (!is_edge) continue;
+				if (d.in_optimal.at(std::make_pair(a1, a2))) return true;
+			}
+		}
+		return false;
+	};
 	auto outside = [&](int64_t i, int64_t j) {
 		return i < 0 || i >= n || j < 0 || j >= m;
 	};
@@ -50,8 +62,10 @@ std::string draw_subgraph(const int64_t IDX, const int64_t n, const int64_t m, c
 				std::string edge = "\"" + std::to_string(l) + "_" + std::to_string(k) + "\" -- \"" + std::to_string(i) + "_" + std::to_string(j) + "\"";
 				if (!has(i, j) || !has(l, k) || !is_edge) {
 					edge += " [style=invis]";
+				} else if (!is_opt(l, k, i, j)) {
+					edge += " [penwidth=1]";
 				} else {
-					int s;
+					//int s;
 					//if ((s = is_safe(l, k, i, j))) edge += ((s % 2) ? " [color=orange, penwidth=5]" : " [color=orange, penwidth=5]");
 					//else edge += " [penwidth=3]";
 					edge += " [penwidth=3]";
